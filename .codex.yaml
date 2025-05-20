@@ -1,5 +1,10 @@
-﻿version: 1                # Codex 設定ファイルのバージョン番号（固定で 1）
-docker_image: mcr.microsoft.com/dotnet/sdk:8.0  # .NET 8 SDK が入った公式イメージ
-setup_scripts:            # 環境が起動した直後に実行させるコマンド
-  - name: restore         # 好きなラベル
-    run: dotnet restore   # 依存パッケージを先に取っておくと後のビルドが速い
+﻿version: 1
+docker_image: mcr.microsoft.com/dotnet/sdk:8.0
+
+setup_scripts:
+  - name: restore
+    run: dotnet restore ShiftPlanner.sln   # ルートなのでファイル名だけで可
+  - name: build
+    run: dotnet build ShiftPlanner.sln -c Release
+  - name: test
+    run: dotnet test  ShiftPlanner.sln --no-build
