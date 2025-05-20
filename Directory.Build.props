@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- resx 変換を 64bit で強制実行 -->
+    <GenerateResourceMSBuildArchitecture>x64</GenerateResourceMSBuildArchitecture>
+  </PropertyGroup>
+</Project>
