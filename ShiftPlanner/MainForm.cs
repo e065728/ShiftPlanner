@@ -80,8 +80,15 @@ namespace ShiftPlanner
         private void SetupDataGridView()
         {
             dtShift.DataSource = null;
-            dtShift.DataSource = assignments;
             dtShift.AutoGenerateColumns = true;
+            dtShift.DataSource = assignments;
+
+            if (dtShift.Columns["Date"] != null) dtShift.Columns["Date"].HeaderText = "日付";
+            if (dtShift.Columns["ShiftType"] != null) dtShift.Columns["ShiftType"].HeaderText = "シフト種類";
+            if (dtShift.Columns["RequiredNumber"] != null) dtShift.Columns["RequiredNumber"].HeaderText = "必要人数";
+            if (dtShift.Columns["AssignedMembers"] != null) dtShift.Columns["AssignedMembers"].HeaderText = "割り当てメンバー";
+            if (dtShift.Columns["Shortage"] != null) dtShift.Columns["Shortage"].HeaderText = "不足";
+            if (dtShift.Columns["Excess"] != null) dtShift.Columns["Excess"].HeaderText = "過剰";
 
             foreach (DataGridViewRow row in dtShift.Rows)
             {
