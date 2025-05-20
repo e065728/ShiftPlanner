@@ -73,6 +73,15 @@ namespace ShiftPlanner
                 ShiftEnd = TimeSpan.FromHours(17),
                 RequiredNumber = 1
             });
+            // 例として 3 日目の遅番を追加
+            shiftFrames.Add(new ShiftFrame
+            {
+                Date = DateTime.Today.AddDays(3),
+                ShiftType = "遅番",
+                ShiftStart = TimeSpan.FromHours(13),
+                ShiftEnd = TimeSpan.FromHours(21),
+                RequiredNumber = 2
+            });
 
             assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members);
         }
@@ -80,30 +89,37 @@ namespace ShiftPlanner
         private void SetupDataGridView()
         {
             dtShift.DataSource = null;
-            dtShift.AutoGenerateColumns = true;
-            dtShift.DataSource = assignments;
 
-            if (dtShift.Columns["Date"] != null) dtShift.Columns["Date"].HeaderText = "日付";
-            if (dtShift.Columns["ShiftType"] != null) dtShift.Columns["ShiftType"].HeaderText = "シフト種類";
-            if (dtShift.Columns["RequiredNumber"] != null) dtShift.Columns["RequiredNumber"].HeaderText = "必要人数";
-            if (dtShift.Columns["AssignedMembers"] != null) dtShift.Columns["AssignedMembers"].HeaderText = "割り当てメンバー";
-            if (dtShift.Columns["Shortage"] != null) dtShift.Columns["Shortage"].HeaderText = "不足";
-            if (dtShift.Columns["Excess"] != null) dtShift.Columns["Excess"].HeaderText = "過剰";
+            if (shiftFrames.Count == 0) return;
 
-            foreach (DataGridViewRow row in dtShift.Rows)
+            var first = shiftFrames.First().Date;
+            int year = first.Year;
+            int month = first.Month;
+            int daysInMonth = DateTime.DaysInMonth(year, month);
+
+            var table = new DataTable();
+            table.Columns.Add("人名");
+            for (int day = 1; day <= daysInMonth; day++)
             {
-                var assignment = row.DataBoundItem as ShiftAssignment;
-                if (assignment == null) continue;
-
-                if (assignment.Shortage)
-                {
-                    row.DefaultCellStyle.BackColor = Color.LightPink;
-                }
-                else if (assignment.Excess)
-                {
-                    row.DefaultCellStyle.BackColor = Color.LightYellow;
-                }
+                table.Columns.Add($"{day}日");
             }
+
+            foreach (var member in members)
+            {
+                var row = table.NewRow();
+                row["人名"] = member.Name;
+                for (int day = 1; day <= daysInMonth; day++)
+                {
+                    var date = new DateTime(year, month, day);
+                    var assign = assignments.FirstOrDefault(a => a.Date.Date == date && a.AssignedMembers.Contains(member));
+                    row[$"{day}日"] = assign != null ? assign.ShiftType : "休";
+                }
+                table.Rows.Add(row);
+            }
+
+            dtShift.AutoGenerateColumns = true;
+            dtShift.DataSource = table;
+            dtShift.AutoResizeColumns();
         }
 
         private void SetupMemberGrid()
