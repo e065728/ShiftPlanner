@@ -8,3 +8,4 @@ setup_scripts:
     run: dotnet build ShiftPlanner.sln -c Release
   - name: test
     run: dotnet test  ShiftPlanner.sln --no-build
+    
