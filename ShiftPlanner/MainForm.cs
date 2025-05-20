@@ -15,6 +15,7 @@ namespace ShiftPlanner
         private DataGridView dtMembers;
         private Button btnAddMember;
         private Button btnRemoveMember;
+        private Button btnRefreshShift;
         private List<Member> members = new List<Member>();
         private List<ShiftFrame> shiftFrames = new List<ShiftFrame>();
         private List<ShiftAssignment> assignments = new List<ShiftAssignment>();
@@ -78,6 +79,7 @@ namespace ShiftPlanner
 
         private void SetupDataGridView()
         {
+            dtShift.DataSource = null;
             dtShift.DataSource = assignments;
             dtShift.AutoGenerateColumns = true;
 
@@ -120,6 +122,12 @@ namespace ShiftPlanner
             }
         }
 
+        private void btnRefreshShift_Click(object sender, EventArgs e)
+        {
+            assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members);
+            SetupDataGridView();
+        }
+
         private void InitializeComponent()
         {
             this.tabControl1 = new System.Windows.Forms.TabControl();
@@ -129,6 +137,7 @@ namespace ShiftPlanner
             this.dtMembers = new System.Windows.Forms.DataGridView();
             this.btnAddMember = new System.Windows.Forms.Button();
             this.btnRemoveMember = new System.Windows.Forms.Button();
+            this.btnRefreshShift = new System.Windows.Forms.Button();
             this.tabControl1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dtShift)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtMembers)).BeginInit();
@@ -147,6 +156,7 @@ namespace ShiftPlanner
             // tabPage1
             //
             this.tabPage1.Controls.Add(this.dtShift);
+            this.tabPage1.Controls.Add(this.btnRefreshShift);
             this.tabPage1.Location = new System.Drawing.Point(4, 22);
             this.tabPage1.Name = "tabPage1";
             this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
@@ -157,13 +167,25 @@ namespace ShiftPlanner
 
             // dtShift
             //
-            this.dtShift.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.dtShift.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
             this.dtShift.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dtShift.Location = new System.Drawing.Point(3, 3);
+            this.dtShift.Location = new System.Drawing.Point(3, 35);
             this.dtShift.Name = "dtShift";
             this.dtShift.RowTemplate.Height = 21;
-            this.dtShift.Size = new System.Drawing.Size(1379, 832);
-            this.dtShift.TabIndex = 0;
+            this.dtShift.Size = new System.Drawing.Size(1379, 800);
+            this.dtShift.TabIndex = 1;
+
+            // btnRefreshShift
+            //
+            this.btnRefreshShift.Location = new System.Drawing.Point(6, 6);
+            this.btnRefreshShift.Name = "btnRefreshShift";
+            this.btnRefreshShift.Size = new System.Drawing.Size(75, 23);
+            this.btnRefreshShift.TabIndex = 0;
+            this.btnRefreshShift.Text = "更新";
+            this.btnRefreshShift.UseVisualStyleBackColor = true;
+            this.btnRefreshShift.Click += new System.EventHandler(this.btnRefreshShift_Click);
             // 
             // tabPage2
             // 
