@@ -12,6 +12,9 @@ namespace ShiftPlanner
         private TabPage tabPage1;
         private TabPage tabPage2;
         private DataGridView dtShift;
+        private DataGridView dtMembers;
+        private Button btnAddMember;
+        private Button btnRemoveMember;
         private List<Member> members = new List<Member>();
         private List<ShiftFrame> shiftFrames = new List<ShiftFrame>();
         private List<ShiftAssignment> assignments = new List<ShiftAssignment>();
@@ -21,6 +24,7 @@ namespace ShiftPlanner
             InitializeComponent(); // これだけでOK
             InitializeData();
             SetupDataGridView();
+            SetupMemberGrid();
         }
 
         private void InitializeData()
@@ -93,14 +97,41 @@ namespace ShiftPlanner
             }
         }
 
+        private void SetupMemberGrid()
+        {
+            dtMembers.DataSource = null;
+            dtMembers.DataSource = members;
+            dtMembers.AutoGenerateColumns = true;
+        }
+
+        private void btnAddMember_Click(object sender, EventArgs e)
+        {
+            var nextId = members.Count > 0 ? members.Max(m => m.Id) + 1 : 1;
+            members.Add(new Member { Id = nextId, Name = "新規" });
+            SetupMemberGrid();
+        }
+
+        private void btnRemoveMember_Click(object sender, EventArgs e)
+        {
+            if (dtMembers.CurrentRow?.DataBoundItem is Member m)
+            {
+                members.Remove(m);
+                SetupMemberGrid();
+            }
+        }
+
         private void InitializeComponent()
         {
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.tabPage2 = new System.Windows.Forms.TabPage();
             this.dtShift = new System.Windows.Forms.DataGridView();
+            this.dtMembers = new System.Windows.Forms.DataGridView();
+            this.btnAddMember = new System.Windows.Forms.Button();
+            this.btnRemoveMember = new System.Windows.Forms.Button();
             this.tabControl1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dtShift)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dtMembers)).BeginInit();
             this.SuspendLayout();
             // 
             // tabControl1
@@ -136,13 +167,48 @@ namespace ShiftPlanner
             // 
             // tabPage2
             // 
+            this.tabPage2.Controls.Add(this.dtMembers);
+            this.tabPage2.Controls.Add(this.btnRemoveMember);
+            this.tabPage2.Controls.Add(this.btnAddMember);
             this.tabPage2.Location = new System.Drawing.Point(4, 22);
             this.tabPage2.Name = "tabPage2";
             this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage2.Size = new System.Drawing.Size(192, 74);
+            this.tabPage2.Size = new System.Drawing.Size(1385, 838);
             this.tabPage2.TabIndex = 1;
-            this.tabPage2.Text = "tabPage2";
+            this.tabPage2.Text = "メンバー";
             this.tabPage2.UseVisualStyleBackColor = true;
+
+            // btnAddMember
+            //
+            this.btnAddMember.Location = new System.Drawing.Point(6, 6);
+            this.btnAddMember.Name = "btnAddMember";
+            this.btnAddMember.Size = new System.Drawing.Size(75, 23);
+            this.btnAddMember.TabIndex = 0;
+            this.btnAddMember.Text = "追加";
+            this.btnAddMember.UseVisualStyleBackColor = true;
+            this.btnAddMember.Click += new System.EventHandler(this.btnAddMember_Click);
+
+            // btnRemoveMember
+            //
+            this.btnRemoveMember.Location = new System.Drawing.Point(87, 6);
+            this.btnRemoveMember.Name = "btnRemoveMember";
+            this.btnRemoveMember.Size = new System.Drawing.Size(75, 23);
+            this.btnRemoveMember.TabIndex = 1;
+            this.btnRemoveMember.Text = "削除";
+            this.btnRemoveMember.UseVisualStyleBackColor = true;
+            this.btnRemoveMember.Click += new System.EventHandler(this.btnRemoveMember_Click);
+
+            // dtMembers
+            //
+            this.dtMembers.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.dtMembers.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dtMembers.Location = new System.Drawing.Point(3, 35);
+            this.dtMembers.Name = "dtMembers";
+            this.dtMembers.RowTemplate.Height = 21;
+            this.dtMembers.Size = new System.Drawing.Size(1379, 800);
+            this.dtMembers.TabIndex = 2;
             // 
             // MainForm
             // 
@@ -151,6 +217,7 @@ namespace ShiftPlanner
             this.Name = "MainForm";
             this.tabControl1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dtShift)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dtMembers)).EndInit();
             this.ResumeLayout(false);
 
         }
