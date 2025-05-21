@@ -17,6 +17,7 @@ namespace ShiftPlanner
         private Button btnAddMember;
         private Button btnRemoveMember;
         private Button btnRefreshShift;
+        private DateTimePicker dtpMonth;
         private List<Member> members = new List<Member>();
         private List<ShiftFrame> shiftFrames = new List<ShiftFrame>();
         private List<ShiftAssignment> assignments = new List<ShiftAssignment>();
@@ -91,11 +92,8 @@ namespace ShiftPlanner
         {
             dtShift.DataSource = null;
 
-            if (shiftFrames.Count == 0) return;
-
-            var first = shiftFrames.First().Date;
-            int year = first.Year;
-            int month = first.Month;
+            int year = dtpMonth.Value.Year;
+            int month = dtpMonth.Value.Month;
             int daysInMonth = DateTime.DaysInMonth(year, month);
 
             var table = new DataTable();
@@ -118,8 +116,39 @@ namespace ShiftPlanner
                 table.Rows.Add(row);
             }
 
+            var requiredRow = table.NewRow();
+            requiredRow["人名"] = "必要人数";
+            for (int day = 1; day <= daysInMonth; day++)
+            {
+                var date = new DateTime(year, month, day);
+                var frame = shiftFrames.FirstOrDefault(f => f.Date.Date == date);
+                requiredRow[$"{day}日"] = frame?.RequiredNumber ?? 0;
+            }
+            table.Rows.Add(requiredRow);
+
+            var assignedRow = table.NewRow();
+            assignedRow["人名"] = "割当人数";
+            for (int day = 1; day <= daysInMonth; day++)
+            {
+                var date = new DateTime(year, month, day);
+                var count = assignments.Where(a => a.Date.Date == date).Sum(a => a.AssignedMembers.Count);
+                assignedRow[$"{day}日"] = count;
+            }
+            table.Rows.Add(assignedRow);
+
             dtShift.AutoGenerateColumns = true;
             dtShift.DataSource = table;
+
+            for (int day = 1; day <= daysInMonth; day++)
+            {
+                var date = new DateTime(year, month, day);
+                var col = dtShift.Columns[$"{day}日"];
+                if (col != null && (date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday))
+                {
+                    col.DefaultCellStyle.BackColor = Color.LightYellow;
+                }
+            }
+
             dtShift.AutoResizeColumns();
         }
 
@@ -152,6 +181,11 @@ namespace ShiftPlanner
             SetupDataGridView();
         }
 
+        private void dtpMonth_ValueChanged(object sender, EventArgs e)
+        {
+            SetupDataGridView();
+        }
+
         private void InitializeComponent()
         {
             this.tabControl1 = new System.Windows.Forms.TabControl();
@@ -162,6 +196,7 @@ namespace ShiftPlanner
             this.btnAddMember = new System.Windows.Forms.Button();
             this.btnRemoveMember = new System.Windows.Forms.Button();
             this.btnRefreshShift = new System.Windows.Forms.Button();
+            this.dtpMonth = new System.Windows.Forms.DateTimePicker();
             this.tabControl1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dtShift)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtMembers)).BeginInit();
@@ -181,6 +216,7 @@ namespace ShiftPlanner
             //
             this.tabPage1.Controls.Add(this.dtShift);
             this.tabPage1.Controls.Add(this.btnRefreshShift);
+            this.tabPage1.Controls.Add(this.dtpMonth);
             this.tabPage1.Location = new System.Drawing.Point(4, 22);
             this.tabPage1.Name = "tabPage1";
             this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
@@ -210,6 +246,18 @@ namespace ShiftPlanner
             this.btnRefreshShift.Text = "更新";
             this.btnRefreshShift.UseVisualStyleBackColor = true;
             this.btnRefreshShift.Click += new System.EventHandler(this.btnRefreshShift_Click);
+
+            // dtpMonth
+            //
+            this.dtpMonth.CustomFormat = "yyyy/MM";
+            this.dtpMonth.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
+            this.dtpMonth.Location = new System.Drawing.Point(87, 6);
+            this.dtpMonth.Name = "dtpMonth";
+            this.dtpMonth.ShowUpDown = true;
+            this.dtpMonth.Size = new System.Drawing.Size(100, 23);
+            this.dtpMonth.TabIndex = 2;
+            this.dtpMonth.Value = new System.DateTime(System.DateTime.Now.Year, System.DateTime.Now.Month, 1);
+            this.dtpMonth.ValueChanged += new System.EventHandler(this.dtpMonth_ValueChanged);
             // 
             // tabPage2
             // 
