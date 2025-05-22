@@ -4,6 +4,9 @@ using System.Drawing;
 using System.Linq;
 using System.Data;
 using System.Windows.Forms;
+using System.IO;
+using System.Runtime.Serialization.Json;
+using System.Runtime.Serialization;
 
 namespace ShiftPlanner
 {
@@ -18,6 +21,7 @@ namespace ShiftPlanner
         private Button btnRemoveMember;
         private Button btnRefreshShift;
         private DateTimePicker dtpMonth;
+        private readonly string memberFilePath = Path.Combine(Application.StartupPath, "members.json");
         private List<Member> members = new List<Member>();
         private List<ShiftFrame> shiftFrames = new List<ShiftFrame>();
         private List<ShiftAssignment> assignments = new List<ShiftAssignment>();
@@ -30,33 +34,74 @@ namespace ShiftPlanner
             SetupMemberGrid();
         }
 
+        private void LoadMembers()
+        {
+            if (File.Exists(memberFilePath))
+            {
+                try
+                {
+                    var serializer = new DataContractJsonSerializer(typeof(List<Member>));
+                    using (var stream = File.OpenRead(memberFilePath))
+                    {
+                        members = (List<Member>)serializer.ReadObject(stream);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"メンバー情報の読み込みに失敗しました: {ex.Message}");
+                    members = new List<Member>();
+                }
+            }
+        }
+
+        private void SaveMembers()
+        {
+            try
+            {
+                var serializer = new DataContractJsonSerializer(typeof(List<Member>));
+                using (var stream = File.Create(memberFilePath))
+                {
+                    serializer.WriteObject(stream, members);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"メンバー情報の保存に失敗しました: {ex.Message}");
+            }
+        }
+
         private void InitializeData()
         {
-            // メンバー初期データ
-            members.Add(new Member
+            LoadMembers();
+
+            if (members.Count == 0)
             {
-                Id = 1,
-                Name = "山田",
-                AvailableDays = new List<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday },
-                AvailableFrom = TimeSpan.FromHours(9),
-                AvailableTo = TimeSpan.FromHours(17)
-            });
-            members.Add(new Member
-            {
-                Id = 2,
-                Name = "佐藤",
-                AvailableDays = new List<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Wednesday },
-                AvailableFrom = TimeSpan.FromHours(9),
-                AvailableTo = TimeSpan.FromHours(17)
-            });
-            members.Add(new Member
-            {
-                Id = 3,
-                Name = "鈴木",
-                AvailableDays = new List<DayOfWeek> { DayOfWeek.Tuesday },
-                AvailableFrom = TimeSpan.FromHours(9),
-                AvailableTo = TimeSpan.FromHours(17)
-            });
+                // メンバー初期データ
+                members.Add(new Member
+                {
+                    Id = 1,
+                    Name = "山田",
+                    AvailableDays = new List<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday },
+                    AvailableFrom = TimeSpan.FromHours(9),
+                    AvailableTo = TimeSpan.FromHours(17)
+                });
+                members.Add(new Member
+                {
+                    Id = 2,
+                    Name = "佐藤",
+                    AvailableDays = new List<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Wednesday },
+                    AvailableFrom = TimeSpan.FromHours(9),
+                    AvailableTo = TimeSpan.FromHours(17)
+                });
+                members.Add(new Member
+                {
+                    Id = 3,
+                    Name = "鈴木",
+                    AvailableDays = new List<DayOfWeek> { DayOfWeek.Tuesday },
+                    AvailableFrom = TimeSpan.FromHours(9),
+                    AvailableTo = TimeSpan.FromHours(17)
+                });
+            }
 
             // シフトフレーム例
             shiftFrames.Add(new ShiftFrame
@@ -164,6 +209,7 @@ namespace ShiftPlanner
             var nextId = members.Count > 0 ? members.Max(m => m.Id) + 1 : 1;
             members.Add(new Member { Id = nextId, Name = "新規" });
             SetupMemberGrid();
+            SaveMembers();
         }
 
         private void btnRemoveMember_Click(object sender, EventArgs e)
@@ -172,6 +218,7 @@ namespace ShiftPlanner
             {
                 members.Remove(m);
                 SetupMemberGrid();
+                SaveMembers();
             }
         }
 
@@ -184,6 +231,12 @@ namespace ShiftPlanner
         private void dtpMonth_ValueChanged(object sender, EventArgs e)
         {
             SetupDataGridView();
+        }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            SaveMembers();
+            base.OnFormClosing(e);
         }
 
         private void InitializeComponent()
