@@ -1,0 +1,24 @@
+name: Build .NET Framework 4.8 WinForms App
+
+on:
+  push:
+    branches: [ "main" ]  # 適宜変更
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: windows-latest  # ← これが "Windowsランナー"
+
+    steps:
+    - name: ソースをチェックアウト
+      uses: actions/checkout@v3
+
+    - name: MSBuildをセットアップ
+      uses: microsoft/setup-msbuild@v1.3.1
+
+    - name: NuGetパッケージの復元
+      run: nuget restore ShiftPlanner.sln
+
+    - name: ビルドを実行
+      run: msbuild ShiftPlanner.sln /p:Configuration=Release
