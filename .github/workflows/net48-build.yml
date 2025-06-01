@@ -2,10 +2,10 @@ name: Build .NET Framework 4.8 WinForms App
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "main" ]
     paths-ignore: [ "**.md" ]  # optional: READMEなどの編集で無駄に走らせない
   pull_request:
-    branches: [ "master" ]
+    branches: [ "main" ]
 
 jobs:
   build:
