@@ -145,7 +145,9 @@ namespace ShiftPlanner
             table.Columns.Add("人名");
             for (int day = 1; day <= daysInMonth; day++)
             {
-                table.Columns.Add($"{day}日");
+                var date = new DateTime(year, month, day);
+                var header = $"{day}({GetJapaneseDayOfWeek(date.DayOfWeek)})";
+                table.Columns.Add(header);
             }
 
             foreach (var member in members)
@@ -155,8 +157,9 @@ namespace ShiftPlanner
                 for (int day = 1; day <= daysInMonth; day++)
                 {
                     var date = new DateTime(year, month, day);
+                    var header = $"{day}({GetJapaneseDayOfWeek(date.DayOfWeek)})";
                     var assign = assignments.FirstOrDefault(a => a.Date.Date == date && a.AssignedMembers.Contains(member));
-                    row[$"{day}日"] = assign != null ? assign.ShiftType : "休";
+                    row[header] = assign != null ? assign.ShiftType : "休";
                 }
                 table.Rows.Add(row);
             }
@@ -166,8 +169,9 @@ namespace ShiftPlanner
             for (int day = 1; day <= daysInMonth; day++)
             {
                 var date = new DateTime(year, month, day);
+                var header = $"{day}({GetJapaneseDayOfWeek(date.DayOfWeek)})";
                 var frame = shiftFrames.FirstOrDefault(f => f.Date.Date == date);
-                requiredRow[$"{day}日"] = frame?.RequiredNumber ?? 0;
+                requiredRow[header] = frame?.RequiredNumber ?? 0;
             }
             table.Rows.Add(requiredRow);
 
@@ -176,8 +180,9 @@ namespace ShiftPlanner
             for (int day = 1; day <= daysInMonth; day++)
             {
                 var date = new DateTime(year, month, day);
+                var header = $"{day}({GetJapaneseDayOfWeek(date.DayOfWeek)})";
                 var count = assignments.Where(a => a.Date.Date == date).Sum(a => a.AssignedMembers.Count);
-                assignedRow[$"{day}日"] = count;
+                assignedRow[header] = count;
             }
             table.Rows.Add(assignedRow);
 
@@ -187,14 +192,47 @@ namespace ShiftPlanner
             for (int day = 1; day <= daysInMonth; day++)
             {
                 var date = new DateTime(year, month, day);
-                var col = dtShift.Columns[$"{day}日"];
-                if (col != null && (date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday))
+                var header = $"{day}({GetJapaneseDayOfWeek(date.DayOfWeek)})";
+                var col = dtShift.Columns[header];
+                if (col != null)
                 {
-                    col.DefaultCellStyle.BackColor = Color.LightYellow;
+                    col.Width = 45;
+                    if (date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday)
+                    {
+                        col.DefaultCellStyle.BackColor = Color.LightYellow;
+                    }
                 }
             }
 
             dtShift.AutoResizeColumns();
+        }
+
+        /// <summary>
+        /// 指定した曜日を日本語表記で返します。
+        /// </summary>
+        /// <param name="day">曜日</param>
+        /// <returns>日・月・火などの文字列。該当しない場合は空文字列。</returns>
+        private static string GetJapaneseDayOfWeek(DayOfWeek day)
+        {
+            switch (day)
+            {
+                case DayOfWeek.Sunday:
+                    return "日";
+                case DayOfWeek.Monday:
+                    return "月";
+                case DayOfWeek.Tuesday:
+                    return "火";
+                case DayOfWeek.Wednesday:
+                    return "水";
+                case DayOfWeek.Thursday:
+                    return "木";
+                case DayOfWeek.Friday:
+                    return "金";
+                case DayOfWeek.Saturday:
+                    return "土";
+            }
+
+            return string.Empty;
         }
 
         private void SetupMemberGrid()
