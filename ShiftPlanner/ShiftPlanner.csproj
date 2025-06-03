@@ -51,6 +51,8 @@
     <!-- Json シリアライズ用 -->
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml" />
+    <!-- PDF 出力用ライブラリ -->
+    <Reference Include="itextsharp" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MainForm.cs">
