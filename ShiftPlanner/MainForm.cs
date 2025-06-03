@@ -46,9 +46,19 @@ namespace ShiftPlanner
                         members = (List<Member>)serializer.ReadObject(stream);
                     }
                 }
+                catch (UnauthorizedAccessException ex)
+                {
+                    MessageBox.Show($"ファイルにアクセスできません: {ex.Message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    members = new List<Member>();
+                }
+                catch (IOException ex)
+                {
+                    MessageBox.Show($"メンバー情報の読み込みに失敗しました: {ex.Message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    members = new List<Member>();
+                }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"メンバー情報の読み込みに失敗しました: {ex.Message}");
+                    MessageBox.Show($"予期しないエラーが発生しました: {ex.Message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     members = new List<Member>();
                 }
             }
@@ -64,9 +74,17 @@ namespace ShiftPlanner
                     serializer.WriteObject(stream, members);
                 }
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                MessageBox.Show($"ファイルにアクセスできません: {ex.Message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            catch (IOException ex)
+            {
+                MessageBox.Show($"メンバー情報の保存に失敗しました: {ex.Message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
             catch (Exception ex)
             {
-                MessageBox.Show($"メンバー情報の保存に失敗しました: {ex.Message}");
+                MessageBox.Show($"予期しないエラーが発生しました: {ex.Message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 

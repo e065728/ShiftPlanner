@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Windows.Forms;
 
 namespace ShiftPlanner
 {
@@ -18,13 +19,34 @@ namespace ShiftPlanner
         /// <param name="path">保存先パス</param>
         public static void ExportToCsv(IEnumerable<ShiftFrame> shifts, string path)
         {
-            using (var writer = new StreamWriter(path, false, Encoding.UTF8))
+            if (shifts == null || path == null)
             {
-                writer.WriteLine("Date,ShiftType,Start,End,RequiredNumber");
-                foreach (var s in shifts)
+                MessageBox.Show("出力対象データまたはパスが指定されていません。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            try
+            {
+                using (var writer = new StreamWriter(path, false, Encoding.UTF8))
                 {
-                    writer.WriteLine($"{s.Date:yyyy-MM-dd},{s.ShiftType},{s.ShiftStart},{s.ShiftEnd},{s.RequiredNumber}");
+                    writer.WriteLine("Date,ShiftType,Start,End,RequiredNumber");
+                    foreach (var s in shifts)
+                    {
+                        writer.WriteLine($"{s.Date:yyyy-MM-dd},{s.ShiftType},{s.ShiftStart},{s.ShiftEnd},{s.RequiredNumber}");
+                    }
                 }
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                MessageBox.Show($"ファイルにアクセスできません: {ex.Message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            catch (IOException ex)
+            {
+                MessageBox.Show($"ファイルの書き込みに失敗しました: {ex.Message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"予期しないエラーが発生しました: {ex.Message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -36,8 +58,29 @@ namespace ShiftPlanner
         /// <param name="path">保存先パス</param>
         public static void ExportToPdf(IEnumerable<ShiftFrame> shifts, string path)
         {
-            // TODO: PDF出力処理を実装する
-            throw new NotImplementedException();
+            if (shifts == null || path == null)
+            {
+                MessageBox.Show("出力対象データまたはパスが指定されていません。", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            try
+            {
+                // TODO: PDF出力処理を実装する
+                MessageBox.Show("PDF 出力はまだ実装されていません。", "情報", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                MessageBox.Show($"ファイルにアクセスできません: {ex.Message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            catch (IOException ex)
+            {
+                MessageBox.Show($"ファイルの書き込みに失敗しました: {ex.Message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"予期しないエラーが発生しました: {ex.Message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }
