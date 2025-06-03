@@ -204,6 +204,47 @@ namespace ShiftPlanner
                 }
             }
 
+            // 割当人数行の不足・過剰を色分け
+            try
+            {
+                int assignedRowIndex = table.Rows.IndexOf(assignedRow);
+                if (assignedRowIndex >= 0 && assignedRowIndex < dtShift.Rows.Count)
+                {
+                    for (int day = 1; day <= daysInMonth; day++)
+                    {
+                        var date = new DateTime(year, month, day);
+                        var header = $"{day}({GetJapaneseDayOfWeek(date.DayOfWeek)})";
+                        var col = dtShift.Columns[header];
+                        if (col == null)
+                        {
+                            continue;
+                        }
+
+                        var cell = dtShift.Rows[assignedRowIndex].Cells[col.Index];
+                        var style = new DataGridViewCellStyle(cell.Style);
+
+                        var assign = assignments.FirstOrDefault(a => a.Date.Date == date);
+                        if (assign != null)
+                        {
+                            if (assign.Shortage)
+                            {
+                                style.BackColor = Color.MistyRose;      // 不足時は薄い赤
+                            }
+                            else if (assign.Excess)
+                            {
+                                style.BackColor = Color.LightBlue;      // 過剰時は薄い青
+                            }
+                        }
+
+                        cell.Style = style;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"セルの着色中にエラーが発生しました: {ex.Message}");
+            }
+
             dtShift.AutoResizeColumns();
         }
 
