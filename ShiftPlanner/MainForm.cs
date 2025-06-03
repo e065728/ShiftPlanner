@@ -21,7 +21,12 @@ namespace ShiftPlanner
         private Button btnRemoveMember;
         private Button btnRefreshShift;
         private DateTimePicker dtpMonth;
-        private readonly string memberFilePath = Path.Combine(Application.StartupPath, "members.json");
+        // メンバー情報保存用のファイルパス
+        // %APPDATA%/ShiftPlanner/members.json の形で保存する
+        private readonly string memberFilePath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "ShiftPlanner",
+            "members.json");
         private List<Member> members = new List<Member>();
         private List<ShiftFrame> shiftFrames = new List<ShiftFrame>();
         private List<ShiftAssignment> assignments = new List<ShiftAssignment>();
@@ -29,6 +34,21 @@ namespace ShiftPlanner
         public MainForm()
         {
             InitializeComponent(); // これだけでOK
+
+            // データ保存用ディレクトリが無い場合は作成する
+            var dir = Path.GetDirectoryName(memberFilePath);
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+            {
+                try
+                {
+                    Directory.CreateDirectory(dir);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"データ保存用ディレクトリの作成に失敗しました: {ex.Message}");
+                }
+            }
+
             InitializeData();
             SetupDataGridView();
             SetupMemberGrid();
