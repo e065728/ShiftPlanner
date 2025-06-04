@@ -323,8 +323,15 @@ namespace ShiftPlanner
 
         private void btnRefreshShift_Click(object sender, EventArgs e)
         {
-            assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members);
-            SetupDataGridView();
+            try
+            {
+                assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members);
+                SetupDataGridView();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"シフト更新中にエラーが発生しました: {ex.Message}");
+            }
         }
 
         private void dtpMonth_ValueChanged(object sender, EventArgs e)
