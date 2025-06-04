@@ -26,7 +26,15 @@ namespace ShiftPlanner
         private Button btnRemoveRequest;
         private Button btnRefreshShift;
         private DateTimePicker dtpMonth;
-        private TabPage tabPage3;
+        // CSV、PDF出力ボタン
+        private Button btnExportCsv;
+        private Button btnExportPdf;
+        // メニュー関連
+        private MenuStrip menuStrip1;
+        private ToolStripMenuItem menuFile;
+        private ToolStripMenuItem menuExportCsv;
+        private ToolStripMenuItem menuExportPdf;
+        // tabPage3 は上で宣言済みのため削除
         private DateTimePicker dtp分析月;
         private Label lbl総労働時間;
         private System.Windows.Forms.DataVisualization.Charting.Chart chartシフト分布;
@@ -751,7 +759,12 @@ namespace ShiftPlanner
             this.btnRemoveRequest = new System.Windows.Forms.Button();
             this.btnRefreshShift = new System.Windows.Forms.Button();
             this.dtpMonth = new System.Windows.Forms.DateTimePicker();
-            this.tabPage3 = new System.Windows.Forms.TabPage();
+            this.btnExportCsv = new System.Windows.Forms.Button();
+            this.btnExportPdf = new System.Windows.Forms.Button();
+            this.menuStrip1 = new System.Windows.Forms.MenuStrip();
+            this.menuFile = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuExportCsv = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuExportPdf = new System.Windows.Forms.ToolStripMenuItem();
             this.dtp分析月 = new System.Windows.Forms.DateTimePicker();
             this.lbl総労働時間 = new System.Windows.Forms.Label();
             this.chartシフト分布 = new System.Windows.Forms.DataVisualization.Charting.Chart();
