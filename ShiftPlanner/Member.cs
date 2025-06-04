@@ -40,5 +40,39 @@ namespace ShiftPlanner
         /// </summary>
         [DataMember]
         public ShiftConstraints Constraints { get; set; } = new ShiftConstraints();
+
+        // 以下は UI 操作用のラッパープロパティ
+        [IgnoreDataMember]
+        public double MinWeeklyHours
+        {
+            get { return Constraints?.MinWeeklyHours ?? 0; }
+            set
+            {
+                if (Constraints == null) Constraints = new ShiftConstraints();
+                Constraints.MinWeeklyHours = value;
+            }
+        }
+
+        [IgnoreDataMember]
+        public double MaxWeeklyHours
+        {
+            get { return Constraints?.MaxWeeklyHours ?? 0; }
+            set
+            {
+                if (Constraints == null) Constraints = new ShiftConstraints();
+                Constraints.MaxWeeklyHours = value;
+            }
+        }
+
+        [IgnoreDataMember]
+        public int MaxConsecutiveDays
+        {
+            get { return Constraints?.MaxConsecutiveDays ?? 0; }
+            set
+            {
+                if (Constraints == null) Constraints = new ShiftConstraints();
+                Constraints.MaxConsecutiveDays = value;
+            }
+        }
     }
 }

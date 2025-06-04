@@ -301,6 +301,24 @@ namespace ShiftPlanner
             dtMembers.DataSource = null;
             dtMembers.DataSource = members;
             dtMembers.AutoGenerateColumns = true;
+
+            // 列ヘッダーを日本語に変更
+            var map = new Dictionary<string, string>
+            {
+                { "MinWeeklyHours", "週最小時間" },
+                { "MaxWeeklyHours", "週最大時間" },
+                { "MaxConsecutiveDays", "連続勤務上限" }
+            };
+
+            foreach (DataGridViewColumn col in dtMembers.Columns)
+            {
+                if (map.ContainsKey(col.DataPropertyName))
+                {
+                    col.HeaderText = map[col.DataPropertyName];
+                }
+            }
+
+            dtMembers.AutoResizeColumns();
         }
 
         private void btnAddMember_Click(object sender, EventArgs e)
