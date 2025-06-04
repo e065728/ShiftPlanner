@@ -15,12 +15,17 @@ namespace ShiftPlanner
         private TabControl tabControl1;
         private TabPage tabPage1;
         private TabPage tabPage2;
+        private TabPage tabPage3;
         private DataGridView dtShift;
         private DataGridView dtMembers;
+        private DataGridView dtHolidays;
         private Button btnAddMember;
         private Button btnRemoveMember;
+        private Button btnAddHoliday;
+        private Button btnRemoveHoliday;
         private Button btnRefreshShift;
         private DateTimePicker dtpMonth;
+        private ComboBox cmbHolidayMember;
         // メンバー情報保存用のファイルパス
         // %APPDATA%/ShiftPlanner/members.json の形で保存する
         private readonly string memberFilePath = Path.Combine(
@@ -52,6 +57,7 @@ namespace ShiftPlanner
             InitializeData();
             SetupDataGridView();
             SetupMemberGrid();
+            SetupHolidayTab();
         }
 
         private void LoadMembers()
@@ -303,11 +309,95 @@ namespace ShiftPlanner
             dtMembers.AutoGenerateColumns = true;
         }
 
+        private void SetupHolidayTab()
+        {
+            cmbHolidayMember.DataSource = null;
+            cmbHolidayMember.DataSource = members;
+            cmbHolidayMember.DisplayMember = "Name";
+            cmbHolidayMember.ValueMember = "Id";
+            if (members.Count > 0)
+            {
+                cmbHolidayMember.SelectedIndex = 0;
+            }
+            UpdateHolidayGrid();
+        }
+
+        private void UpdateHolidayGrid()
+        {
+            dtHolidays.DataSource = null;
+            if (cmbHolidayMember.SelectedItem is Member m && m.DesiredHolidays != null)
+            {
+                var table = new DataTable();
+                table.Columns.Add("日付");
+                foreach (var d in m.DesiredHolidays.OrderBy(d => d))
+                {
+                    var row = table.NewRow();
+                    row[0] = d.ToString("yyyy-MM-dd");
+                    table.Rows.Add(row);
+                }
+                dtHolidays.DataSource = table;
+            }
+        }
+
+        private void cmbHolidayMember_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            UpdateHolidayGrid();
+        }
+
+        private void btnAddHoliday_Click(object sender, EventArgs e)
+        {
+            if (!(cmbHolidayMember.SelectedItem is Member m))
+            {
+                return;
+            }
+
+            var input = Microsoft.VisualBasic.Interaction.InputBox(
+                "日付を入力してください (YYYY-MM-DD)",
+                "希望休追加",
+                DateTime.Today.ToString("yyyy-MM-dd"));
+
+            if (DateTime.TryParse(input, out var date))
+            {
+                date = date.Date;
+                if (!m.DesiredHolidays.Contains(date))
+                {
+                    m.DesiredHolidays.Add(date);
+                    UpdateHolidayGrid();
+                    SaveMembers();
+                }
+            }
+            else if (!string.IsNullOrWhiteSpace(input))
+            {
+                MessageBox.Show("日付の形式が正しくありません。", "エラー");
+            }
+        }
+
+        private void btnRemoveHoliday_Click(object sender, EventArgs e)
+        {
+            if (!(cmbHolidayMember.SelectedItem is Member m))
+            {
+                return;
+            }
+
+            if (dtHolidays.CurrentRow != null)
+            {
+                var val = dtHolidays.CurrentRow.Cells[0].Value as string;
+                if (DateTime.TryParse(val, out var date))
+                {
+                    date = date.Date;
+                    m.DesiredHolidays.Remove(date);
+                    UpdateHolidayGrid();
+                    SaveMembers();
+                }
+            }
+        }
+
         private void btnAddMember_Click(object sender, EventArgs e)
         {
             var nextId = members.Count > 0 ? members.Max(m => m.Id) + 1 : 1;
             members.Add(new Member { Id = nextId, Name = "新規" });
             SetupMemberGrid();
+            SetupHolidayTab();
             SaveMembers();
         }
 
@@ -317,6 +407,7 @@ namespace ShiftPlanner
             {
                 members.Remove(m);
                 SetupMemberGrid();
+                SetupHolidayTab();
                 SaveMembers();
             }
         }
@@ -350,21 +441,28 @@ namespace ShiftPlanner
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.tabPage2 = new System.Windows.Forms.TabPage();
+            this.tabPage3 = new System.Windows.Forms.TabPage();
             this.dtShift = new System.Windows.Forms.DataGridView();
             this.dtMembers = new System.Windows.Forms.DataGridView();
+            this.dtHolidays = new System.Windows.Forms.DataGridView();
             this.btnAddMember = new System.Windows.Forms.Button();
             this.btnRemoveMember = new System.Windows.Forms.Button();
+            this.btnAddHoliday = new System.Windows.Forms.Button();
+            this.btnRemoveHoliday = new System.Windows.Forms.Button();
             this.btnRefreshShift = new System.Windows.Forms.Button();
             this.dtpMonth = new System.Windows.Forms.DateTimePicker();
+            this.cmbHolidayMember = new System.Windows.Forms.ComboBox();
             this.tabControl1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dtShift)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtMembers)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dtHolidays)).BeginInit();
             this.SuspendLayout();
             // 
             // tabControl1
             // 
             this.tabControl1.Controls.Add(this.tabPage1);
             this.tabControl1.Controls.Add(this.tabPage2);
+            this.tabControl1.Controls.Add(this.tabPage3);
             this.tabControl1.Location = new System.Drawing.Point(2, 25);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
@@ -462,15 +560,71 @@ namespace ShiftPlanner
             this.dtMembers.RowTemplate.Height = 21;
             this.dtMembers.Size = new System.Drawing.Size(1379, 800);
             this.dtMembers.TabIndex = 2;
-            // 
+
+            // tabPage3
+            //
+            this.tabPage3.Controls.Add(this.dtHolidays);
+            this.tabPage3.Controls.Add(this.cmbHolidayMember);
+            this.tabPage3.Controls.Add(this.btnRemoveHoliday);
+            this.tabPage3.Controls.Add(this.btnAddHoliday);
+            this.tabPage3.Location = new System.Drawing.Point(4, 22);
+            this.tabPage3.Name = "tabPage3";
+            this.tabPage3.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage3.Size = new System.Drawing.Size(1385, 838);
+            this.tabPage3.TabIndex = 2;
+            this.tabPage3.Text = "希望休";
+            this.tabPage3.UseVisualStyleBackColor = true;
+
+            // btnAddHoliday
+            //
+            this.btnAddHoliday.Location = new System.Drawing.Point(6, 6);
+            this.btnAddHoliday.Name = "btnAddHoliday";
+            this.btnAddHoliday.Size = new System.Drawing.Size(75, 23);
+            this.btnAddHoliday.TabIndex = 0;
+            this.btnAddHoliday.Text = "追加";
+            this.btnAddHoliday.UseVisualStyleBackColor = true;
+            this.btnAddHoliday.Click += new System.EventHandler(this.btnAddHoliday_Click);
+
+            // btnRemoveHoliday
+            //
+            this.btnRemoveHoliday.Location = new System.Drawing.Point(87, 6);
+            this.btnRemoveHoliday.Name = "btnRemoveHoliday";
+            this.btnRemoveHoliday.Size = new System.Drawing.Size(75, 23);
+            this.btnRemoveHoliday.TabIndex = 1;
+            this.btnRemoveHoliday.Text = "削除";
+            this.btnRemoveHoliday.UseVisualStyleBackColor = true;
+            this.btnRemoveHoliday.Click += new System.EventHandler(this.btnRemoveHoliday_Click);
+
+            // cmbHolidayMember
+            //
+            this.cmbHolidayMember.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbHolidayMember.Location = new System.Drawing.Point(168, 6);
+            this.cmbHolidayMember.Name = "cmbHolidayMember";
+            this.cmbHolidayMember.Size = new System.Drawing.Size(121, 23);
+            this.cmbHolidayMember.TabIndex = 2;
+            this.cmbHolidayMember.SelectedIndexChanged += new System.EventHandler(this.cmbHolidayMember_SelectedIndexChanged);
+
+            // dtHolidays
+            //
+            this.dtHolidays.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.dtHolidays.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dtHolidays.Location = new System.Drawing.Point(3, 35);
+            this.dtHolidays.Name = "dtHolidays";
+            this.dtHolidays.RowTemplate.Height = 21;
+            this.dtHolidays.Size = new System.Drawing.Size(1379, 800);
+            this.dtHolidays.TabIndex = 3;
+            //
             // MainForm
-            // 
+            //
             this.ClientSize = new System.Drawing.Size(1398, 889);
             this.Controls.Add(this.tabControl1);
             this.Name = "MainForm";
             this.tabControl1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dtShift)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtMembers)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dtHolidays)).EndInit();
             this.ResumeLayout(false);
 
         }

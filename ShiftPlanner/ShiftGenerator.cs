@@ -28,7 +28,8 @@ namespace ShiftPlanner
                 var eligible = members.Where(m =>
                     (m.AvailableDays == null || m.AvailableDays.Contains(frame.Date.DayOfWeek)) &&
                     m.AvailableFrom <= frame.ShiftStart &&
-                    m.AvailableTo >= frame.ShiftEnd)
+                    m.AvailableTo >= frame.ShiftEnd &&
+                    (m.DesiredHolidays == null || !m.DesiredHolidays.Contains(frame.Date.Date)))
                     .ToList();
 
                 if (eligible.Count == 0)
