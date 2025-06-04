@@ -31,6 +31,14 @@ namespace ShiftPlanner
                     m.AvailableTo >= frame.ShiftEnd)
                     .ToList();
 
+                // シフトに必要なスキルを満たすかチェック
+                var requiredSkills = frame.RequiredSkills ?? new List<string>();
+                if (requiredSkills.Count > 0)
+                {
+                    eligible = eligible.Where(m => m.Skills != null && !requiredSkills.Except(m.Skills).Any())
+                                       .ToList();
+                }
+
                 if (eligible.Count == 0)
                 {
                     // 条件に合うメンバーがいない場合は全メンバー対象

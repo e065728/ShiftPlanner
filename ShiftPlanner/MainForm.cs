@@ -21,6 +21,12 @@ namespace ShiftPlanner
         private Button btnRemoveMember;
         private Button btnRefreshShift;
         private DateTimePicker dtpMonth;
+        private ListBox lstSkills;
+        private TextBox txtSkillInput;
+        private Button btnAddSkill;
+        private Button btnRemoveSkill;
+        private TextBox txtSkillSearch;
+        private Button btnSearchSkill;
         // メンバー情報保存用のファイルパス
         // %APPDATA%/ShiftPlanner/members.json の形で保存する
         private readonly string memberFilePath = Path.Combine(
@@ -103,7 +109,8 @@ namespace ShiftPlanner
                     Name = "山田",
                     AvailableDays = new List<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday },
                     AvailableFrom = TimeSpan.FromHours(9),
-                    AvailableTo = TimeSpan.FromHours(17)
+                    AvailableTo = TimeSpan.FromHours(17),
+                    Skills = new List<string> { "レジ" }
                 });
                 members.Add(new Member
                 {
@@ -111,7 +118,8 @@ namespace ShiftPlanner
                     Name = "佐藤",
                     AvailableDays = new List<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Wednesday },
                     AvailableFrom = TimeSpan.FromHours(9),
-                    AvailableTo = TimeSpan.FromHours(17)
+                    AvailableTo = TimeSpan.FromHours(17),
+                    Skills = new List<string> { "調理" }
                 });
                 members.Add(new Member
                 {
@@ -119,7 +127,8 @@ namespace ShiftPlanner
                     Name = "鈴木",
                     AvailableDays = new List<DayOfWeek> { DayOfWeek.Tuesday },
                     AvailableFrom = TimeSpan.FromHours(9),
-                    AvailableTo = TimeSpan.FromHours(17)
+                    AvailableTo = TimeSpan.FromHours(17),
+                    Skills = new List<string> { "レジ" }
                 });
             }
 
@@ -130,7 +139,8 @@ namespace ShiftPlanner
                 ShiftType = "早番",
                 ShiftStart = TimeSpan.FromHours(9),
                 ShiftEnd = TimeSpan.FromHours(17),
-                RequiredNumber = 2
+                RequiredNumber = 2,
+                RequiredSkills = new List<string> { "レジ" }
             });
             shiftFrames.Add(new ShiftFrame
             {
@@ -138,7 +148,8 @@ namespace ShiftPlanner
                 ShiftType = "早番",
                 ShiftStart = TimeSpan.FromHours(9),
                 ShiftEnd = TimeSpan.FromHours(17),
-                RequiredNumber = 1
+                RequiredNumber = 1,
+                RequiredSkills = new List<string> { "調理" }
             });
             // 例として 3 日目の遅番を追加
             shiftFrames.Add(new ShiftFrame
@@ -147,7 +158,8 @@ namespace ShiftPlanner
                 ShiftType = "遅番",
                 ShiftStart = TimeSpan.FromHours(13),
                 ShiftEnd = TimeSpan.FromHours(21),
-                RequiredNumber = 2
+                RequiredNumber = 2,
+                RequiredSkills = new List<string> { "レジ" }
             });
 
             assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members);
@@ -301,6 +313,7 @@ namespace ShiftPlanner
             dtMembers.DataSource = null;
             dtMembers.DataSource = members;
             dtMembers.AutoGenerateColumns = true;
+            dtMembers_SelectionChanged(null, EventArgs.Empty);
         }
 
         private void btnAddMember_Click(object sender, EventArgs e)
@@ -319,6 +332,64 @@ namespace ShiftPlanner
                 SetupMemberGrid();
                 SaveMembers();
             }
+        }
+
+        private void dtMembers_SelectionChanged(object sender, EventArgs e)
+        {
+            if (dtMembers.CurrentRow?.DataBoundItem is Member m)
+            {
+                lstSkills.DataSource = null;
+                lstSkills.DataSource = m.Skills.ToList();
+            }
+        }
+
+        private void btnAddSkill_Click(object sender, EventArgs e)
+        {
+            var skill = txtSkillInput.Text.Trim();
+            if (string.IsNullOrEmpty(skill))
+            {
+                return;
+            }
+            if (dtMembers.CurrentRow?.DataBoundItem is Member m)
+            {
+                if (!m.Skills.Contains(skill))
+                {
+                    m.Skills.Add(skill);
+                    txtSkillInput.Clear();
+                    dtMembers_SelectionChanged(null, EventArgs.Empty);
+                    SaveMembers();
+                }
+            }
+        }
+
+        private void btnRemoveSkill_Click(object sender, EventArgs e)
+        {
+            if (dtMembers.CurrentRow?.DataBoundItem is Member m && lstSkills.SelectedItem is string s)
+            {
+                m.Skills.Remove(s);
+                dtMembers_SelectionChanged(null, EventArgs.Empty);
+                SaveMembers();
+            }
+        }
+
+        private void btnSearchSkill_Click(object sender, EventArgs e)
+        {
+            SearchBySkill(txtSkillSearch.Text.Trim());
+        }
+
+        private void SearchBySkill(string skill)
+        {
+            if (string.IsNullOrWhiteSpace(skill))
+            {
+                dtMembers.DataSource = members.ToList();
+            }
+            else
+            {
+                dtMembers.DataSource = members
+                    .Where(m => m.Skills != null && m.Skills.Any(sk => sk.Contains(skill)))
+                    .ToList();
+            }
+            dtMembers_SelectionChanged(null, EventArgs.Empty);
         }
 
         private void btnRefreshShift_Click(object sender, EventArgs e)
@@ -356,6 +427,12 @@ namespace ShiftPlanner
             this.btnRemoveMember = new System.Windows.Forms.Button();
             this.btnRefreshShift = new System.Windows.Forms.Button();
             this.dtpMonth = new System.Windows.Forms.DateTimePicker();
+            this.lstSkills = new System.Windows.Forms.ListBox();
+            this.txtSkillInput = new System.Windows.Forms.TextBox();
+            this.btnAddSkill = new System.Windows.Forms.Button();
+            this.btnRemoveSkill = new System.Windows.Forms.Button();
+            this.txtSkillSearch = new System.Windows.Forms.TextBox();
+            this.btnSearchSkill = new System.Windows.Forms.Button();
             this.tabControl1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dtShift)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtMembers)).BeginInit();
@@ -421,6 +498,12 @@ namespace ShiftPlanner
             // tabPage2
             // 
             this.tabPage2.Controls.Add(this.dtMembers);
+            this.tabPage2.Controls.Add(this.lstSkills);
+            this.tabPage2.Controls.Add(this.txtSkillInput);
+            this.tabPage2.Controls.Add(this.btnAddSkill);
+            this.tabPage2.Controls.Add(this.btnRemoveSkill);
+            this.tabPage2.Controls.Add(this.txtSkillSearch);
+            this.tabPage2.Controls.Add(this.btnSearchSkill);
             this.tabPage2.Controls.Add(this.btnRemoveMember);
             this.tabPage2.Controls.Add(this.btnAddMember);
             this.tabPage2.Location = new System.Drawing.Point(4, 22);
@@ -451,17 +534,75 @@ namespace ShiftPlanner
             this.btnRemoveMember.UseVisualStyleBackColor = true;
             this.btnRemoveMember.Click += new System.EventHandler(this.btnRemoveMember_Click);
 
+            // txtSkillSearch
+            //
+            this.txtSkillSearch.Location = new System.Drawing.Point(168, 6);
+            this.txtSkillSearch.Name = "txtSkillSearch";
+            this.txtSkillSearch.Size = new System.Drawing.Size(120, 23);
+            this.txtSkillSearch.TabIndex = 2;
+
+            // btnSearchSkill
+            //
+            this.btnSearchSkill.Location = new System.Drawing.Point(294, 6);
+            this.btnSearchSkill.Name = "btnSearchSkill";
+            this.btnSearchSkill.Size = new System.Drawing.Size(75, 23);
+            this.btnSearchSkill.TabIndex = 3;
+            this.btnSearchSkill.Text = "検索";
+            this.btnSearchSkill.UseVisualStyleBackColor = true;
+            this.btnSearchSkill.Click += new System.EventHandler(this.btnSearchSkill_Click);
+
+            // lstSkills
+            //
+            this.lstSkills.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.lstSkills.FormattingEnabled = true;
+            this.lstSkills.ItemHeight = 15;
+            this.lstSkills.Location = new System.Drawing.Point(1090, 35);
+            this.lstSkills.Name = "lstSkills";
+            this.lstSkills.Size = new System.Drawing.Size(289, 724);
+            this.lstSkills.TabIndex = 6;
+
+            // txtSkillInput
+            //
+            this.txtSkillInput.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.txtSkillInput.Location = new System.Drawing.Point(1090, 770);
+            this.txtSkillInput.Name = "txtSkillInput";
+            this.txtSkillInput.Size = new System.Drawing.Size(200, 23);
+            this.txtSkillInput.TabIndex = 7;
+
+            // btnAddSkill
+            //
+            this.btnAddSkill.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnAddSkill.Location = new System.Drawing.Point(1296, 768);
+            this.btnAddSkill.Name = "btnAddSkill";
+            this.btnAddSkill.Size = new System.Drawing.Size(83, 23);
+            this.btnAddSkill.TabIndex = 8;
+            this.btnAddSkill.Text = "追加";
+            this.btnAddSkill.UseVisualStyleBackColor = true;
+            this.btnAddSkill.Click += new System.EventHandler(this.btnAddSkill_Click);
+
+            // btnRemoveSkill
+            //
+            this.btnRemoveSkill.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnRemoveSkill.Location = new System.Drawing.Point(1296, 797);
+            this.btnRemoveSkill.Name = "btnRemoveSkill";
+            this.btnRemoveSkill.Size = new System.Drawing.Size(83, 23);
+            this.btnRemoveSkill.TabIndex = 9;
+            this.btnRemoveSkill.Text = "削除";
+            this.btnRemoveSkill.UseVisualStyleBackColor = true;
+            this.btnRemoveSkill.Click += new System.EventHandler(this.btnRemoveSkill_Click);
+
             // dtMembers
             //
-            this.dtMembers.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.dtMembers.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)));
             this.dtMembers.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dtMembers.Location = new System.Drawing.Point(3, 35);
             this.dtMembers.Name = "dtMembers";
             this.dtMembers.RowTemplate.Height = 21;
-            this.dtMembers.Size = new System.Drawing.Size(1379, 800);
-            this.dtMembers.TabIndex = 2;
+            this.dtMembers.Size = new System.Drawing.Size(1080, 800);
+            this.dtMembers.TabIndex = 4;
+            this.dtMembers.SelectionChanged += new System.EventHandler(this.dtMembers_SelectionChanged);
             // 
             // MainForm
             // 
