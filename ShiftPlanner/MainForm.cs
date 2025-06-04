@@ -7,6 +7,7 @@ using System.Windows.Forms;
 using System.IO;
 using System.Runtime.Serialization.Json;
 using System.Runtime.Serialization;
+using System.Windows.Forms.DataVisualization.Charting;
 
 namespace ShiftPlanner
 {
@@ -25,12 +26,22 @@ namespace ShiftPlanner
         private Button btnRemoveRequest;
         private Button btnRefreshShift;
         private DateTimePicker dtpMonth;
+        private TabPage tabPage3;
+        private DateTimePicker dtp分析月;
+        private Label lbl総労働時間;
+        private System.Windows.Forms.DataVisualization.Charting.Chart chartシフト分布;
+
         // メンバー情報保存用のファイルパス
         // %APPDATA%/ShiftPlanner/members.json の形で保存する
-        private readonly string memberFilePath = Path.Combine(
+        // データ保存ディレクトリ
+        private readonly string dataDir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "ShiftPlanner",
-            "members.json");
+            "ShiftPlanner");
+
+        // 各種データ保存用ファイルパス
+        private readonly string memberFilePath;
+        private readonly string frameFilePath;
+        private readonly string assignmentFilePath;
         private List<Member> members = new List<Member>();
         private List<ShiftFrame> shiftFrames = new List<ShiftFrame>();
         private List<ShiftAssignment> assignments = new List<ShiftAssignment>();
@@ -42,10 +53,15 @@ namespace ShiftPlanner
 
         public MainForm()
         {
+            // 各ファイルパスを生成
+            memberFilePath = Path.Combine(dataDir, "members.json");
+            frameFilePath = Path.Combine(dataDir, "shiftFrames.json");
+            assignmentFilePath = Path.Combine(dataDir, "shiftAssignments.json");
+
             InitializeComponent(); // これだけでOK
 
             // データ保存用ディレクトリが無い場合は作成する
-            var dir = Path.GetDirectoryName(memberFilePath);
+            var dir = dataDir;
             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
             {
                 try
@@ -100,6 +116,7 @@ namespace ShiftPlanner
             }
         }
 
+
         private void LoadRequests()
         {
             if (File.Exists(requestFilePath))
@@ -110,10 +127,12 @@ namespace ShiftPlanner
                     using (var stream = File.OpenRead(requestFilePath))
                     {
                         shiftRequests = (List<ShiftRequest>)serializer.ReadObject(stream);
+
                     }
                 }
                 catch (Exception ex)
                 {
+
                     MessageBox.Show($"希望情報の読み込みに失敗しました: {ex.Message}");
                     shiftRequests = new List<ShiftRequest>();
                 }
@@ -128,18 +147,23 @@ namespace ShiftPlanner
                 using (var stream = File.Create(requestFilePath))
                 {
                     serializer.WriteObject(stream, shiftRequests);
+
                 }
             }
             catch (Exception ex)
             {
+
                 MessageBox.Show($"希望情報の保存に失敗しました: {ex.Message}");
+
             }
         }
 
         private void InitializeData()
         {
             LoadMembers();
+
             LoadRequests();
+
 
             if (members.Count == 0)
             {
@@ -170,6 +194,7 @@ namespace ShiftPlanner
                 });
             }
 
+
             // シフトフレーム例
             shiftFrames.Add(new ShiftFrame
             {
@@ -198,6 +223,7 @@ namespace ShiftPlanner
             });
 
             assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members, shiftRequests);
+
         }
 
         private void SetupDataGridView()
@@ -345,9 +371,90 @@ namespace ShiftPlanner
 
         private void SetupMemberGrid()
         {
+            // データソースを一旦解除してから設定
             dtMembers.DataSource = null;
             dtMembers.DataSource = members;
+
+            // 自動生成された列のヘッダーを日本語へ変換
             dtMembers.AutoGenerateColumns = true;
+            try
+            {
+                foreach (DataGridViewColumn col in dtMembers.Columns)
+                {
+                    if (col == null || string.IsNullOrEmpty(col.Name))
+                    {
+                        continue; // null 安全対策
+                    }
+
+                    switch (col.Name)
+                    {
+                        case nameof(Member.Id):
+                            col.HeaderText = "ID";
+                            break;
+                        case nameof(Member.Name):
+                            col.HeaderText = "名前";
+                            break;
+                        case nameof(Member.AvailableDays):
+                            col.HeaderText = "勤務可能曜日";
+                            break;
+                        case nameof(Member.AvailableFrom):
+                            col.HeaderText = "開始時間";
+                            break;
+                        case nameof(Member.AvailableTo):
+                            col.HeaderText = "終了時間";
+                            break;
+                        case nameof(Member.Skills):
+                            col.HeaderText = "スキル";
+                            break;
+                        case nameof(Member.DesiredHolidays):
+                            col.HeaderText = "希望休";
+                            break;
+                        case nameof(Member.Constraints):
+                            col.HeaderText = "制約";
+                            break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // ヘッダー変更に失敗してもアプリが落ちないよう通知のみ
+                MessageBox.Show($"ヘッダー設定中にエラーが発生しました: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 分析タブの情報を更新します。
+        /// </summary>
+        private void UpdateAnalysis()
+        {
+            try
+            {
+                int 年 = dtp分析月.Value.Year;
+                int 月 = dtp分析月.Value.Month;
+
+                // 総労働時間計算
+                var 時間 = ShiftAnalyzer.CalculateMonthlyHours(shiftFrames, 年, 月);
+                lbl総労働時間.Text = $"総労働時間: {時間.TotalHours:F1} 時間";
+
+                // シフトタイプ分布
+                var 分布 = ShiftAnalyzer.GetShiftTypeDistribution(shiftFrames, 年, 月);
+                if (chartシフト分布.Series.Count == 0)
+                {
+                    var series = new Series { ChartType = SeriesChartType.Pie };
+                    chartシフト分布.Series.Add(series);
+                }
+
+                var s = chartシフト分布.Series[0];
+                s.Points.Clear();
+                foreach (var kv in 分布)
+                {
+                    s.Points.AddXY(kv.Key, kv.Value);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"分析情報の更新に失敗しました: {ex.Message}");
+            }
         }
 
         private void SetupRequestGrid()
@@ -375,6 +482,7 @@ namespace ShiftPlanner
             }
         }
 
+
         private void btnAddRequest_Click(object sender, EventArgs e)
         {
             using (var form = new ShiftRequestForm(members))
@@ -395,6 +503,7 @@ namespace ShiftPlanner
                 shiftRequests.Remove(r);
                 SetupRequestGrid();
                 SaveRequests();
+
             }
         }
 
@@ -402,8 +511,11 @@ namespace ShiftPlanner
         {
             try
             {
+
                 assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members, shiftRequests);
+
                 SetupDataGridView();
+                SaveAssignments();
             }
             catch (Exception ex)
             {
@@ -416,11 +528,84 @@ namespace ShiftPlanner
             SetupDataGridView();
         }
 
+        private void dtp分析月_ValueChanged(object sender, EventArgs e)
+        {
+            UpdateAnalysis();
+        }
+
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             SaveMembers();
             SaveRequests();
             base.OnFormClosing(e);
+        }
+
+        /// <summary>
+        /// CSV 出力メニューまたはボタンのクリックイベント
+        /// </summary>
+        private void btnExportCsv_Click(object sender, EventArgs e)
+        {
+            ExportCsv();
+        }
+
+        /// <summary>
+        /// PDF 出力メニューまたはボタンのクリックイベント
+        /// </summary>
+        private void btnExportPdf_Click(object sender, EventArgs e)
+        {
+            ExportPdf();
+        }
+
+        /// <summary>
+        /// CSV を保存します。
+        /// </summary>
+        private void ExportCsv()
+        {
+            using (var dialog = new SaveFileDialog())
+            {
+                dialog.Filter = "CSVファイル (*.csv)|*.csv|すべてのファイル (*.*)|*.*";
+                dialog.Title = "CSVの保存先を選択してください";
+
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    try
+                    {
+                        var frames = shiftFrames ?? new List<ShiftFrame>();
+                        ShiftExporter.ExportToCsv(frames, dialog.FileName);
+                        MessageBox.Show("CSV出力が完了しました。", "情報");
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"CSV出力に失敗しました: {ex.Message}");
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// PDF を保存します。
+        /// </summary>
+        private void ExportPdf()
+        {
+            using (var dialog = new SaveFileDialog())
+            {
+                dialog.Filter = "PDFファイル (*.pdf)|*.pdf|すべてのファイル (*.*)|*.*";
+                dialog.Title = "PDFの保存先を選択してください";
+
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    try
+                    {
+                        var frames = shiftFrames ?? new List<ShiftFrame>();
+                        var message = ShiftExporter.ExportToPdf(frames, dialog.FileName);
+                        MessageBox.Show(message, "情報");
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"PDF出力に失敗しました: {ex.Message}");
+                    }
+                }
+            }
         }
 
         private void InitializeComponent()
@@ -438,11 +623,49 @@ namespace ShiftPlanner
             this.btnRemoveRequest = new System.Windows.Forms.Button();
             this.btnRefreshShift = new System.Windows.Forms.Button();
             this.dtpMonth = new System.Windows.Forms.DateTimePicker();
+            this.tabPage3 = new System.Windows.Forms.TabPage();
+            this.dtp分析月 = new System.Windows.Forms.DateTimePicker();
+            this.lbl総労働時間 = new System.Windows.Forms.Label();
+            this.chartシフト分布 = new System.Windows.Forms.DataVisualization.Charting.Chart();
             this.tabControl1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dtShift)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtMembers)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtRequests)).BeginInit();
+
             this.SuspendLayout();
+
+            // menuStrip1
+            //
+            this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menuFile});
+            this.menuStrip1.Location = new System.Drawing.Point(0, 0);
+            this.menuStrip1.Name = "menuStrip1";
+            this.menuStrip1.Size = new System.Drawing.Size(1398, 24);
+            this.menuStrip1.TabIndex = 3;
+            this.menuStrip1.Text = "menuStrip1";
+
+            // menuFile
+            //
+            this.menuFile.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menuExportCsv,
+            this.menuExportPdf});
+            this.menuFile.Name = "menuFile";
+            this.menuFile.Size = new System.Drawing.Size(55, 20);
+            this.menuFile.Text = "ファイル";
+
+            // menuExportCsv
+            //
+            this.menuExportCsv.Name = "menuExportCsv";
+            this.menuExportCsv.Size = new System.Drawing.Size(122, 22);
+            this.menuExportCsv.Text = "CSV出力";
+            this.menuExportCsv.Click += new System.EventHandler(this.btnExportCsv_Click);
+
+            // menuExportPdf
+            //
+            this.menuExportPdf.Name = "menuExportPdf";
+            this.menuExportPdf.Size = new System.Drawing.Size(122, 22);
+            this.menuExportPdf.Text = "PDF出力";
+            this.menuExportPdf.Click += new System.EventHandler(this.btnExportPdf_Click);
             // 
             // tabControl1
             // 
@@ -458,6 +681,8 @@ namespace ShiftPlanner
             // tabPage1
             //
             this.tabPage1.Controls.Add(this.dtShift);
+            this.tabPage1.Controls.Add(this.btnExportPdf);
+            this.tabPage1.Controls.Add(this.btnExportCsv);
             this.tabPage1.Controls.Add(this.btnRefreshShift);
             this.tabPage1.Controls.Add(this.dtpMonth);
             this.tabPage1.Location = new System.Drawing.Point(4, 22);
@@ -501,6 +726,26 @@ namespace ShiftPlanner
             this.dtpMonth.TabIndex = 2;
             this.dtpMonth.Value = new System.DateTime(System.DateTime.Now.Year, System.DateTime.Now.Month, 1);
             this.dtpMonth.ValueChanged += new System.EventHandler(this.dtpMonth_ValueChanged);
+
+            // btnExportCsv
+            //
+            this.btnExportCsv.Location = new System.Drawing.Point(193, 6);
+            this.btnExportCsv.Name = "btnExportCsv";
+            this.btnExportCsv.Size = new System.Drawing.Size(75, 23);
+            this.btnExportCsv.TabIndex = 3;
+            this.btnExportCsv.Text = "CSV出力";
+            this.btnExportCsv.UseVisualStyleBackColor = true;
+            this.btnExportCsv.Click += new System.EventHandler(this.btnExportCsv_Click);
+
+            // btnExportPdf
+            //
+            this.btnExportPdf.Location = new System.Drawing.Point(274, 6);
+            this.btnExportPdf.Name = "btnExportPdf";
+            this.btnExportPdf.Size = new System.Drawing.Size(75, 23);
+            this.btnExportPdf.TabIndex = 4;
+            this.btnExportPdf.Text = "PDF出力";
+            this.btnExportPdf.UseVisualStyleBackColor = true;
+            this.btnExportPdf.Click += new System.EventHandler(this.btnExportPdf_Click);
             // 
             // tabPage2
             // 
@@ -591,17 +836,22 @@ namespace ShiftPlanner
             this.dtRequests.RowTemplate.Height = 21;
             this.dtRequests.Size = new System.Drawing.Size(1379, 800);
             this.dtRequests.TabIndex = 2;
+
             // 
             // MainForm
             // 
             this.ClientSize = new System.Drawing.Size(1398, 889);
             this.Controls.Add(this.tabControl1);
+            this.Controls.Add(this.menuStrip1);
+            this.MainMenuStrip = this.menuStrip1;
             this.Name = "MainForm";
             this.tabControl1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dtShift)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtMembers)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtRequests)).EndInit();
+
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
     }
