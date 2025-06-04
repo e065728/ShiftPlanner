@@ -27,6 +27,16 @@ namespace ShiftPlanner
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "ShiftPlanner",
             "members.json");
+        // シフト枠保存用ファイルパス
+        private readonly string shiftFrameFilePath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "ShiftPlanner",
+            "shiftframes.json");
+        // 割当結果保存用ファイルパス
+        private readonly string assignmentFilePath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "ShiftPlanner",
+            "assignments.json");
         private List<Member> members = new List<Member>();
         private List<ShiftFrame> shiftFrames = new List<ShiftFrame>();
         private List<ShiftAssignment> assignments = new List<ShiftAssignment>();
@@ -90,9 +100,95 @@ namespace ShiftPlanner
             }
         }
 
+        /// <summary>
+        /// シフト枠情報を読み込みます。
+        /// </summary>
+        private void LoadShiftFrames()
+        {
+            if (File.Exists(shiftFrameFilePath))
+            {
+                try
+                {
+                    var serializer = new DataContractJsonSerializer(typeof(List<ShiftFrame>));
+                    using (var stream = File.OpenRead(shiftFrameFilePath))
+                    {
+                        shiftFrames = (List<ShiftFrame>)serializer.ReadObject(stream);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"シフト枠の読み込みに失敗しました: {ex.Message}");
+                    shiftFrames = new List<ShiftFrame>();
+                }
+            }
+        }
+
+        /// <summary>
+        /// シフト枠情報を保存します。
+        /// </summary>
+        private void SaveShiftFrames()
+        {
+            try
+            {
+                var serializer = new DataContractJsonSerializer(typeof(List<ShiftFrame>));
+                using (var stream = File.Create(shiftFrameFilePath))
+                {
+                    serializer.WriteObject(stream, shiftFrames);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"シフト枠の保存に失敗しました: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 割当結果を読み込みます。
+        /// </summary>
+        private void LoadAssignments()
+        {
+            if (File.Exists(assignmentFilePath))
+            {
+                try
+                {
+                    var serializer = new DataContractJsonSerializer(typeof(List<ShiftAssignment>));
+                    using (var stream = File.OpenRead(assignmentFilePath))
+                    {
+                        assignments = (List<ShiftAssignment>)serializer.ReadObject(stream);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"割当結果の読み込みに失敗しました: {ex.Message}");
+                    assignments = new List<ShiftAssignment>();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 割当結果を保存します。
+        /// </summary>
+        private void SaveAssignments()
+        {
+            try
+            {
+                var serializer = new DataContractJsonSerializer(typeof(List<ShiftAssignment>));
+                using (var stream = File.Create(assignmentFilePath))
+                {
+                    serializer.WriteObject(stream, assignments);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"割当結果の保存に失敗しました: {ex.Message}");
+            }
+        }
+
         private void InitializeData()
         {
             LoadMembers();
+            LoadShiftFrames();
+            LoadAssignments();
 
             if (members.Count == 0)
             {
@@ -123,34 +219,43 @@ namespace ShiftPlanner
                 });
             }
 
-            // シフトフレーム例
-            shiftFrames.Add(new ShiftFrame
+            if (shiftFrames.Count == 0)
             {
-                Date = DateTime.Today.AddDays(1),
-                ShiftType = "早番",
-                ShiftStart = TimeSpan.FromHours(9),
-                ShiftEnd = TimeSpan.FromHours(17),
-                RequiredNumber = 2
-            });
-            shiftFrames.Add(new ShiftFrame
-            {
-                Date = DateTime.Today.AddDays(2),
-                ShiftType = "早番",
-                ShiftStart = TimeSpan.FromHours(9),
-                ShiftEnd = TimeSpan.FromHours(17),
-                RequiredNumber = 1
-            });
-            // 例として 3 日目の遅番を追加
-            shiftFrames.Add(new ShiftFrame
-            {
-                Date = DateTime.Today.AddDays(3),
-                ShiftType = "遅番",
-                ShiftStart = TimeSpan.FromHours(13),
-                ShiftEnd = TimeSpan.FromHours(21),
-                RequiredNumber = 2
-            });
+                // シフトフレーム例
+                shiftFrames.Add(new ShiftFrame
+                {
+                    Date = DateTime.Today.AddDays(1),
+                    ShiftType = "早番",
+                    ShiftStart = TimeSpan.FromHours(9),
+                    ShiftEnd = TimeSpan.FromHours(17),
+                    RequiredNumber = 2
+                });
+                shiftFrames.Add(new ShiftFrame
+                {
+                    Date = DateTime.Today.AddDays(2),
+                    ShiftType = "早番",
+                    ShiftStart = TimeSpan.FromHours(9),
+                    ShiftEnd = TimeSpan.FromHours(17),
+                    RequiredNumber = 1
+                });
+                // 例として 3 日目の遅番を追加
+                shiftFrames.Add(new ShiftFrame
+                {
+                    Date = DateTime.Today.AddDays(3),
+                    ShiftType = "遅番",
+                    ShiftStart = TimeSpan.FromHours(13),
+                    ShiftEnd = TimeSpan.FromHours(21),
+                    RequiredNumber = 2
+                });
+            }
 
-            assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members);
+            if (assignments.Count == 0)
+            {
+                assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members);
+            }
+
+            SaveShiftFrames();
+            SaveAssignments();
         }
 
         private void SetupDataGridView()
@@ -372,6 +477,7 @@ namespace ShiftPlanner
             try
             {
                 assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members);
+                SaveAssignments();
                 SetupDataGridView();
             }
             catch (Exception ex)
@@ -388,6 +494,8 @@ namespace ShiftPlanner
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             SaveMembers();
+            SaveShiftFrames();
+            SaveAssignments();
             base.OnFormClosing(e);
         }
 
