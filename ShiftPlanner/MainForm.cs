@@ -649,6 +649,14 @@ namespace ShiftPlanner
         }
 
         /// <summary>
+        /// 分析CSV出力メニューのクリックイベント
+        /// </summary>
+        private void menuExportAnalysisCsv_Click(object sender, EventArgs e)
+        {
+            ExportAnalysisCsv();
+        }
+
+        /// <summary>
         /// CSV を保存します。
         /// </summary>
         private void ExportCsv()
@@ -700,6 +708,34 @@ namespace ShiftPlanner
             }
         }
 
+        /// <summary>
+        /// 分析結果をCSVとして保存します。
+        /// </summary>
+        private void ExportAnalysisCsv()
+        {
+            using (var dialog = new SaveFileDialog())
+            {
+                dialog.Filter = "CSVファイル (*.csv)|*.csv|すべてのファイル (*.*)|*.*";
+                dialog.Title = "分析CSVの保存先を選択してください";
+
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    try
+                    {
+                        var frames = shiftFrames ?? new List<ShiftFrame>();
+                        var year = dtp分析月.Value.Year;
+                        var month = dtp分析月.Value.Month;
+                        var message = ShiftAnalyzer.ExportDistributionToCsv(frames, year, month, dialog.FileName);
+                        MessageBox.Show(message, "情報");
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"分析CSV出力に失敗しました: {ex.Message}");
+                    }
+                }
+            }
+        }
+
         private void InitializeComponent()
         {
             this.tabControl1 = new System.Windows.Forms.TabControl();
@@ -738,9 +774,11 @@ namespace ShiftPlanner
 
             // menuFile
             //
+            ToolStripMenuItem menuExportAnalysisCsv = new ToolStripMenuItem();
             this.menuFile.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.menuExportCsv,
-            this.menuExportPdf});
+            this.menuExportPdf,
+            menuExportAnalysisCsv});
             this.menuFile.Name = "menuFile";
             this.menuFile.Size = new System.Drawing.Size(55, 20);
             this.menuFile.Text = "ファイル";
@@ -755,9 +793,16 @@ namespace ShiftPlanner
             // menuExportPdf
             //
             this.menuExportPdf.Name = "menuExportPdf";
-            this.menuExportPdf.Size = new System.Drawing.Size(122, 22);
+            this.menuExportPdf.Size = new System.Drawing.Size(134, 22);
             this.menuExportPdf.Text = "PDF出力";
             this.menuExportPdf.Click += new System.EventHandler(this.btnExportPdf_Click);
+
+            // menuExportAnalysisCsv
+            //
+            menuExportAnalysisCsv.Name = "menuExportAnalysisCsv";
+            menuExportAnalysisCsv.Size = new System.Drawing.Size(134, 22);
+            menuExportAnalysisCsv.Text = "分析CSV出力";
+            menuExportAnalysisCsv.Click += new System.EventHandler(this.menuExportAnalysisCsv_Click);
             // 
             // tabControl1
             // 
