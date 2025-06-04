@@ -15,10 +15,14 @@ namespace ShiftPlanner
         private TabControl tabControl1;
         private TabPage tabPage1;
         private TabPage tabPage2;
+        private TabPage tabPage3;
         private DataGridView dtShift;
         private DataGridView dtMembers;
+        private DataGridView dtFrames;
         private Button btnAddMember;
         private Button btnRemoveMember;
+        private Button btnAddFrame;
+        private Button btnRemoveFrame;
         private Button btnRefreshShift;
         private DateTimePicker dtpMonth;
         // メンバー情報保存用のファイルパス
@@ -27,6 +31,11 @@ namespace ShiftPlanner
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "ShiftPlanner",
             "members.json");
+        // シフト枠情報保存用のファイルパス
+        private readonly string frameFilePath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "ShiftPlanner",
+            "shiftframes.json");
         private List<Member> members = new List<Member>();
         private List<ShiftFrame> shiftFrames = new List<ShiftFrame>();
         private List<ShiftAssignment> assignments = new List<ShiftAssignment>();
@@ -52,6 +61,7 @@ namespace ShiftPlanner
             InitializeData();
             SetupDataGridView();
             SetupMemberGrid();
+            SetupFrameGrid();
         }
 
         private void LoadMembers()
@@ -90,9 +100,46 @@ namespace ShiftPlanner
             }
         }
 
+        private void LoadShiftFrames()
+        {
+            if (File.Exists(frameFilePath))
+            {
+                try
+                {
+                    var serializer = new DataContractJsonSerializer(typeof(List<ShiftFrame>));
+                    using (var stream = File.OpenRead(frameFilePath))
+                    {
+                        shiftFrames = (List<ShiftFrame>)serializer.ReadObject(stream);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"シフト枠情報の読み込みに失敗しました: {ex.Message}");
+                    shiftFrames = new List<ShiftFrame>();
+                }
+            }
+        }
+
+        private void SaveShiftFrames()
+        {
+            try
+            {
+                var serializer = new DataContractJsonSerializer(typeof(List<ShiftFrame>));
+                using (var stream = File.Create(frameFilePath))
+                {
+                    serializer.WriteObject(stream, shiftFrames);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"シフト枠情報の保存に失敗しました: {ex.Message}");
+            }
+        }
+
         private void InitializeData()
         {
             LoadMembers();
+            LoadShiftFrames();
 
             if (members.Count == 0)
             {
@@ -123,32 +170,37 @@ namespace ShiftPlanner
                 });
             }
 
-            // シフトフレーム例
-            shiftFrames.Add(new ShiftFrame
+            if (shiftFrames.Count == 0)
             {
-                Date = DateTime.Today.AddDays(1),
-                ShiftType = "早番",
-                ShiftStart = TimeSpan.FromHours(9),
-                ShiftEnd = TimeSpan.FromHours(17),
-                RequiredNumber = 2
-            });
-            shiftFrames.Add(new ShiftFrame
-            {
-                Date = DateTime.Today.AddDays(2),
-                ShiftType = "早番",
-                ShiftStart = TimeSpan.FromHours(9),
-                ShiftEnd = TimeSpan.FromHours(17),
-                RequiredNumber = 1
-            });
-            // 例として 3 日目の遅番を追加
-            shiftFrames.Add(new ShiftFrame
-            {
-                Date = DateTime.Today.AddDays(3),
-                ShiftType = "遅番",
-                ShiftStart = TimeSpan.FromHours(13),
-                ShiftEnd = TimeSpan.FromHours(21),
-                RequiredNumber = 2
-            });
+                // シフトフレーム初期データ
+                shiftFrames.Add(new ShiftFrame
+                {
+                    Date = DateTime.Today.AddDays(1),
+                    ShiftType = "早番",
+                    ShiftStart = TimeSpan.FromHours(9),
+                    ShiftEnd = TimeSpan.FromHours(17),
+                    RequiredNumber = 2
+                });
+                shiftFrames.Add(new ShiftFrame
+                {
+                    Date = DateTime.Today.AddDays(2),
+                    ShiftType = "早番",
+                    ShiftStart = TimeSpan.FromHours(9),
+                    ShiftEnd = TimeSpan.FromHours(17),
+                    RequiredNumber = 1
+                });
+                // 例として 3 日目の遅番を追加
+                shiftFrames.Add(new ShiftFrame
+                {
+                    Date = DateTime.Today.AddDays(3),
+                    ShiftType = "遅番",
+                    ShiftStart = TimeSpan.FromHours(13),
+                    ShiftEnd = TimeSpan.FromHours(21),
+                    RequiredNumber = 2
+                });
+
+                SaveShiftFrames();
+            }
 
             assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members);
         }
@@ -303,6 +355,13 @@ namespace ShiftPlanner
             dtMembers.AutoGenerateColumns = true;
         }
 
+        private void SetupFrameGrid()
+        {
+            dtFrames.DataSource = null;
+            dtFrames.DataSource = shiftFrames;
+            dtFrames.AutoGenerateColumns = true;
+        }
+
         private void btnAddMember_Click(object sender, EventArgs e)
         {
             var nextId = members.Count > 0 ? members.Max(m => m.Id) + 1 : 1;
@@ -319,6 +378,35 @@ namespace ShiftPlanner
                 SetupMemberGrid();
                 SaveMembers();
             }
+        }
+
+        private void btnAddFrame_Click(object sender, EventArgs e)
+        {
+            shiftFrames.Add(new ShiftFrame
+            {
+                Date = DateTime.Today,
+                ShiftType = "早番",
+                ShiftStart = TimeSpan.FromHours(9),
+                ShiftEnd = TimeSpan.FromHours(17),
+                RequiredNumber = 1
+            });
+            SetupFrameGrid();
+            SaveShiftFrames();
+        }
+
+        private void btnRemoveFrame_Click(object sender, EventArgs e)
+        {
+            if (dtFrames.CurrentRow?.DataBoundItem is ShiftFrame f)
+            {
+                shiftFrames.Remove(f);
+                SetupFrameGrid();
+                SaveShiftFrames();
+            }
+        }
+
+        private void dtFrames_CellEndEdit(object sender, DataGridViewCellEventArgs e)
+        {
+            SaveShiftFrames();
         }
 
         private void btnRefreshShift_Click(object sender, EventArgs e)
@@ -342,6 +430,7 @@ namespace ShiftPlanner
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             SaveMembers();
+            SaveShiftFrames();
             base.OnFormClosing(e);
         }
 
@@ -350,21 +439,27 @@ namespace ShiftPlanner
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.tabPage2 = new System.Windows.Forms.TabPage();
+            this.tabPage3 = new System.Windows.Forms.TabPage();
             this.dtShift = new System.Windows.Forms.DataGridView();
             this.dtMembers = new System.Windows.Forms.DataGridView();
+            this.dtFrames = new System.Windows.Forms.DataGridView();
             this.btnAddMember = new System.Windows.Forms.Button();
             this.btnRemoveMember = new System.Windows.Forms.Button();
+            this.btnAddFrame = new System.Windows.Forms.Button();
+            this.btnRemoveFrame = new System.Windows.Forms.Button();
             this.btnRefreshShift = new System.Windows.Forms.Button();
             this.dtpMonth = new System.Windows.Forms.DateTimePicker();
             this.tabControl1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dtShift)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtMembers)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dtFrames)).BeginInit();
             this.SuspendLayout();
             // 
             // tabControl1
             // 
             this.tabControl1.Controls.Add(this.tabPage1);
             this.tabControl1.Controls.Add(this.tabPage2);
+            this.tabControl1.Controls.Add(this.tabPage3);
             this.tabControl1.Location = new System.Drawing.Point(2, 25);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
@@ -431,6 +526,19 @@ namespace ShiftPlanner
             this.tabPage2.Text = "メンバー";
             this.tabPage2.UseVisualStyleBackColor = true;
 
+            // tabPage3
+            //
+            this.tabPage3.Controls.Add(this.dtFrames);
+            this.tabPage3.Controls.Add(this.btnRemoveFrame);
+            this.tabPage3.Controls.Add(this.btnAddFrame);
+            this.tabPage3.Location = new System.Drawing.Point(4, 22);
+            this.tabPage3.Name = "tabPage3";
+            this.tabPage3.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage3.Size = new System.Drawing.Size(1385, 838);
+            this.tabPage3.TabIndex = 2;
+            this.tabPage3.Text = "シフト枠";
+            this.tabPage3.UseVisualStyleBackColor = true;
+
             // btnAddMember
             //
             this.btnAddMember.Location = new System.Drawing.Point(6, 6);
@@ -462,6 +570,39 @@ namespace ShiftPlanner
             this.dtMembers.RowTemplate.Height = 21;
             this.dtMembers.Size = new System.Drawing.Size(1379, 800);
             this.dtMembers.TabIndex = 2;
+
+            // btnAddFrame
+            //
+            this.btnAddFrame.Location = new System.Drawing.Point(6, 6);
+            this.btnAddFrame.Name = "btnAddFrame";
+            this.btnAddFrame.Size = new System.Drawing.Size(75, 23);
+            this.btnAddFrame.TabIndex = 0;
+            this.btnAddFrame.Text = "追加";
+            this.btnAddFrame.UseVisualStyleBackColor = true;
+            this.btnAddFrame.Click += new System.EventHandler(this.btnAddFrame_Click);
+
+            // btnRemoveFrame
+            //
+            this.btnRemoveFrame.Location = new System.Drawing.Point(87, 6);
+            this.btnRemoveFrame.Name = "btnRemoveFrame";
+            this.btnRemoveFrame.Size = new System.Drawing.Size(75, 23);
+            this.btnRemoveFrame.TabIndex = 1;
+            this.btnRemoveFrame.Text = "削除";
+            this.btnRemoveFrame.UseVisualStyleBackColor = true;
+            this.btnRemoveFrame.Click += new System.EventHandler(this.btnRemoveFrame_Click);
+
+            // dtFrames
+            //
+            this.dtFrames.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.dtFrames.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dtFrames.Location = new System.Drawing.Point(3, 35);
+            this.dtFrames.Name = "dtFrames";
+            this.dtFrames.RowTemplate.Height = 21;
+            this.dtFrames.Size = new System.Drawing.Size(1379, 800);
+            this.dtFrames.TabIndex = 2;
+            this.dtFrames.CellEndEdit += new System.Windows.Forms.DataGridViewCellEventHandler(this.dtFrames_CellEndEdit);
             // 
             // MainForm
             // 
@@ -471,6 +612,7 @@ namespace ShiftPlanner
             this.tabControl1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dtShift)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtMembers)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dtFrames)).EndInit();
             this.ResumeLayout(false);
 
         }
