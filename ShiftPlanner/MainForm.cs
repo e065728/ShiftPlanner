@@ -367,10 +367,60 @@ namespace ShiftPlanner
             }
         }
 
+        /// <summary>
+        /// DataGridView から必要人数を取得し、shiftFrames の値を更新します。
+        /// </summary>
+        private void UpdateShiftFramesFromGrid()
+        {
+            // データソースが DataTable でない場合は処理しない
+            if (!(dtShift.DataSource is DataTable table))
+            {
+                return;
+            }
+
+            int year = dtpMonth.Value.Year;
+            int month = dtpMonth.Value.Month;
+            int daysInMonth = DateTime.DaysInMonth(year, month);
+
+            // 必要人数行のインデックスはメンバー数と同じ
+            int requiredRowIndex = members.Count;
+            if (requiredRowIndex >= table.Rows.Count)
+            {
+                return; // 行が存在しない場合は何もしない
+            }
+
+            DataRow requiredRow = table.Rows[requiredRowIndex];
+
+            for (int day = 1; day <= daysInMonth; day++)
+            {
+                var date = new DateTime(year, month, day);
+                string header = $"{day}({GetJapaneseDayOfWeek(date.DayOfWeek)})";
+
+                // 列存在確認
+                if (!table.Columns.Contains(header))
+                {
+                    continue;
+                }
+
+                int number;
+                if (int.TryParse(requiredRow[header]?.ToString(), out number))
+                {
+                    var frame = shiftFrames.FirstOrDefault(f => f.Date.Date == date);
+                    if (frame != null)
+                    {
+                        frame.RequiredNumber = number;
+                    }
+                }
+            }
+        }
+
         private void btnRefreshShift_Click(object sender, EventArgs e)
         {
             try
             {
+                // 必要人数の値を DataGridView から取得して shiftFrames に反映する
+                UpdateShiftFramesFromGrid();
+
                 assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members);
                 SetupDataGridView();
             }
