@@ -32,8 +32,44 @@ namespace ShiftPlanner
         /// <summary>
         /// 希望休の日付一覧。
         /// </summary>
-        [DataMember]
+        // JSON 保存用。日付文字列の配列として保存する
+        [DataMember(Name = "DesiredHolidays")]
+        private List<string> DesiredHolidayStrings { get; set; } = new List<string>();
+
+        /// <summary>
+        /// 希望休の日付一覧
+        /// </summary>
+        [IgnoreDataMember]
         public List<DateTime> DesiredHolidays { get; set; } = new List<DateTime>();
+
+        [OnSerializing]
+        private void OnSerializing(StreamingContext context)
+        {
+            DesiredHolidayStrings = new List<string>();
+            if (DesiredHolidays != null)
+            {
+                foreach (var d in DesiredHolidays)
+                {
+                    DesiredHolidayStrings.Add(d.ToString("yyyy-MM-dd"));
+                }
+            }
+        }
+
+        [OnDeserialized]
+        private void OnDeserialized(StreamingContext context)
+        {
+            DesiredHolidays = new List<DateTime>();
+            if (DesiredHolidayStrings != null)
+            {
+                foreach (var s in DesiredHolidayStrings)
+                {
+                    if (DateTime.TryParse(s, out var dt))
+                    {
+                        DesiredHolidays.Add(dt.Date);
+                    }
+                }
+            }
+        }
 
         /// <summary>
         /// 勤務時間や連続勤務上限などの制約設定。
