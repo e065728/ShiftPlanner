@@ -7,6 +7,7 @@ using System.Windows.Forms;
 using System.IO;
 using System.Runtime.Serialization.Json;
 using System.Runtime.Serialization;
+using System.Windows.Forms.DataVisualization.Charting;
 
 namespace ShiftPlanner
 {
@@ -21,6 +22,10 @@ namespace ShiftPlanner
         private Button btnRemoveMember;
         private Button btnRefreshShift;
         private DateTimePicker dtpMonth;
+        private TabPage tabPage3;
+        private DateTimePicker dtp分析月;
+        private Label lbl総労働時間;
+        private System.Windows.Forms.DataVisualization.Charting.Chart chartシフト分布;
         // メンバー情報保存用のファイルパス
         // %APPDATA%/ShiftPlanner/members.json の形で保存する
         private readonly string memberFilePath = Path.Combine(
@@ -52,6 +57,7 @@ namespace ShiftPlanner
             InitializeData();
             SetupDataGridView();
             SetupMemberGrid();
+            UpdateAnalysis();
         }
 
         private void LoadMembers()
@@ -303,6 +309,41 @@ namespace ShiftPlanner
             dtMembers.AutoGenerateColumns = true;
         }
 
+        /// <summary>
+        /// 分析タブの情報を更新します。
+        /// </summary>
+        private void UpdateAnalysis()
+        {
+            try
+            {
+                int 年 = dtp分析月.Value.Year;
+                int 月 = dtp分析月.Value.Month;
+
+                // 総労働時間計算
+                var 時間 = ShiftAnalyzer.CalculateMonthlyHours(shiftFrames, 年, 月);
+                lbl総労働時間.Text = $"総労働時間: {時間.TotalHours:F1} 時間";
+
+                // シフトタイプ分布
+                var 分布 = ShiftAnalyzer.GetShiftTypeDistribution(shiftFrames, 年, 月);
+                if (chartシフト分布.Series.Count == 0)
+                {
+                    var series = new Series { ChartType = SeriesChartType.Pie };
+                    chartシフト分布.Series.Add(series);
+                }
+
+                var s = chartシフト分布.Series[0];
+                s.Points.Clear();
+                foreach (var kv in 分布)
+                {
+                    s.Points.AddXY(kv.Key, kv.Value);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"分析情報の更新に失敗しました: {ex.Message}");
+            }
+        }
+
         private void btnAddMember_Click(object sender, EventArgs e)
         {
             var nextId = members.Count > 0 ? members.Max(m => m.Id) + 1 : 1;
@@ -339,6 +380,11 @@ namespace ShiftPlanner
             SetupDataGridView();
         }
 
+        private void dtp分析月_ValueChanged(object sender, EventArgs e)
+        {
+            UpdateAnalysis();
+        }
+
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             SaveMembers();
@@ -356,15 +402,21 @@ namespace ShiftPlanner
             this.btnRemoveMember = new System.Windows.Forms.Button();
             this.btnRefreshShift = new System.Windows.Forms.Button();
             this.dtpMonth = new System.Windows.Forms.DateTimePicker();
+            this.tabPage3 = new System.Windows.Forms.TabPage();
+            this.dtp分析月 = new System.Windows.Forms.DateTimePicker();
+            this.lbl総労働時間 = new System.Windows.Forms.Label();
+            this.chartシフト分布 = new System.Windows.Forms.DataVisualization.Charting.Chart();
             this.tabControl1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dtShift)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtMembers)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.chartシフト分布)).BeginInit();
             this.SuspendLayout();
             // 
             // tabControl1
             // 
             this.tabControl1.Controls.Add(this.tabPage1);
             this.tabControl1.Controls.Add(this.tabPage2);
+            this.tabControl1.Controls.Add(this.tabPage3);
             this.tabControl1.Location = new System.Drawing.Point(2, 25);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
@@ -431,6 +483,19 @@ namespace ShiftPlanner
             this.tabPage2.Text = "メンバー";
             this.tabPage2.UseVisualStyleBackColor = true;
 
+            // tabPage3
+            //
+            this.tabPage3.Controls.Add(this.chartシフト分布);
+            this.tabPage3.Controls.Add(this.lbl総労働時間);
+            this.tabPage3.Controls.Add(this.dtp分析月);
+            this.tabPage3.Location = new System.Drawing.Point(4, 22);
+            this.tabPage3.Name = "tabPage3";
+            this.tabPage3.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage3.Size = new System.Drawing.Size(1385, 838);
+            this.tabPage3.TabIndex = 2;
+            this.tabPage3.Text = "分析";
+            this.tabPage3.UseVisualStyleBackColor = true;
+
             // btnAddMember
             //
             this.btnAddMember.Location = new System.Drawing.Point(6, 6);
@@ -462,6 +527,40 @@ namespace ShiftPlanner
             this.dtMembers.RowTemplate.Height = 21;
             this.dtMembers.Size = new System.Drawing.Size(1379, 800);
             this.dtMembers.TabIndex = 2;
+
+            // dtp分析月
+            //
+            this.dtp分析月.CustomFormat = "yyyy/MM";
+            this.dtp分析月.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
+            this.dtp分析月.Location = new System.Drawing.Point(6, 6);
+            this.dtp分析月.Name = "dtp分析月";
+            this.dtp分析月.ShowUpDown = true;
+            this.dtp分析月.Size = new System.Drawing.Size(100, 23);
+            this.dtp分析月.TabIndex = 0;
+            this.dtp分析月.Value = new System.DateTime(System.DateTime.Now.Year, System.DateTime.Now.Month, 1);
+            this.dtp分析月.ValueChanged += new System.EventHandler(this.dtp分析月_ValueChanged);
+
+            // lbl総労働時間
+            //
+            this.lbl総労働時間.AutoSize = true;
+            this.lbl総労働時間.Location = new System.Drawing.Point(112, 10);
+            this.lbl総労働時間.Name = "lbl総労働時間";
+            this.lbl総労働時間.Size = new System.Drawing.Size(83, 15);
+            this.lbl総労働時間.TabIndex = 1;
+            this.lbl総労働時間.Text = "総労働時間:";
+
+            // chartシフト分布
+            //
+            ChartArea chartArea1 = new ChartArea();
+            this.chartシフト分布.ChartAreas.Add(chartArea1);
+            this.chartシフト分布.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.chartシフト分布.Location = new System.Drawing.Point(3, 35);
+            this.chartシフト分布.Name = "chartシフト分布";
+            this.chartシフト分布.Size = new System.Drawing.Size(1379, 800);
+            this.chartシフト分布.TabIndex = 2;
+            this.chartシフト分布.Text = "chart1";
             // 
             // MainForm
             // 
@@ -471,6 +570,7 @@ namespace ShiftPlanner
             this.tabControl1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dtShift)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtMembers)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.chartシフト分布)).EndInit();
             this.ResumeLayout(false);
 
         }
