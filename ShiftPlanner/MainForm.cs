@@ -298,9 +298,55 @@ namespace ShiftPlanner
 
         private void SetupMemberGrid()
         {
+            // データソースを一旦解除してから設定
             dtMembers.DataSource = null;
             dtMembers.DataSource = members;
+
+            // 自動生成された列のヘッダーを日本語へ変換
             dtMembers.AutoGenerateColumns = true;
+            try
+            {
+                foreach (DataGridViewColumn col in dtMembers.Columns)
+                {
+                    if (col == null || string.IsNullOrEmpty(col.Name))
+                    {
+                        continue; // null 安全対策
+                    }
+
+                    switch (col.Name)
+                    {
+                        case nameof(Member.Id):
+                            col.HeaderText = "ID";
+                            break;
+                        case nameof(Member.Name):
+                            col.HeaderText = "名前";
+                            break;
+                        case nameof(Member.AvailableDays):
+                            col.HeaderText = "勤務可能曜日";
+                            break;
+                        case nameof(Member.AvailableFrom):
+                            col.HeaderText = "開始時間";
+                            break;
+                        case nameof(Member.AvailableTo):
+                            col.HeaderText = "終了時間";
+                            break;
+                        case nameof(Member.Skills):
+                            col.HeaderText = "スキル";
+                            break;
+                        case nameof(Member.DesiredHolidays):
+                            col.HeaderText = "希望休";
+                            break;
+                        case nameof(Member.Constraints):
+                            col.HeaderText = "制約";
+                            break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // ヘッダー変更に失敗してもアプリが落ちないよう通知のみ
+                MessageBox.Show($"ヘッダー設定中にエラーが発生しました: {ex.Message}");
+            }
         }
 
         private void btnAddMember_Click(object sender, EventArgs e)
