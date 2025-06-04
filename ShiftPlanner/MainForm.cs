@@ -16,10 +16,14 @@ namespace ShiftPlanner
         private TabControl tabControl1;
         private TabPage tabPage1;
         private TabPage tabPage2;
+        private TabPage tabPage3;
         private DataGridView dtShift;
         private DataGridView dtMembers;
+        private DataGridView dtRequests;
         private Button btnAddMember;
         private Button btnRemoveMember;
+        private Button btnAddRequest;
+        private Button btnRemoveRequest;
         private Button btnRefreshShift;
         private DateTimePicker dtpMonth;
         private TabPage tabPage3;
@@ -41,6 +45,11 @@ namespace ShiftPlanner
         private List<Member> members = new List<Member>();
         private List<ShiftFrame> shiftFrames = new List<ShiftFrame>();
         private List<ShiftAssignment> assignments = new List<ShiftAssignment>();
+        private readonly string requestFilePath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "ShiftPlanner",
+            "requests.json");
+        private List<ShiftRequest> shiftRequests = new List<ShiftRequest>();
 
         public MainForm()
         {
@@ -68,7 +77,7 @@ namespace ShiftPlanner
             InitializeData();
             SetupDataGridView();
             SetupMemberGrid();
-            UpdateAnalysis();
+            SetupRequestGrid();
         }
 
         private void LoadMembers()
@@ -107,95 +116,54 @@ namespace ShiftPlanner
             }
         }
 
-        // シフト枠の読み込み
-        private void LoadShiftFrames()
+
+        private void LoadRequests()
         {
-            if (File.Exists(frameFilePath))
+            if (File.Exists(requestFilePath))
             {
                 try
                 {
-                    var serializer = new DataContractJsonSerializer(typeof(List<ShiftFrame>));
-                    using (var stream = File.OpenRead(frameFilePath))
+                    var serializer = new DataContractJsonSerializer(typeof(List<ShiftRequest>));
+                    using (var stream = File.OpenRead(requestFilePath))
                     {
-                        var data = serializer.ReadObject(stream) as List<ShiftFrame>;
-                        if (data != null)
-                        {
-                            shiftFrames = data;
-                        }
+                        shiftRequests = (List<ShiftRequest>)serializer.ReadObject(stream);
+
                     }
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"シフト枠の読み込みに失敗しました: {ex.Message}");
-                    shiftFrames = new List<ShiftFrame>();
+
+                    MessageBox.Show($"希望情報の読み込みに失敗しました: {ex.Message}");
+                    shiftRequests = new List<ShiftRequest>();
                 }
             }
         }
 
-        // シフト枠の保存
-        private void SaveShiftFrames()
+        private void SaveRequests()
         {
             try
             {
-                var serializer = new DataContractJsonSerializer(typeof(List<ShiftFrame>));
-                using (var stream = File.Create(frameFilePath))
+                var serializer = new DataContractJsonSerializer(typeof(List<ShiftRequest>));
+                using (var stream = File.Create(requestFilePath))
                 {
-                    serializer.WriteObject(stream, shiftFrames);
+                    serializer.WriteObject(stream, shiftRequests);
+
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"シフト枠の保存に失敗しました: {ex.Message}");
-            }
-        }
 
-        // 割当情報の読み込み
-        private void LoadAssignments()
-        {
-            if (File.Exists(assignmentFilePath))
-            {
-                try
-                {
-                    var serializer = new DataContractJsonSerializer(typeof(List<ShiftAssignment>));
-                    using (var stream = File.OpenRead(assignmentFilePath))
-                    {
-                        var data = serializer.ReadObject(stream) as List<ShiftAssignment>;
-                        if (data != null)
-                        {
-                            assignments = data;
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"割当情報の読み込みに失敗しました: {ex.Message}");
-                    assignments = new List<ShiftAssignment>();
-                }
-            }
-        }
+                MessageBox.Show($"希望情報の保存に失敗しました: {ex.Message}");
 
-        // 割当情報の保存
-        private void SaveAssignments()
-        {
-            try
-            {
-                var serializer = new DataContractJsonSerializer(typeof(List<ShiftAssignment>));
-                using (var stream = File.Create(assignmentFilePath))
-                {
-                    serializer.WriteObject(stream, assignments);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"割当情報の保存に失敗しました: {ex.Message}");
             }
         }
 
         private void InitializeData()
         {
             LoadMembers();
-            LoadShiftFrames();
-            LoadAssignments();
+
+            LoadRequests();
+
 
             if (members.Count == 0)
             {
@@ -226,44 +194,36 @@ namespace ShiftPlanner
                 });
             }
 
-            if (shiftFrames.Count == 0)
-            {
-                // シフトフレーム例
-                shiftFrames.Add(new ShiftFrame
-                {
-                    Date = DateTime.Today.AddDays(1),
-                    ShiftType = "早番",
-                    ShiftStart = TimeSpan.FromHours(9),
-                    ShiftEnd = TimeSpan.FromHours(17),
-                    RequiredNumber = 2
-                });
-                shiftFrames.Add(new ShiftFrame
-                {
-                    Date = DateTime.Today.AddDays(2),
-                    ShiftType = "早番",
-                    ShiftStart = TimeSpan.FromHours(9),
-                    ShiftEnd = TimeSpan.FromHours(17),
-                    RequiredNumber = 1
-                });
-                // 例として 3 日目の遅番を追加
-                shiftFrames.Add(new ShiftFrame
-                {
-                    Date = DateTime.Today.AddDays(3),
-                    ShiftType = "遅番",
-                    ShiftStart = TimeSpan.FromHours(13),
-                    ShiftEnd = TimeSpan.FromHours(21),
-                    RequiredNumber = 2
-                });
 
-                // 初期データを保存
-                SaveShiftFrames();
-            }
-
-            if (assignments.Count == 0)
+            // シフトフレーム例
+            shiftFrames.Add(new ShiftFrame
             {
-                assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members);
-                SaveAssignments();
-            }
+                Date = DateTime.Today.AddDays(1),
+                ShiftType = "早番",
+                ShiftStart = TimeSpan.FromHours(9),
+                ShiftEnd = TimeSpan.FromHours(17),
+                RequiredNumber = 2
+            });
+            shiftFrames.Add(new ShiftFrame
+            {
+                Date = DateTime.Today.AddDays(2),
+                ShiftType = "早番",
+                ShiftStart = TimeSpan.FromHours(9),
+                ShiftEnd = TimeSpan.FromHours(17),
+                RequiredNumber = 1
+            });
+            // 例として 3 日目の遅番を追加
+            shiftFrames.Add(new ShiftFrame
+            {
+                Date = DateTime.Today.AddDays(3),
+                ShiftType = "遅番",
+                ShiftStart = TimeSpan.FromHours(13),
+                ShiftEnd = TimeSpan.FromHours(21),
+                RequiredNumber = 2
+            });
+
+            assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members, shiftRequests);
+
         }
 
         private void SetupDataGridView()
@@ -497,6 +457,13 @@ namespace ShiftPlanner
             }
         }
 
+        private void SetupRequestGrid()
+        {
+            dtRequests.DataSource = null;
+            dtRequests.DataSource = shiftRequests;
+            dtRequests.AutoGenerateColumns = true;
+        }
+
         private void btnAddMember_Click(object sender, EventArgs e)
         {
             var nextId = members.Count > 0 ? members.Max(m => m.Id) + 1 : 1;
@@ -515,50 +482,28 @@ namespace ShiftPlanner
             }
         }
 
-        /// <summary>
-        /// DataGridView から必要人数を取得し、shiftFrames の値を更新します。
-        /// </summary>
-        private void UpdateShiftFramesFromGrid()
+
+        private void btnAddRequest_Click(object sender, EventArgs e)
         {
-            // データソースが DataTable でない場合は処理しない
-            if (!(dtShift.DataSource is DataTable table))
+            using (var form = new ShiftRequestForm(members))
             {
-                return;
-            }
-
-            int year = dtpMonth.Value.Year;
-            int month = dtpMonth.Value.Month;
-            int daysInMonth = DateTime.DaysInMonth(year, month);
-
-            // 必要人数行のインデックスはメンバー数と同じ
-            int requiredRowIndex = members.Count;
-            if (requiredRowIndex >= table.Rows.Count)
-            {
-                return; // 行が存在しない場合は何もしない
-            }
-
-            DataRow requiredRow = table.Rows[requiredRowIndex];
-
-            for (int day = 1; day <= daysInMonth; day++)
-            {
-                var date = new DateTime(year, month, day);
-                string header = $"{day}({GetJapaneseDayOfWeek(date.DayOfWeek)})";
-
-                // 列存在確認
-                if (!table.Columns.Contains(header))
+                if (form.ShowDialog() == DialogResult.OK && form.ShiftRequest != null)
                 {
-                    continue;
+                    shiftRequests.Add(form.ShiftRequest);
+                    SetupRequestGrid();
+                    SaveRequests();
                 }
+            }
+        }
 
-                int number;
-                if (int.TryParse(requiredRow[header]?.ToString(), out number))
-                {
-                    var frame = shiftFrames.FirstOrDefault(f => f.Date.Date == date);
-                    if (frame != null)
-                    {
-                        frame.RequiredNumber = number;
-                    }
-                }
+        private void btnRemoveRequest_Click(object sender, EventArgs e)
+        {
+            if (dtRequests.CurrentRow?.DataBoundItem is ShiftRequest r)
+            {
+                shiftRequests.Remove(r);
+                SetupRequestGrid();
+                SaveRequests();
+
             }
         }
 
@@ -566,10 +511,9 @@ namespace ShiftPlanner
         {
             try
             {
-                // 必要人数の値を DataGridView から取得して shiftFrames に反映する
-                UpdateShiftFramesFromGrid();
 
-                assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members);
+                assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members, shiftRequests);
+
                 SetupDataGridView();
                 SaveAssignments();
             }
@@ -592,8 +536,7 @@ namespace ShiftPlanner
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             SaveMembers();
-            SaveShiftFrames();
-            SaveAssignments();
+            SaveRequests();
             base.OnFormClosing(e);
         }
 
@@ -670,10 +613,14 @@ namespace ShiftPlanner
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPage1 = new System.Windows.Forms.TabPage();
             this.tabPage2 = new System.Windows.Forms.TabPage();
+            this.tabPage3 = new System.Windows.Forms.TabPage();
             this.dtShift = new System.Windows.Forms.DataGridView();
             this.dtMembers = new System.Windows.Forms.DataGridView();
+            this.dtRequests = new System.Windows.Forms.DataGridView();
             this.btnAddMember = new System.Windows.Forms.Button();
             this.btnRemoveMember = new System.Windows.Forms.Button();
+            this.btnAddRequest = new System.Windows.Forms.Button();
+            this.btnRemoveRequest = new System.Windows.Forms.Button();
             this.btnRefreshShift = new System.Windows.Forms.Button();
             this.dtpMonth = new System.Windows.Forms.DateTimePicker();
             this.tabPage3 = new System.Windows.Forms.TabPage();
@@ -683,7 +630,7 @@ namespace ShiftPlanner
             this.tabControl1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dtShift)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtMembers)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.chartシフト分布)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dtRequests)).BeginInit();
 
             this.SuspendLayout();
 
@@ -815,15 +762,15 @@ namespace ShiftPlanner
 
             // tabPage3
             //
-            this.tabPage3.Controls.Add(this.chartシフト分布);
-            this.tabPage3.Controls.Add(this.lbl総労働時間);
-            this.tabPage3.Controls.Add(this.dtp分析月);
+            this.tabPage3.Controls.Add(this.dtRequests);
+            this.tabPage3.Controls.Add(this.btnRemoveRequest);
+            this.tabPage3.Controls.Add(this.btnAddRequest);
             this.tabPage3.Location = new System.Drawing.Point(4, 22);
             this.tabPage3.Name = "tabPage3";
             this.tabPage3.Padding = new System.Windows.Forms.Padding(3);
             this.tabPage3.Size = new System.Drawing.Size(1385, 838);
             this.tabPage3.TabIndex = 2;
-            this.tabPage3.Text = "分析";
+            this.tabPage3.Text = "希望";
             this.tabPage3.UseVisualStyleBackColor = true;
 
             // btnAddMember
@@ -858,39 +805,38 @@ namespace ShiftPlanner
             this.dtMembers.Size = new System.Drawing.Size(1379, 800);
             this.dtMembers.TabIndex = 2;
 
-            // dtp分析月
+            // btnAddRequest
             //
-            this.dtp分析月.CustomFormat = "yyyy/MM";
-            this.dtp分析月.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
-            this.dtp分析月.Location = new System.Drawing.Point(6, 6);
-            this.dtp分析月.Name = "dtp分析月";
-            this.dtp分析月.ShowUpDown = true;
-            this.dtp分析月.Size = new System.Drawing.Size(100, 23);
-            this.dtp分析月.TabIndex = 0;
-            this.dtp分析月.Value = new System.DateTime(System.DateTime.Now.Year, System.DateTime.Now.Month, 1);
-            this.dtp分析月.ValueChanged += new System.EventHandler(this.dtp分析月_ValueChanged);
+            this.btnAddRequest.Location = new System.Drawing.Point(6, 6);
+            this.btnAddRequest.Name = "btnAddRequest";
+            this.btnAddRequest.Size = new System.Drawing.Size(75, 23);
+            this.btnAddRequest.TabIndex = 0;
+            this.btnAddRequest.Text = "追加";
+            this.btnAddRequest.UseVisualStyleBackColor = true;
+            this.btnAddRequest.Click += new System.EventHandler(this.btnAddRequest_Click);
 
-            // lbl総労働時間
+            // btnRemoveRequest
             //
-            this.lbl総労働時間.AutoSize = true;
-            this.lbl総労働時間.Location = new System.Drawing.Point(112, 10);
-            this.lbl総労働時間.Name = "lbl総労働時間";
-            this.lbl総労働時間.Size = new System.Drawing.Size(83, 15);
-            this.lbl総労働時間.TabIndex = 1;
-            this.lbl総労働時間.Text = "総労働時間:";
+            this.btnRemoveRequest.Location = new System.Drawing.Point(87, 6);
+            this.btnRemoveRequest.Name = "btnRemoveRequest";
+            this.btnRemoveRequest.Size = new System.Drawing.Size(75, 23);
+            this.btnRemoveRequest.TabIndex = 1;
+            this.btnRemoveRequest.Text = "削除";
+            this.btnRemoveRequest.UseVisualStyleBackColor = true;
+            this.btnRemoveRequest.Click += new System.EventHandler(this.btnRemoveRequest_Click);
 
-            // chartシフト分布
+            // dtRequests
             //
-            ChartArea chartArea1 = new ChartArea();
-            this.chartシフト分布.ChartAreas.Add(chartArea1);
-            this.chartシフト分布.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            this.dtRequests.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
-            this.chartシフト分布.Location = new System.Drawing.Point(3, 35);
-            this.chartシフト分布.Name = "chartシフト分布";
-            this.chartシフト分布.Size = new System.Drawing.Size(1379, 800);
-            this.chartシフト分布.TabIndex = 2;
-            this.chartシフト分布.Text = "chart1";
+            this.dtRequests.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dtRequests.Location = new System.Drawing.Point(3, 35);
+            this.dtRequests.Name = "dtRequests";
+            this.dtRequests.RowTemplate.Height = 21;
+            this.dtRequests.Size = new System.Drawing.Size(1379, 800);
+            this.dtRequests.TabIndex = 2;
+
             // 
             // MainForm
             // 
@@ -902,7 +848,7 @@ namespace ShiftPlanner
             this.tabControl1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dtShift)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtMembers)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.chartシフト分布)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dtRequests)).EndInit();
 
             this.ResumeLayout(false);
             this.PerformLayout();
