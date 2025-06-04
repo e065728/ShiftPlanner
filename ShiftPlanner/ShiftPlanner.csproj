@@ -63,6 +63,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ShiftFrame.cs" />
     <Compile Include="ShiftRequest.cs" />
+    <Compile Include="ShiftRequestForm.cs" />
     <Compile Include="ShiftExporter.cs" />
     <Compile Include="ShiftAnalyzer.cs" />
     <Compile Include="ShiftAssignment.cs" />
