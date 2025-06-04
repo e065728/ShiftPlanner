@@ -21,6 +21,12 @@ namespace ShiftPlanner
         private Button btnRemoveMember;
         private Button btnRefreshShift;
         private DateTimePicker dtpMonth;
+        private MenuStrip menuStrip1;
+        private ToolStripMenuItem menuFile;
+        private ToolStripMenuItem menuExportCsv;
+        private ToolStripMenuItem menuExportPdf;
+        private Button btnExportCsv;
+        private Button btnExportPdf;
         // メンバー情報保存用のファイルパス
         // %APPDATA%/ShiftPlanner/members.json の形で保存する
         private readonly string memberFilePath = Path.Combine(
@@ -345,6 +351,74 @@ namespace ShiftPlanner
             base.OnFormClosing(e);
         }
 
+        /// <summary>
+        /// CSV 出力メニューまたはボタンのクリックイベント
+        /// </summary>
+        private void btnExportCsv_Click(object sender, EventArgs e)
+        {
+            ExportCsv();
+        }
+
+        /// <summary>
+        /// PDF 出力メニューまたはボタンのクリックイベント
+        /// </summary>
+        private void btnExportPdf_Click(object sender, EventArgs e)
+        {
+            ExportPdf();
+        }
+
+        /// <summary>
+        /// CSV を保存します。
+        /// </summary>
+        private void ExportCsv()
+        {
+            using (var dialog = new SaveFileDialog())
+            {
+                dialog.Filter = "CSVファイル (*.csv)|*.csv|すべてのファイル (*.*)|*.*";
+                dialog.Title = "CSVの保存先を選択してください";
+
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    try
+                    {
+                        var frames = shiftFrames ?? new List<ShiftFrame>();
+                        ShiftExporter.ExportToCsv(frames, dialog.FileName);
+                        MessageBox.Show("CSV出力が完了しました。", "情報");
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"CSV出力に失敗しました: {ex.Message}");
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// PDF を保存します。
+        /// </summary>
+        private void ExportPdf()
+        {
+            using (var dialog = new SaveFileDialog())
+            {
+                dialog.Filter = "PDFファイル (*.pdf)|*.pdf|すべてのファイル (*.*)|*.*";
+                dialog.Title = "PDFの保存先を選択してください";
+
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    try
+                    {
+                        var frames = shiftFrames ?? new List<ShiftFrame>();
+                        var message = ShiftExporter.ExportToPdf(frames, dialog.FileName);
+                        MessageBox.Show(message, "情報");
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"PDF出力に失敗しました: {ex.Message}");
+                    }
+                }
+            }
+        }
+
         private void InitializeComponent()
         {
             this.tabControl1 = new System.Windows.Forms.TabControl();
@@ -356,10 +430,50 @@ namespace ShiftPlanner
             this.btnRemoveMember = new System.Windows.Forms.Button();
             this.btnRefreshShift = new System.Windows.Forms.Button();
             this.dtpMonth = new System.Windows.Forms.DateTimePicker();
+            this.menuStrip1 = new System.Windows.Forms.MenuStrip();
+            this.menuFile = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuExportCsv = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuExportPdf = new System.Windows.Forms.ToolStripMenuItem();
+            this.btnExportCsv = new System.Windows.Forms.Button();
+            this.btnExportPdf = new System.Windows.Forms.Button();
             this.tabControl1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dtShift)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtMembers)).BeginInit();
+            this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
+
+            // menuStrip1
+            //
+            this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menuFile});
+            this.menuStrip1.Location = new System.Drawing.Point(0, 0);
+            this.menuStrip1.Name = "menuStrip1";
+            this.menuStrip1.Size = new System.Drawing.Size(1398, 24);
+            this.menuStrip1.TabIndex = 3;
+            this.menuStrip1.Text = "menuStrip1";
+
+            // menuFile
+            //
+            this.menuFile.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menuExportCsv,
+            this.menuExportPdf});
+            this.menuFile.Name = "menuFile";
+            this.menuFile.Size = new System.Drawing.Size(55, 20);
+            this.menuFile.Text = "ファイル";
+
+            // menuExportCsv
+            //
+            this.menuExportCsv.Name = "menuExportCsv";
+            this.menuExportCsv.Size = new System.Drawing.Size(122, 22);
+            this.menuExportCsv.Text = "CSV出力";
+            this.menuExportCsv.Click += new System.EventHandler(this.btnExportCsv_Click);
+
+            // menuExportPdf
+            //
+            this.menuExportPdf.Name = "menuExportPdf";
+            this.menuExportPdf.Size = new System.Drawing.Size(122, 22);
+            this.menuExportPdf.Text = "PDF出力";
+            this.menuExportPdf.Click += new System.EventHandler(this.btnExportPdf_Click);
             // 
             // tabControl1
             // 
@@ -374,6 +488,8 @@ namespace ShiftPlanner
             // tabPage1
             //
             this.tabPage1.Controls.Add(this.dtShift);
+            this.tabPage1.Controls.Add(this.btnExportPdf);
+            this.tabPage1.Controls.Add(this.btnExportCsv);
             this.tabPage1.Controls.Add(this.btnRefreshShift);
             this.tabPage1.Controls.Add(this.dtpMonth);
             this.tabPage1.Location = new System.Drawing.Point(4, 22);
@@ -417,6 +533,26 @@ namespace ShiftPlanner
             this.dtpMonth.TabIndex = 2;
             this.dtpMonth.Value = new System.DateTime(System.DateTime.Now.Year, System.DateTime.Now.Month, 1);
             this.dtpMonth.ValueChanged += new System.EventHandler(this.dtpMonth_ValueChanged);
+
+            // btnExportCsv
+            //
+            this.btnExportCsv.Location = new System.Drawing.Point(193, 6);
+            this.btnExportCsv.Name = "btnExportCsv";
+            this.btnExportCsv.Size = new System.Drawing.Size(75, 23);
+            this.btnExportCsv.TabIndex = 3;
+            this.btnExportCsv.Text = "CSV出力";
+            this.btnExportCsv.UseVisualStyleBackColor = true;
+            this.btnExportCsv.Click += new System.EventHandler(this.btnExportCsv_Click);
+
+            // btnExportPdf
+            //
+            this.btnExportPdf.Location = new System.Drawing.Point(274, 6);
+            this.btnExportPdf.Name = "btnExportPdf";
+            this.btnExportPdf.Size = new System.Drawing.Size(75, 23);
+            this.btnExportPdf.TabIndex = 4;
+            this.btnExportPdf.Text = "PDF出力";
+            this.btnExportPdf.UseVisualStyleBackColor = true;
+            this.btnExportPdf.Click += new System.EventHandler(this.btnExportPdf_Click);
             // 
             // tabPage2
             // 
@@ -467,11 +603,16 @@ namespace ShiftPlanner
             // 
             this.ClientSize = new System.Drawing.Size(1398, 889);
             this.Controls.Add(this.tabControl1);
+            this.Controls.Add(this.menuStrip1);
+            this.MainMenuStrip = this.menuStrip1;
             this.Name = "MainForm";
             this.tabControl1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dtShift)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtMembers)).EndInit();
+            this.menuStrip1.ResumeLayout(false);
+            this.menuStrip1.PerformLayout();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
     }
