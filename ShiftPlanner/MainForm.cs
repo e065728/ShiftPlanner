@@ -23,20 +23,30 @@ namespace ShiftPlanner
         private DateTimePicker dtpMonth;
         // メンバー情報保存用のファイルパス
         // %APPDATA%/ShiftPlanner/members.json の形で保存する
-        private readonly string memberFilePath = Path.Combine(
+        // データ保存ディレクトリ
+        private readonly string dataDir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "ShiftPlanner",
-            "members.json");
+            "ShiftPlanner");
+
+        // 各種データ保存用ファイルパス
+        private readonly string memberFilePath;
+        private readonly string frameFilePath;
+        private readonly string assignmentFilePath;
         private List<Member> members = new List<Member>();
         private List<ShiftFrame> shiftFrames = new List<ShiftFrame>();
         private List<ShiftAssignment> assignments = new List<ShiftAssignment>();
 
         public MainForm()
         {
+            // 各ファイルパスを生成
+            memberFilePath = Path.Combine(dataDir, "members.json");
+            frameFilePath = Path.Combine(dataDir, "shiftFrames.json");
+            assignmentFilePath = Path.Combine(dataDir, "shiftAssignments.json");
+
             InitializeComponent(); // これだけでOK
 
             // データ保存用ディレクトリが無い場合は作成する
-            var dir = Path.GetDirectoryName(memberFilePath);
+            var dir = dataDir;
             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
             {
                 try
@@ -90,9 +100,95 @@ namespace ShiftPlanner
             }
         }
 
+        // シフト枠の読み込み
+        private void LoadShiftFrames()
+        {
+            if (File.Exists(frameFilePath))
+            {
+                try
+                {
+                    var serializer = new DataContractJsonSerializer(typeof(List<ShiftFrame>));
+                    using (var stream = File.OpenRead(frameFilePath))
+                    {
+                        var data = serializer.ReadObject(stream) as List<ShiftFrame>;
+                        if (data != null)
+                        {
+                            shiftFrames = data;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"シフト枠の読み込みに失敗しました: {ex.Message}");
+                    shiftFrames = new List<ShiftFrame>();
+                }
+            }
+        }
+
+        // シフト枠の保存
+        private void SaveShiftFrames()
+        {
+            try
+            {
+                var serializer = new DataContractJsonSerializer(typeof(List<ShiftFrame>));
+                using (var stream = File.Create(frameFilePath))
+                {
+                    serializer.WriteObject(stream, shiftFrames);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"シフト枠の保存に失敗しました: {ex.Message}");
+            }
+        }
+
+        // 割当情報の読み込み
+        private void LoadAssignments()
+        {
+            if (File.Exists(assignmentFilePath))
+            {
+                try
+                {
+                    var serializer = new DataContractJsonSerializer(typeof(List<ShiftAssignment>));
+                    using (var stream = File.OpenRead(assignmentFilePath))
+                    {
+                        var data = serializer.ReadObject(stream) as List<ShiftAssignment>;
+                        if (data != null)
+                        {
+                            assignments = data;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"割当情報の読み込みに失敗しました: {ex.Message}");
+                    assignments = new List<ShiftAssignment>();
+                }
+            }
+        }
+
+        // 割当情報の保存
+        private void SaveAssignments()
+        {
+            try
+            {
+                var serializer = new DataContractJsonSerializer(typeof(List<ShiftAssignment>));
+                using (var stream = File.Create(assignmentFilePath))
+                {
+                    serializer.WriteObject(stream, assignments);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"割当情報の保存に失敗しました: {ex.Message}");
+            }
+        }
+
         private void InitializeData()
         {
             LoadMembers();
+            LoadShiftFrames();
+            LoadAssignments();
 
             if (members.Count == 0)
             {
@@ -123,34 +219,44 @@ namespace ShiftPlanner
                 });
             }
 
-            // シフトフレーム例
-            shiftFrames.Add(new ShiftFrame
+            if (shiftFrames.Count == 0)
             {
-                Date = DateTime.Today.AddDays(1),
-                ShiftType = "早番",
-                ShiftStart = TimeSpan.FromHours(9),
-                ShiftEnd = TimeSpan.FromHours(17),
-                RequiredNumber = 2
-            });
-            shiftFrames.Add(new ShiftFrame
-            {
-                Date = DateTime.Today.AddDays(2),
-                ShiftType = "早番",
-                ShiftStart = TimeSpan.FromHours(9),
-                ShiftEnd = TimeSpan.FromHours(17),
-                RequiredNumber = 1
-            });
-            // 例として 3 日目の遅番を追加
-            shiftFrames.Add(new ShiftFrame
-            {
-                Date = DateTime.Today.AddDays(3),
-                ShiftType = "遅番",
-                ShiftStart = TimeSpan.FromHours(13),
-                ShiftEnd = TimeSpan.FromHours(21),
-                RequiredNumber = 2
-            });
+                // シフトフレーム例
+                shiftFrames.Add(new ShiftFrame
+                {
+                    Date = DateTime.Today.AddDays(1),
+                    ShiftType = "早番",
+                    ShiftStart = TimeSpan.FromHours(9),
+                    ShiftEnd = TimeSpan.FromHours(17),
+                    RequiredNumber = 2
+                });
+                shiftFrames.Add(new ShiftFrame
+                {
+                    Date = DateTime.Today.AddDays(2),
+                    ShiftType = "早番",
+                    ShiftStart = TimeSpan.FromHours(9),
+                    ShiftEnd = TimeSpan.FromHours(17),
+                    RequiredNumber = 1
+                });
+                // 例として 3 日目の遅番を追加
+                shiftFrames.Add(new ShiftFrame
+                {
+                    Date = DateTime.Today.AddDays(3),
+                    ShiftType = "遅番",
+                    ShiftStart = TimeSpan.FromHours(13),
+                    ShiftEnd = TimeSpan.FromHours(21),
+                    RequiredNumber = 2
+                });
 
-            assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members);
+                // 初期データを保存
+                SaveShiftFrames();
+            }
+
+            if (assignments.Count == 0)
+            {
+                assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members);
+                SaveAssignments();
+            }
         }
 
         private void SetupDataGridView()
@@ -373,6 +479,7 @@ namespace ShiftPlanner
             {
                 assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members);
                 SetupDataGridView();
+                SaveAssignments();
             }
             catch (Exception ex)
             {
@@ -388,6 +495,8 @@ namespace ShiftPlanner
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             SaveMembers();
+            SaveShiftFrames();
+            SaveAssignments();
             base.OnFormClosing(e);
         }
 
