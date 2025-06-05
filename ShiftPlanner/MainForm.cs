@@ -379,6 +379,8 @@ namespace ShiftPlanner
 
             dtShift.AutoGenerateColumns = true;
             dtShift.DataSource = table;
+            dtShift.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
+            dtShift.ColumnHeadersDefaultCellStyle.WrapMode = DataGridViewTriState.False;
 
             for (int day = 1; day <= daysInMonth; day++)
             {
@@ -387,7 +389,11 @@ namespace ShiftPlanner
                 var col = dtShift.Columns[header];
                 if (col != null)
                 {
-                    col.Width = 45;
+                    col.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
+                    col.HeaderCell.Style.WrapMode = DataGridViewTriState.False;
+                    col.HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                    col.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                    col.Width = 40;
                     if (date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday)
                     {
                         col.DefaultCellStyle.BackColor = Color.LightYellow;
@@ -436,7 +442,7 @@ namespace ShiftPlanner
                 MessageBox.Show($"セルの着色中にエラーが発生しました: {ex.Message}");
             }
 
-            dtShift.AutoResizeColumns();
+            // 自動リサイズは行わず固定幅を維持
         }
 
         /// <summary>
