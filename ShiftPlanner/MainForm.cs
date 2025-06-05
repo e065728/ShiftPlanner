@@ -219,6 +219,27 @@ namespace ShiftPlanner
         }
 
         /// <summary>
+        /// すべてのシフトフレームの必要人数をリセットします。
+        /// </summary>
+        private void ResetRequiredNumbers()
+        {
+            if (shiftFrames == null)
+            {
+                return; // null 安全対策
+            }
+
+            foreach (var frame in shiftFrames)
+            {
+                if (frame != null)
+                {
+                    frame.RequiredNumber = 0;
+                }
+            }
+
+            SaveFrames();
+        }
+
+        /// <summary>
         /// 割り当て結果を読み込みます。
         /// </summary>
         private void LoadAssignments()
@@ -841,6 +862,9 @@ namespace ShiftPlanner
 
                 // 手入力分を優先して反映
                 ApplyManualAssignments(manual);
+
+                // 必要人数をリセット
+                ResetRequiredNumbers();
 
                 SetupDataGridView();
                 SaveAssignments();
