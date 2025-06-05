@@ -466,6 +466,9 @@ namespace ShiftPlanner
                 }
             }
 
+            // すべての列をソート不可に設定
+            SetColumnsNotSortable(dtShift);
+
             // 割当人数行の不足・過剰を色分け
             try
             {
@@ -536,6 +539,26 @@ namespace ShiftPlanner
             }
 
             return string.Empty;
+        }
+
+        /// <summary>
+        /// 指定したグリッドの列をすべてソート不可に設定します。
+        /// </summary>
+        /// <param name="grid">対象のDataGridView</param>
+        private static void SetColumnsNotSortable(DataGridView grid)
+        {
+            if (grid == null || grid.Columns == null)
+            {
+                return; // null 安全対策
+            }
+
+            foreach (DataGridViewColumn column in grid.Columns)
+            {
+                if (column != null)
+                {
+                    column.SortMode = DataGridViewColumnSortMode.NotSortable;
+                }
+            }
         }
 
         /// <summary>
@@ -754,6 +777,9 @@ namespace ShiftPlanner
                             break;
                     }
                 }
+
+                // 列をソート不可に設定
+                SetColumnsNotSortable(dtMembers);
             }
             catch (Exception ex)
             {
@@ -827,6 +853,9 @@ namespace ShiftPlanner
                             break;
                     }
                 }
+
+                // 列をソート不可に設定
+                SetColumnsNotSortable(dtRequests);
             }
             catch (Exception ex)
             {
