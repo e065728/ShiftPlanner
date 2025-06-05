@@ -232,6 +232,8 @@ namespace ShiftPlanner
                     {
                         assignments = (List<ShiftAssignment>)serializer.ReadObject(stream);
                     }
+                    // 読み込んだメンバーを既存の参照に置き換える
+                    ReconcileAssignmentMembers();
                 }
                 catch (Exception ex)
                 {
@@ -257,6 +259,35 @@ namespace ShiftPlanner
             catch (Exception ex)
             {
                 MessageBox.Show($"割り当て結果の保存に失敗しました: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 読み込んだ割り当てデータのメンバー参照を既存メンバーリストのものに合わせます。
+        /// </summary>
+        private void ReconcileAssignmentMembers()
+        {
+            if (assignments == null || members == null)
+            {
+                return;
+            }
+
+            foreach (var assign in assignments)
+            {
+                if (assign?.AssignedMembers == null)
+                {
+                    continue;
+                }
+
+                for (int i = 0; i < assign.AssignedMembers.Count; i++)
+                {
+                    var m = assign.AssignedMembers[i];
+                    var existing = members.FirstOrDefault(x => x.Id == m.Id);
+                    if (existing != null)
+                    {
+                        assign.AssignedMembers[i] = existing;
+                    }
+                }
             }
         }
 
@@ -359,7 +390,10 @@ namespace ShiftPlanner
                 {
                     var date = new DateTime(year, month, day);
                     var header = $"{day}({GetJapaneseDayOfWeek(date.DayOfWeek)})";
-                    var assign = assignments.FirstOrDefault(a => a.Date.Date == date && a.AssignedMembers.Contains(member));
+                    var assign = assignments.FirstOrDefault(a =>
+                        a.Date.Date == date &&
+                        a.AssignedMembers != null &&
+                        a.AssignedMembers.Any(m => m.Id == member.Id));
                     row[header] = assign != null ? assign.ShiftType : "休";
                 }
                 table.Rows.Add(row);
