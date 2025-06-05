@@ -467,6 +467,55 @@ namespace ShiftPlanner
             return string.Empty;
         }
 
+        /// <summary>
+        /// シフト表の「必要人数」行から値を取得してシフトフレームを更新します。
+        /// </summary>
+        private void ApplyRequiredNumbersFromGrid()
+        {
+            if (!(dtShift.DataSource is DataTable table))
+            {
+                return; // データテーブルが取得できない場合は何もしない
+            }
+
+            dtShift.EndEdit(); // 編集中の値を確定させる
+
+            var requiredRow = table.AsEnumerable()
+                .FirstOrDefault(r => string.Equals(r["人名"]?.ToString(), "必要人数", StringComparison.Ordinal));
+            if (requiredRow == null)
+            {
+                return; // 行が見つからない場合も処理しない
+            }
+
+            int year = dtpMonth.Value.Year;
+            int month = dtpMonth.Value.Month;
+            int daysInMonth = DateTime.DaysInMonth(year, month);
+
+            for (int day = 1; day <= daysInMonth; day++)
+            {
+                var date = new DateTime(year, month, day);
+                string header = $"{day}({GetJapaneseDayOfWeek(date.DayOfWeek)})";
+                if (!table.Columns.Contains(header))
+                {
+                    continue; // 列が存在しない場合はスキップ
+                }
+
+                int number = 0;
+                var val = requiredRow[header];
+                if (val != null && !string.IsNullOrEmpty(val.ToString()))
+                {
+                    int.TryParse(val.ToString(), out number);
+                }
+
+                var frame = shiftFrames.FirstOrDefault(f => f.Date.Date == date);
+                if (frame != null)
+                {
+                    frame.RequiredNumber = number;
+                }
+            }
+
+            SaveFrames();
+        }
+
         private void SetupMemberGrid()
         {
             // データソースを一旦解除してから設定
@@ -609,6 +658,8 @@ namespace ShiftPlanner
         {
             try
             {
+                // 必要人数グリッドの内容をシフトフレームへ反映
+                ApplyRequiredNumbersFromGrid();
 
                 assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members, shiftRequests);
 
