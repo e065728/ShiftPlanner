@@ -8,7 +8,8 @@ namespace ShiftPlanner
     /// <summary>
     /// シフト希望を入力するための簡易フォーム。
     /// </summary>
-    public class ShiftRequestForm : Form
+    // Designer で定義されているクラスと結合するため partial とする
+    public partial class ShiftRequestForm : Form
     {
         // 以下のUIコントロール定義はデザイナー部に移動しました
         private readonly List<Member> members;
