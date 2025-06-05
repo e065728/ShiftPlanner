@@ -799,9 +799,40 @@ namespace ShiftPlanner
 
         private void SetupRequestGrid()
         {
+            // データソースを一旦解除してから再設定
             dtRequests.DataSource = null;
-            dtRequests.DataSource = shiftRequests;
+            dtRequests.DataSource = shiftRequests ?? new List<ShiftRequest>();
             dtRequests.AutoGenerateColumns = true;
+
+            // 生成された列ヘッダーを日本語へ変更
+            try
+            {
+                foreach (DataGridViewColumn col in dtRequests.Columns)
+                {
+                    if (col == null || string.IsNullOrEmpty(col.Name))
+                    {
+                        continue; // null 安全対策
+                    }
+
+                    switch (col.Name)
+                    {
+                        case nameof(ShiftRequest.MemberId):
+                            col.HeaderText = "メンバーID";
+                            break;
+                        case nameof(ShiftRequest.Date):
+                            col.HeaderText = "希望日";
+                            break;
+                        case nameof(ShiftRequest.IsHolidayRequest):
+                            col.HeaderText = "休み希望";
+                            break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // ヘッダー設定失敗時もアプリが落ちないよう通知のみ
+                MessageBox.Show($"ヘッダー設定中にエラーが発生しました: {ex.Message}");
+            }
         }
 
         private void btnAddMember_Click(object sender, EventArgs e)
