@@ -86,6 +86,16 @@ namespace ShiftPlanner
             SetupDataGridView();
             SetupMemberGrid();
             SetupRequestGrid();
+
+            // グリッド編集内容を保存するイベントを設定
+            if (dtMembers != null)
+            {
+                dtMembers.CellEndEdit += (s, e) => SaveMembers();
+            }
+            if (dtRequests != null)
+            {
+                dtRequests.CellEndEdit += (s, e) => SaveRequests();
+            }
         }
 
         private void LoadMembers()
@@ -522,6 +532,128 @@ namespace ShiftPlanner
             SaveFrames();
         }
 
+        /// <summary>
+        /// グリッドで手入力されたシフト内容を取得します。
+        /// </summary>
+        private Dictionary<(int memberId, DateTime date), string?> CaptureManualAssignmentsFromGrid()
+        {
+            var result = new Dictionary<(int, DateTime), string?>();
+
+            if (!(dtShift.DataSource is DataTable table))
+            {
+                return result;
+            }
+
+            dtShift.EndEdit();
+
+            int year = dtpMonth.Value.Year;
+            int month = dtpMonth.Value.Month;
+            int daysInMonth = DateTime.DaysInMonth(year, month);
+
+            foreach (DataRow row in table.Rows)
+            {
+                var name = row["人名"]?.ToString();
+                if (string.IsNullOrEmpty(name) || name == "必要人数" || name == "割当人数")
+                {
+                    continue;
+                }
+
+                var member = members.FirstOrDefault(m => m.Name == name);
+                if (member == null)
+                {
+                    continue;
+                }
+
+                for (int day = 1; day <= daysInMonth; day++)
+                {
+                    var date = new DateTime(year, month, day);
+                    var header = $"{day}({GetJapaneseDayOfWeek(date.DayOfWeek)})";
+                    if (!table.Columns.Contains(header))
+                    {
+                        continue;
+                    }
+
+                    var val = row[header]?.ToString();
+                    result[(member.Id, date)] = string.IsNullOrWhiteSpace(val) ? "休" : val;
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 自動生成後の割り当てに手入力内容を反映します。
+        /// </summary>
+        private void ApplyManualAssignments(Dictionary<(int memberId, DateTime date), string?> manual)
+        {
+            if (manual == null || manual.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var kv in manual)
+            {
+                var key = kv.Key;
+                var shiftType = kv.Value ?? "休";
+                var member = members.FirstOrDefault(m => m.Id == key.memberId);
+                if (member == null)
+                {
+                    continue;
+                }
+
+                // その日の既存割当からメンバーを除外
+                foreach (var a in assignments.Where(a => a.Date.Date == key.date).ToList())
+                {
+                    a.AssignedMembers.RemoveAll(m => m.Id == member.Id);
+                }
+
+                if (string.IsNullOrEmpty(shiftType) || shiftType == "休")
+                {
+                    // 休み指定なので割当なし
+                    continue;
+                }
+
+                // シフトフレームを取得または作成
+                var frame = shiftFrames.FirstOrDefault(f => f.Date.Date == key.date && f.ShiftType == shiftType);
+                if (frame == null)
+                {
+                    frame = new ShiftFrame
+                    {
+                        Date = key.date,
+                        ShiftType = shiftType,
+                        ShiftStart = TimeSpan.FromHours(9),
+                        ShiftEnd = TimeSpan.FromHours(17),
+                        RequiredNumber = 1
+                    };
+                    shiftFrames.Add(frame);
+                }
+
+                // 割当を取得または作成
+                var assign = assignments.FirstOrDefault(a => a.Date.Date == key.date && a.ShiftType == shiftType);
+                if (assign == null)
+                {
+                    assign = new ShiftAssignment
+                    {
+                        Date = key.date,
+                        ShiftType = shiftType,
+                        RequiredNumber = frame.RequiredNumber,
+                        AssignedMembers = new List<Member>()
+                    };
+                    assignments.Add(assign);
+                }
+
+                if (!assign.AssignedMembers.Any(m => m.Id == member.Id))
+                {
+                    assign.AssignedMembers.Add(member);
+                }
+            }
+
+            // 不要になった割当を整理
+            assignments.RemoveAll(a => a.AssignedMembers == null || a.AssignedMembers.Count == 0);
+
+            SaveFrames();
+        }
+
         private void SetupMemberGrid()
         {
             // データソースを一旦解除してから設定
@@ -664,10 +796,17 @@ namespace ShiftPlanner
         {
             try
             {
+                // 手入力されたシフト内容を取得しておく
+                var manual = CaptureManualAssignmentsFromGrid();
+
                 // 必要人数グリッドの内容をシフトフレームへ反映
                 ApplyRequiredNumbersFromGrid();
 
+                // 自動割当を生成
                 assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members, shiftRequests);
+
+                // 手入力分を優先して反映
+                ApplyManualAssignments(manual);
 
                 SetupDataGridView();
                 SaveAssignments();
