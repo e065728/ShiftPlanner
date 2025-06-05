@@ -72,6 +72,11 @@ namespace ShiftPlanner
             {
                 dtRequests.CellEndEdit += (s, e) => SaveRequests();
             }
+            if (dtShift != null)
+            {
+                // Delete キーで選択セルをクリアするイベントを登録
+                dtShift.KeyDown += dtShift_KeyDown;
+            }
         }
 
         private void LoadMembers()
@@ -1032,6 +1037,36 @@ namespace ShiftPlanner
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// シフト表グリッドで Delete キーが押されたとき、選択セルの値をクリアします。
+        /// </summary>
+        private void dtShift_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode != Keys.Delete || dtShift == null)
+            {
+                return;
+            }
+
+            foreach (DataGridViewCell cell in dtShift.SelectedCells)
+            {
+                if (cell == null || cell.ReadOnly)
+                {
+                    continue;
+                }
+
+                // 行や列が無効な場合もスキップ
+                if (cell.RowIndex < 0 || cell.ColumnIndex < 0)
+                {
+                    continue;
+                }
+
+                cell.Value = string.Empty;
+            }
+
+            // 既定の処理を抑制
+            e.Handled = true;
         }
 
         // このメソッドの内容は MainForm.Designer.cs に移動しました。
