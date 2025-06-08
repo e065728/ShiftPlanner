@@ -87,12 +87,7 @@ namespace ShiftPlanner
                 }
             }
 
-            // メンバータブはメニューから表示するため削除
-            if (tabControl1.TabPages.Contains(tabPage2))
-            {
-                tabControl1.TabPages.Remove(tabPage2);
-            }
-
+          
             // グリッド編集内容を保存するイベントを設定
             if (dtRequests != null)
             {
@@ -475,39 +470,8 @@ namespace ShiftPlanner
             LoadFrames();
             LoadRequests();
             LoadAssignments();
-
-            if (members.Count == 0)
-            {
-                // メンバー初期データ
-                members.Add(new Member
-                {
-                    Id = 1,
-                    Name = "山田",
-                    AvailableDays = new List<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday },
-                    // デフォルトの勤務時間列は廃止
-                    WorksOnSaturday = false,
-                    WorksOnSunday = false
-                });
-                members.Add(new Member
-                {
-                    Id = 2,
-                    Name = "佐藤",
-                    AvailableDays = new List<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Wednesday },
-                    // デフォルトの勤務時間列は廃止
-                    WorksOnSaturday = false,
-                    WorksOnSunday = false
-                });
-                members.Add(new Member
-                {
-                    Id = 3,
-                    Name = "鈴木",
-                    AvailableDays = new List<DayOfWeek> { DayOfWeek.Tuesday },
-                    // デフォルトの勤務時間列は廃止
-                    WorksOnSaturday = false,
-                    WorksOnSunday = false
-                });
-            }
-
+          
+          
             // シフトフレームが無い場合でもサンプルデータは作成しない
             // 必要に応じて別画面からシフトフレームを登録してもらう
 
@@ -857,63 +821,6 @@ namespace ShiftPlanner
             SaveFrames();
         }
 
-        private void SetupMemberGrid()
-        {
-            // データソースを一旦解除してから設定
-            dtMembers.DataSource = null;
-            dtMembers.DataSource = members;
-
-            // 自動生成された列のヘッダーを日本語へ変換
-            dtMembers.AutoGenerateColumns = true;
-            try
-            {
-                foreach (DataGridViewColumn col in dtMembers.Columns)
-                {
-                    if (col == null || string.IsNullOrEmpty(col.Name))
-                    {
-                        continue; // null 安全対策
-                    }
-
-                    switch (col.Name)
-                    {
-                        case nameof(Member.Id):
-                            col.HeaderText = "ID";
-                            break;
-                        case nameof(Member.Name):
-                            col.HeaderText = "名前";
-                            break;
-                        case nameof(Member.AvailableDays):
-                            col.HeaderText = "勤務可能曜日";
-                            break;
-                        case nameof(Member.Skills):
-                            col.HeaderText = "スキル";
-                            break;
-                        case nameof(Member.DesiredHolidays):
-                            col.HeaderText = "希望休";
-                            break;
-                        case nameof(Member.Constraints):
-                            // 制約列は表示しない
-                            col.Visible = false;
-                            break;
-                        case nameof(Member.WorksOnSaturday):
-                            col.HeaderText = "土曜日";
-                            break;
-                        case nameof(Member.WorksOnSunday):
-                            col.HeaderText = "日曜日";
-                            break;
-                    }
-                }
-
-                // 列をソート不可に設定
-                DataGridViewHelper.SetColumnsNotSortable(dtMembers);
-            }
-            catch (Exception ex)
-            {
-                // ヘッダー変更に失敗してもアプリが落ちないよう通知のみ
-                MessageBox.Show($"ヘッダー設定中にエラーが発生しました: {ex.Message}");
-            }
-        }
-
         /// <summary>
         /// 分析タブの情報を更新します。
         /// </summary>
@@ -1001,24 +908,11 @@ namespace ShiftPlanner
             {
                 Id = nextId,
                 Name = "新規",
-                // 勤務開始・終了時間列は廃止
-                WorksOnSaturday = false,
-                WorksOnSunday = false
+             
             });
-            SetupMemberGrid();
+           
             SaveMembers();
         }
-
-        private void btnRemoveMember_Click(object sender, EventArgs e)
-        {
-            if (dtMembers.CurrentRow?.DataBoundItem is Member m)
-            {
-                members.Remove(m);
-                SetupMemberGrid();
-                SaveMembers();
-            }
-        }
-
 
         private void btnAddRequest_Click(object sender, EventArgs e)
         {
