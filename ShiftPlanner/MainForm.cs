@@ -74,7 +74,6 @@ namespace ShiftPlanner
             JapaneseHolidayHelper.SetCustomHolidays(customHolidays);
 
             InitializeData();
-            SetupDataGridView();
             SetupRequestGrid();
             UpdateRequestSummary();
 
@@ -92,11 +91,6 @@ namespace ShiftPlanner
             if (dtRequests != null)
             {
                 dtRequests.CellEndEdit += DtRequests_CellEndEdit;
-            }
-            if (dtShift != null)
-            {
-                // Delete キーで選択セルをクリアするイベントを登録
-                dtShift.KeyDown += dtShift_KeyDown;
             }
         }
 
@@ -361,35 +355,7 @@ namespace ShiftPlanner
             SaveFrames();
         }
 
-        /// <summary>
-        /// 勤怠時間マスターの設定をシフトフレームへ適用します。
-        /// </summary>
-        private void ApplyShiftTimesFromMaster()
-        {
-            if (shiftFrames == null || shiftTimes == null)
-            {
-                return; // nullチェック
-            }
 
-            foreach (var frame in shiftFrames)
-            {
-                if (frame == null || string.IsNullOrWhiteSpace(frame.ShiftType))
-                {
-                    continue;
-                }
-
-                var master = shiftTimes.FirstOrDefault(t =>
-                    t != null && string.Equals(t.Name, frame.ShiftType, StringComparison.OrdinalIgnoreCase));
-
-                if (master != null)
-                {
-                    frame.ShiftStart = master.Start;
-                    frame.ShiftEnd = master.End;
-                }
-            }
-
-            SaveFrames();
-        }
 
         /// <summary>
         /// 割り当て結果を読み込みます。
@@ -484,137 +450,6 @@ namespace ShiftPlanner
             }
         }
 
-        private void SetupDataGridView()
-        {
-            dtShift.DataSource = null;
-
-            int year = dtpMonth.Value.Year;
-            int month = dtpMonth.Value.Month;
-            int daysInMonth = DateTime.DaysInMonth(year, month);
-
-            var table = new DataTable();
-            table.Columns.Add("人名");
-            for (int day = 1; day <= daysInMonth; day++)
-            {
-                var date = new DateTime(year, month, day);
-                var header = $"{day}({GetJapaneseDayOfWeek(date.DayOfWeek)})";
-                table.Columns.Add(header);
-            }
-
-            foreach (var member in members)
-            {
-                var row = table.NewRow();
-                row["人名"] = member.Name;
-                for (int day = 1; day <= daysInMonth; day++)
-                {
-                    var date = new DateTime(year, month, day);
-                    var header = $"{day}({GetJapaneseDayOfWeek(date.DayOfWeek)})";
-                    var assign = assignments.FirstOrDefault(a =>
-                        a.Date.Date == date &&
-                        a.AssignedMembers != null &&
-                        a.AssignedMembers.Any(m => m.Id == member.Id));
-                    row[header] = assign != null ? assign.ShiftType : "休";
-                }
-                table.Rows.Add(row);
-            }
-
-            var requiredRow = table.NewRow();
-            requiredRow["人名"] = "必要人数";
-            for (int day = 1; day <= daysInMonth; day++)
-            {
-                var date = new DateTime(year, month, day);
-                var header = $"{day}({GetJapaneseDayOfWeek(date.DayOfWeek)})";
-                var frame = shiftFrames.FirstOrDefault(f => f.Date.Date == date);
-                requiredRow[header] = frame?.RequiredNumber ?? 0;
-            }
-            table.Rows.Add(requiredRow);
-
-            var assignedRow = table.NewRow();
-            assignedRow["人名"] = "割当人数";
-            for (int day = 1; day <= daysInMonth; day++)
-            {
-                var date = new DateTime(year, month, day);
-                var header = $"{day}({GetJapaneseDayOfWeek(date.DayOfWeek)})";
-                var count = assignments.Where(a => a.Date.Date == date).Sum(a => a.AssignedMembers.Count);
-                assignedRow[header] = count;
-            }
-            table.Rows.Add(assignedRow);
-
-            dtShift.AutoGenerateColumns = true;
-            dtShift.DataSource = table;
-            dtShift.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
-            dtShift.ColumnHeadersDefaultCellStyle.WrapMode = DataGridViewTriState.False;
-
-            for (int day = 1; day <= daysInMonth; day++)
-            {
-                var date = new DateTime(year, month, day);
-                var header = $"{day}({GetJapaneseDayOfWeek(date.DayOfWeek)})";
-                var col = dtShift.Columns[header];
-                if (col != null)
-                {
-                    col.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
-                    col.HeaderCell.Style.WrapMode = DataGridViewTriState.False;
-                    col.HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleCenter;
-                    col.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-                    col.Width = 40;
-                    // 土日または祝日は背景色を変更
-                    if (date.DayOfWeek == DayOfWeek.Saturday ||
-                        date.DayOfWeek == DayOfWeek.Sunday ||
-                        JapaneseHolidayHelper.IsHoliday(date))
-                    {
-                        col.DefaultCellStyle.BackColor = Color.LightYellow;
-                    }
-                }
-            }
-
-            // すべての列をソート不可に設定
-            DataGridViewHelper.SetColumnsNotSortable(dtShift);
-
-            // 割当人数行の不足・過剰を色分け
-            try
-            {
-                int assignedRowIndex = table.Rows.IndexOf(assignedRow);
-                if (assignedRowIndex >= 0 && assignedRowIndex < dtShift.Rows.Count)
-                {
-                    for (int day = 1; day <= daysInMonth; day++)
-                    {
-                        var date = new DateTime(year, month, day);
-                        var header = $"{day}({GetJapaneseDayOfWeek(date.DayOfWeek)})";
-                        var col = dtShift.Columns[header];
-                        if (col == null)
-                        {
-                            continue;
-                        }
-
-                        var cell = dtShift.Rows[assignedRowIndex].Cells[col.Index];
-                        var style = new DataGridViewCellStyle(cell.Style);
-
-                        var assign = assignments.FirstOrDefault(a => a.Date.Date == date);
-                        if (assign != null)
-                        {
-                            // 必要人数と割当人数が一致する場合は青、
-                            // 一致しない場合は赤の背景色にする
-                            if (assign.AssignedMembers.Count == assign.RequiredNumber)
-                            {
-                                style.BackColor = Color.LightBlue;
-                            }
-                            else
-                            {
-                                style.BackColor = Color.LightCoral;
-                            }
-                        }
-
-                        cell.Style = style;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"セルの着色中にエラーが発生しました: {ex.Message}");
-            }
-
-            // 自動リサイズは行わず固定幅を維持
-        }
 
         /// <summary>
         /// 指定した曜日を日本語表記で返します。
@@ -650,176 +485,9 @@ namespace ShiftPlanner
         /// <param name="grid">対象のDataGridView</param>
         /// シフト表の「必要人数」行から値を取得してシフトフレームを更新します。
         /// </summary>
-        private void ApplyRequiredNumbersFromGrid()
-        {
-            if (!(dtShift.DataSource is DataTable table))
-            {
-                return; // データテーブルが取得できない場合は何もしない
-            }
 
-            dtShift.EndEdit(); // 編集中の値を確定させる
 
-            var requiredRow = table.AsEnumerable()
-                .FirstOrDefault(r => string.Equals(r["人名"]?.ToString(), "必要人数", StringComparison.Ordinal));
-            if (requiredRow == null)
-            {
-                return; // 行が見つからない場合も処理しない
-            }
 
-            int year = dtpMonth.Value.Year;
-            int month = dtpMonth.Value.Month;
-            int daysInMonth = DateTime.DaysInMonth(year, month);
-
-            for (int day = 1; day <= daysInMonth; day++)
-            {
-                var date = new DateTime(year, month, day);
-                string header = $"{day}({GetJapaneseDayOfWeek(date.DayOfWeek)})";
-                if (!table.Columns.Contains(header))
-                {
-                    continue; // 列が存在しない場合はスキップ
-                }
-
-                int number = 0;
-                var val = requiredRow[header];
-                if (val != null && !string.IsNullOrEmpty(val.ToString()))
-                {
-                    int.TryParse(val.ToString(), out number);
-                }
-
-                var frame = shiftFrames.FirstOrDefault(f => f.Date.Date == date);
-                if (frame != null)
-                {
-                    frame.RequiredNumber = number;
-                }
-            }
-
-            SaveFrames();
-        }
-
-        /// <summary>
-        /// グリッドで手入力されたシフト内容を取得します。
-        /// </summary>
-        private Dictionary<(int memberId, DateTime date), string?> CaptureManualAssignmentsFromGrid()
-        {
-            var result = new Dictionary<(int, DateTime), string?>();
-
-            if (!(dtShift.DataSource is DataTable table))
-            {
-                return result;
-            }
-
-            dtShift.EndEdit();
-
-            int year = dtpMonth.Value.Year;
-            int month = dtpMonth.Value.Month;
-            int daysInMonth = DateTime.DaysInMonth(year, month);
-
-            foreach (DataRow row in table.Rows)
-            {
-                var name = row["人名"]?.ToString();
-                if (string.IsNullOrEmpty(name) || name == "必要人数" || name == "割当人数")
-                {
-                    continue;
-                }
-
-                var member = members.FirstOrDefault(m => m.Name == name);
-                if (member == null)
-                {
-                    continue;
-                }
-
-                for (int day = 1; day <= daysInMonth; day++)
-                {
-                    var date = new DateTime(year, month, day);
-                    var header = $"{day}({GetJapaneseDayOfWeek(date.DayOfWeek)})";
-                    if (!table.Columns.Contains(header))
-                    {
-                        continue;
-                    }
-
-                    var val = row[header]?.ToString();
-                    result[(member.Id, date)] = string.IsNullOrWhiteSpace(val) ? "休" : val;
-                }
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// 自動生成後の割り当てに手入力内容を反映します。
-        /// </summary>
-        private void ApplyManualAssignments(Dictionary<(int memberId, DateTime date), string?> manual)
-        {
-            if (manual == null || manual.Count == 0)
-            {
-                return;
-            }
-
-            foreach (var kv in manual)
-            {
-                var key = kv.Key;
-                var shiftType = kv.Value ?? "休";
-                var member = members.FirstOrDefault(m => m.Id == key.memberId);
-                if (member == null)
-                {
-                    continue;
-                }
-
-                // その日の既存割当からメンバーを除外
-                foreach (var a in assignments.Where(a => a.Date.Date == key.date).ToList())
-                {
-                    a.AssignedMembers.RemoveAll(m => m.Id == member.Id);
-                }
-
-                if (string.IsNullOrEmpty(shiftType) || shiftType == "休")
-                {
-                    // 休み指定なので割当なし
-                    continue;
-                }
-
-                // シフトフレームを取得または作成
-                var frame = shiftFrames.FirstOrDefault(f => f.Date.Date == key.date && f.ShiftType == shiftType);
-                if (frame == null)
-                {
-                    var master = shiftTimes?.FirstOrDefault(t =>
-                        t != null && string.Equals(t.Name, shiftType, StringComparison.OrdinalIgnoreCase));
-
-                    frame = new ShiftFrame
-                    {
-                        Date = key.date,
-                        ShiftType = shiftType,
-                        ShiftStart = master?.Start ?? TimeSpan.Zero,
-                        ShiftEnd = master?.End ?? TimeSpan.Zero
-                        // RequiredNumber は初期値 0 のままとする
-                    };
-                    shiftFrames.Add(frame);
-                }
-
-                // 割当を取得または作成
-                var assign = assignments.FirstOrDefault(a => a.Date.Date == key.date && a.ShiftType == shiftType);
-                if (assign == null)
-                {
-                    assign = new ShiftAssignment
-                    {
-                        Date = key.date,
-                        ShiftType = shiftType,
-                        RequiredNumber = frame.RequiredNumber,
-                        AssignedMembers = new List<Member>()
-                    };
-                    assignments.Add(assign);
-                }
-
-                if (!assign.AssignedMembers.Any(m => m.Id == member.Id))
-                {
-                    assign.AssignedMembers.Add(member);
-                }
-            }
-
-            // 不要になった割当を整理
-            assignments.RemoveAll(a => a.AssignedMembers == null || a.AssignedMembers.Count == 0);
-
-            SaveFrames();
-        }
 
         /// <summary>
         /// 分析タブの情報を更新します。
@@ -952,41 +620,6 @@ namespace ShiftPlanner
             }
         }
 
-        private void btnRefreshShift_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                // 手入力されたシフト内容を取得しておく
-                var manual = CaptureManualAssignmentsFromGrid();
-
-                // 必要人数グリッドの内容をシフトフレームへ反映
-                ApplyRequiredNumbersFromGrid();
-
-                // シフト時間マスターの内容をシフトフレームへ反映
-                ApplyShiftTimesFromMaster();
-
-                // 自動割当を生成
-                assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members, shiftRequests);
-
-                // 手入力分を優先して反映
-                ApplyManualAssignments(manual);
-
-                // 必要人数は保持したままにする
-
-                SetupDataGridView();
-                SaveAssignments();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"シフト更新中にエラーが発生しました: {ex.Message}");
-            }
-        }
-
-        private void dtpMonth_ValueChanged(object sender, EventArgs e)
-        {
-            SetupDataGridView();
-        }
-
         private void dtp分析月_ValueChanged(object sender, EventArgs e)
         {
             UpdateAnalysis();
@@ -1003,21 +636,7 @@ namespace ShiftPlanner
             base.OnFormClosing(e);
         }
 
-        /// <summary>
-        /// CSV 出力メニューまたはボタンのクリックイベント
-        /// </summary>
-        private void btnExportCsv_Click(object sender, EventArgs e)
-        {
-            ExportCsv();
-        }
 
-        /// <summary>
-        /// PDF 出力メニューまたはボタンのクリックイベント
-        /// </summary>
-        private void btnExportPdf_Click(object sender, EventArgs e)
-        {
-            ExportPdf();
-        }
 
         /// <summary>
         /// 分析CSV出力メニューのクリックイベント
@@ -1038,7 +657,6 @@ namespace ShiftPlanner
                 {
                     SaveHolidays();
                     JapaneseHolidayHelper.SetCustomHolidays(customHolidays);
-                    SetupDataGridView();
                 }
             }
         }
@@ -1088,57 +706,7 @@ namespace ShiftPlanner
             }
         }
 
-        /// <summary>
-        /// CSV を保存します。
-        /// </summary>
-        private void ExportCsv()
-        {
-            using (var dialog = new SaveFileDialog())
-            {
-                dialog.Filter = "CSVファイル (*.csv)|*.csv|すべてのファイル (*.*)|*.*";
-                dialog.Title = "CSVの保存先を選択してください";
 
-                if (dialog.ShowDialog() == DialogResult.OK)
-                {
-                    try
-                    {
-                        var frames = shiftFrames ?? new List<ShiftFrame>();
-                        ShiftExporter.ExportToCsv(frames, dialog.FileName);
-                        MessageBox.Show("CSV出力が完了しました。", "情報");
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"CSV出力に失敗しました: {ex.Message}");
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// PDF を保存します。
-        /// </summary>
-        private void ExportPdf()
-        {
-            using (var dialog = new SaveFileDialog())
-            {
-                dialog.Filter = "PDFファイル (*.pdf)|*.pdf|すべてのファイル (*.*)|*.*";
-                dialog.Title = "PDFの保存先を選択してください";
-
-                if (dialog.ShowDialog() == DialogResult.OK)
-                {
-                    try
-                    {
-                        var frames = shiftFrames ?? new List<ShiftFrame>();
-                        var message = ShiftExporter.ExportToPdf(frames, dialog.FileName);
-                        MessageBox.Show(message, "情報");
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"PDF出力に失敗しました: {ex.Message}");
-                    }
-                }
-            }
-        }
 
         /// <summary>
         /// 分析結果をCSVとして保存します。
@@ -1168,35 +736,6 @@ namespace ShiftPlanner
             }
         }
 
-        /// <summary>
-        /// シフト表グリッドで Delete キーが押されたとき、選択セルの値をクリアします。
-        /// </summary>
-        private void dtShift_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.KeyCode != Keys.Delete || dtShift == null)
-            {
-                return;
-            }
-
-            foreach (DataGridViewCell cell in dtShift.SelectedCells)
-            {
-                if (cell == null || cell.ReadOnly)
-                {
-                    continue;
-                }
-
-                // 行や列が無効な場合もスキップ
-                if (cell.RowIndex < 0 || cell.ColumnIndex < 0)
-                {
-                    continue;
-                }
-
-                cell.Value = string.Empty;
-            }
-
-            // 既定の処理を抑制
-            e.Handled = true;
-        }
 
         private void DtRequests_CellEndEdit(object sender, DataGridViewCellEventArgs e)
         {
