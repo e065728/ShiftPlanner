@@ -604,7 +604,7 @@ namespace ShiftPlanner
             }
 
             // すべての列をソート不可に設定
-            SetColumnsNotSortable(dtShift);
+            DataGridViewHelper.SetColumnsNotSortable(dtShift);
 
             // 割当人数行の不足・過剰を色分け
             try
@@ -684,23 +684,6 @@ namespace ShiftPlanner
         /// 指定したグリッドの列をすべてソート不可に設定します。
         /// </summary>
         /// <param name="grid">対象のDataGridView</param>
-        private static void SetColumnsNotSortable(DataGridView grid)
-        {
-            if (grid == null || grid.Columns == null)
-            {
-                return; // null 安全対策
-            }
-
-            foreach (DataGridViewColumn column in grid.Columns)
-            {
-                if (column != null)
-                {
-                    column.SortMode = DataGridViewColumnSortMode.NotSortable;
-                }
-            }
-        }
-
-        /// <summary>
         /// シフト表の「必要人数」行から値を取得してシフトフレームを更新します。
         /// </summary>
         private void ApplyRequiredNumbersFromGrid()
@@ -922,7 +905,7 @@ namespace ShiftPlanner
                 }
 
                 // 列をソート不可に設定
-                SetColumnsNotSortable(dtMembers);
+                DataGridViewHelper.SetColumnsNotSortable(dtMembers);
             }
             catch (Exception ex)
             {
@@ -1001,7 +984,7 @@ namespace ShiftPlanner
                 dtRequests.DataSource = shiftRequests ?? new List<ShiftRequest>();
 
                 // 列をソート不可に設定
-                SetColumnsNotSortable(dtRequests);
+                DataGridViewHelper.SetColumnsNotSortable(dtRequests);
             }
             catch (Exception ex)
             {
@@ -1371,7 +1354,7 @@ namespace ShiftPlanner
                 }).ToList();
 
                 dtRequestSummary.DataSource = list;
-                SetColumnsNotSortable(dtRequestSummary);
+                DataGridViewHelper.SetColumnsNotSortable(dtRequestSummary);
             }
             catch (Exception ex)
             {

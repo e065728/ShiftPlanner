@@ -139,7 +139,7 @@ namespace ShiftPlanner
             dtMembers.CellFormatting += DtMembers_CellFormatting;
             dtMembers.CellParsing += DtMembers_CellParsing;
             dtMembers.CurrentCellDirtyStateChanged += DtMembers_CurrentCellDirtyStateChanged;
-            SetColumnsNotSortable(dtMembers);
+            DataGridViewHelper.SetColumnsNotSortable(dtMembers);
         }
 
         private void DtMembers_CurrentCellDirtyStateChanged(object? sender, EventArgs e)
@@ -211,20 +211,5 @@ namespace ShiftPlanner
 
         /// <summary>
         /// 指定グリッドの列をすべてソート不可にします。
-        /// </summary>
-        private static void SetColumnsNotSortable(DataGridView grid)
-        {
-            if (grid == null || grid.Columns == null)
-            {
-                return;
-            }
-            foreach (DataGridViewColumn column in grid.Columns)
-            {
-                if (column != null)
-                {
-                    column.SortMode = DataGridViewColumnSortMode.NotSortable;
-                }
-            }
-        }
     }
 }
