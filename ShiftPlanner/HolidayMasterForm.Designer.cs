@@ -11,6 +11,8 @@ namespace ShiftPlanner
         private Button btnRemove;
         private Button btnOk;
         private Button btnCancel;
+        private Label lblYear;
+        private NumericUpDown nudYear;
 
         protected override void Dispose(bool disposing)
         {
@@ -28,6 +30,8 @@ namespace ShiftPlanner
             this.btnRemove = new Button();
             this.btnOk = new Button();
             this.btnCancel = new Button();
+            this.lblYear = new Label();
+            this.nudYear = new NumericUpDown();
             this.SuspendLayout();
 
             // dtHolidays
@@ -37,6 +41,21 @@ namespace ShiftPlanner
             this.dtHolidays.Name = "dtHolidays";
             this.dtHolidays.RowTemplate.Height = 21;
             this.dtHolidays.Size = new System.Drawing.Size(360, 208);
+
+            // lblYear
+            this.lblYear.AutoSize = true;
+            this.lblYear.Location = new System.Drawing.Point(174, 17);
+            this.lblYear.Name = "lblYear";
+            this.lblYear.Size = new System.Drawing.Size(29, 12);
+            this.lblYear.Text = "年";
+
+            // nudYear
+            this.nudYear.Location = new System.Drawing.Point(209, 13);
+            this.nudYear.Maximum = new decimal(new int[] { 3000, 0, 0, 0 });
+            this.nudYear.Minimum = new decimal(new int[] { 2000, 0, 0, 0 });
+            this.nudYear.Name = "nudYear";
+            this.nudYear.Size = new System.Drawing.Size(70, 19);
+            this.nudYear.ValueChanged += new EventHandler(this.NudYear_ValueChanged);
 
             // btnAdd
             this.btnAdd.Location = new System.Drawing.Point(12, 12);
@@ -77,6 +96,8 @@ namespace ShiftPlanner
             this.Controls.Add(this.dtHolidays);
             this.Controls.Add(this.btnAdd);
             this.Controls.Add(this.btnRemove);
+            this.Controls.Add(this.lblYear);
+            this.Controls.Add(this.nudYear);
             this.Controls.Add(this.btnOk);
             this.Controls.Add(this.btnCancel);
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
