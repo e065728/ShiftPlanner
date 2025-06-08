@@ -27,6 +27,7 @@ namespace ShiftPlanner
         private readonly string frameFilePath;
         private readonly string assignmentFilePath;
         private readonly string holidayFilePath;
+        private readonly string skillGroupFilePath;
         private List<Member> members = new List<Member>();
         private List<ShiftFrame> shiftFrames = new List<ShiftFrame>();
         private List<ShiftAssignment> assignments = new List<ShiftAssignment>();
@@ -37,6 +38,7 @@ namespace ShiftPlanner
         private List<ShiftRequest> shiftRequests = new List<ShiftRequest>();
         private int holidayLimit = 3; // 休み希望上限
         private List<CustomHoliday> customHolidays = new List<CustomHoliday>();
+        private List<SkillGroup> skillGroups = new List<SkillGroup>();
 
         public MainForm()
         {
@@ -45,6 +47,7 @@ namespace ShiftPlanner
             frameFilePath = Path.Combine(dataDir, "shiftFrames.json");
             assignmentFilePath = Path.Combine(dataDir, "shiftAssignments.json");
             holidayFilePath = Path.Combine(dataDir, "customHolidays.json");
+            skillGroupFilePath = Path.Combine(dataDir, "skillGroups.json");
 
             InitializeComponent(); // これだけでOK
 
@@ -63,6 +66,7 @@ namespace ShiftPlanner
             }
 
             LoadHolidays();
+            LoadSkillGroups();
             JapaneseHolidayHelper.SetCustomHolidays(customHolidays);
 
             InitializeData();
@@ -170,6 +174,46 @@ namespace ShiftPlanner
             catch (Exception ex)
             {
                 MessageBox.Show($"祝日情報の保存に失敗しました: {ex.Message}");
+            }
+        }
+
+        private void LoadSkillGroups()
+        {
+            if (File.Exists(skillGroupFilePath))
+            {
+                try
+                {
+                    var serializer = new DataContractJsonSerializer(typeof(List<SkillGroup>));
+                    using (var stream = File.OpenRead(skillGroupFilePath))
+                    {
+                        var list = serializer.ReadObject(stream) as List<SkillGroup>;
+                        if (list != null)
+                        {
+                            skillGroups = list;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"スキルグループ情報の読み込みに失敗しました: {ex.Message}");
+                    skillGroups = new List<SkillGroup>();
+                }
+            }
+        }
+
+        private void SaveSkillGroups()
+        {
+            try
+            {
+                var serializer = new DataContractJsonSerializer(typeof(List<SkillGroup>));
+                using (var stream = File.Create(skillGroupFilePath))
+                {
+                    serializer.WriteObject(stream, skillGroups);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"スキルグループ情報の保存に失敗しました: {ex.Message}");
             }
         }
 
@@ -1034,6 +1078,7 @@ namespace ShiftPlanner
             SaveFrames();
             SaveAssignments();
             SaveHolidays();
+            SaveSkillGroups();
             base.OnFormClosing(e);
         }
 
@@ -1082,12 +1127,27 @@ namespace ShiftPlanner
         /// </summary>
         private void menuMemberMaster_Click(object sender, EventArgs e)
         {
-            using (var form = new MemberMasterForm(members))
+            using (var form = new MemberMasterForm(members, skillGroups))
             {
                 if (form.ShowDialog() == DialogResult.OK)
                 {
                     // 編集結果はそのまま反映されるため再表示のみ
                     SaveMembers();
+                }
+            }
+        }
+
+        /// <summary>
+        /// スキルグループマスター編集メニューのクリックイベント
+        /// </summary>
+        private void menuSkillGroupMaster_Click(object sender, EventArgs e)
+        {
+            using (var form = new SkillGroupMasterForm(skillGroups))
+            {
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    skillGroups = form.SkillGroups;
+                    SaveSkillGroups();
                 }
             }
         }
