@@ -92,6 +92,12 @@
     <Compile Include="HolidayMasterForm.Designer.cs">
       <DependentUpon>HolidayMasterForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="MemberMasterForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MemberMasterForm.Designer.cs">
+      <DependentUpon>MemberMasterForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="ShiftConstraints.cs" />
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>

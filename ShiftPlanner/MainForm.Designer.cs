@@ -34,6 +34,7 @@ namespace ShiftPlanner
         private ToolStripMenuItem menuExportPdf;
         private ToolStripMenuItem menuMaster;
         private ToolStripMenuItem menuHolidayMaster;
+        private ToolStripMenuItem menuMemberMaster;
         private DateTimePicker dtp分析月;
         private Label lbl総労働時間;
         private Chart chartシフト分布;
@@ -73,6 +74,7 @@ namespace ShiftPlanner
             this.menuExportPdf = new System.Windows.Forms.ToolStripMenuItem();
             this.menuMaster = new System.Windows.Forms.ToolStripMenuItem();
             this.menuHolidayMaster = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuMemberMaster = new System.Windows.Forms.ToolStripMenuItem();
             this.dtp分析月 = new System.Windows.Forms.DateTimePicker();
             this.lbl総労働時間 = new System.Windows.Forms.Label();
             this.chartシフト分布 = new System.Windows.Forms.DataVisualization.Charting.Chart();
@@ -133,10 +135,11 @@ namespace ShiftPlanner
             // menuMaster
             //
             // nullチェックを行い、メニュー項目が作成されている場合のみ追加
-            if (this.menuMaster != null && this.menuHolidayMaster != null)
+            if (this.menuMaster != null && this.menuHolidayMaster != null && this.menuMemberMaster != null)
             {
                 this.menuMaster.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-                this.menuHolidayMaster});
+                this.menuHolidayMaster,
+                this.menuMemberMaster});
             }
             this.menuMaster.Name = "menuMaster";
             this.menuMaster.Size = new System.Drawing.Size(61, 20);
@@ -148,9 +151,16 @@ namespace ShiftPlanner
             this.menuHolidayMaster.Size = new System.Drawing.Size(138, 22);
             this.menuHolidayMaster.Text = "祝日マスター";
             this.menuHolidayMaster.Click += new System.EventHandler(this.menuHolidayMaster_Click);
-            // 
+
+            // menuMemberMaster
+            //
+            this.menuMemberMaster.Name = "menuMemberMaster";
+            this.menuMemberMaster.Size = new System.Drawing.Size(138, 22);
+            this.menuMemberMaster.Text = "メンバーマスター";
+            this.menuMemberMaster.Click += new System.EventHandler(this.menuMemberMaster_Click);
+            //
             // tabControl1
-            // 
+            //
             this.tabControl1.Controls.Add(this.tabPage1);
             this.tabControl1.Controls.Add(this.tabPage2);
             this.tabControl1.Controls.Add(this.tabPage3);

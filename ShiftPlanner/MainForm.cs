@@ -66,14 +66,15 @@ namespace ShiftPlanner
 
             InitializeData();
             SetupDataGridView();
-            SetupMemberGrid();
             SetupRequestGrid();
 
-            // グリッド編集内容を保存するイベントを設定
-            if (dtMembers != null)
+            // メンバータブはメニューから表示するため削除
+            if (tabControl1.TabPages.Contains(tabPage2))
             {
-                dtMembers.CellEndEdit += (s, e) => SaveMembers();
+                tabControl1.TabPages.Remove(tabPage2);
             }
+
+            // グリッド編集内容を保存するイベントを設定
             if (dtRequests != null)
             {
                 dtRequests.CellEndEdit += (s, e) => SaveRequests();
@@ -868,42 +869,44 @@ namespace ShiftPlanner
 
         private void SetupRequestGrid()
         {
-            // データソースを一旦解除してから再設定
-            dtRequests.DataSource = null;
-            dtRequests.DataSource = shiftRequests ?? new List<ShiftRequest>();
-            dtRequests.AutoGenerateColumns = true;
-
-            // 生成された列ヘッダーを日本語へ変更
             try
             {
-                foreach (DataGridViewColumn col in dtRequests.Columns)
-                {
-                    if (col == null || string.IsNullOrEmpty(col.Name))
-                    {
-                        continue; // null 安全対策
-                    }
+                // データソースを一旦解除してから再設定
+                dtRequests.DataSource = null;
+                dtRequests.AutoGenerateColumns = false;
+                dtRequests.Columns.Clear();
 
-                    switch (col.Name)
-                    {
-                        case nameof(ShiftRequest.MemberId):
-                            col.HeaderText = "メンバーID";
-                            break;
-                        case nameof(ShiftRequest.Date):
-                            col.HeaderText = "希望日";
-                            break;
-                        case nameof(ShiftRequest.IsHolidayRequest):
-                            col.HeaderText = "休み希望";
-                            break;
-                    }
-                }
+                // メンバー列は名前を表示するコンボボックスにする
+                var colMember = new DataGridViewComboBoxColumn
+                {
+                    DataPropertyName = nameof(ShiftRequest.MemberId),
+                    HeaderText = "メンバー",
+                    DataSource = members,
+                    DisplayMember = nameof(Member.Name),
+                    ValueMember = nameof(Member.Id)
+                };
+
+                var colDate = new DataGridViewTextBoxColumn
+                {
+                    DataPropertyName = nameof(ShiftRequest.Date),
+                    HeaderText = "希望日"
+                };
+
+                var colHoliday = new DataGridViewCheckBoxColumn
+                {
+                    DataPropertyName = nameof(ShiftRequest.IsHolidayRequest),
+                    HeaderText = "休み希望"
+                };
+
+                dtRequests.Columns.AddRange(new DataGridViewColumn[] { colMember, colDate, colHoliday });
+                dtRequests.DataSource = shiftRequests ?? new List<ShiftRequest>();
 
                 // 列をソート不可に設定
                 SetColumnsNotSortable(dtRequests);
             }
             catch (Exception ex)
             {
-                // ヘッダー設定失敗時もアプリが落ちないよう通知のみ
-                MessageBox.Show($"ヘッダー設定中にエラーが発生しました: {ex.Message}");
+                MessageBox.Show($"グリッド設定中にエラーが発生しました: {ex.Message}");
             }
         }
 
@@ -1044,6 +1047,21 @@ namespace ShiftPlanner
                     SaveHolidays();
                     JapaneseHolidayHelper.SetCustomHolidays(customHolidays);
                     SetupDataGridView();
+                }
+            }
+        }
+
+        /// <summary>
+        /// メンバーマスター編集メニューのクリックイベント
+        /// </summary>
+        private void menuMemberMaster_Click(object sender, EventArgs e)
+        {
+            using (var form = new MemberMasterForm(members))
+            {
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    // 編集結果はそのまま反映されるため再表示のみ
+                    SaveMembers();
                 }
             }
         }
