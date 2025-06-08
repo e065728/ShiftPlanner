@@ -48,11 +48,6 @@ namespace ShiftPlanner
             base.Dispose(disposing);
         }
 
-        /// <summary>
-        /// フォームのコントロールを初期化します。
-        /// </summary>
-        private void InitializeComponent()
-        {
         private void InitializeComponent()
         {
             this.tabControl1 = new System.Windows.Forms.TabControl();
