@@ -10,8 +10,8 @@ namespace ShiftPlanner
         /// シフト枠に必要な人数を満たすようメンバーを割り当てます。
         /// </summary>
         /// <remarks>
-        /// 勤務可能日の条件を満たすメンバーが不足している場合、
-        /// 全メンバーをローテーションして割り当てます。
+        /// 勤務可能日の条件を満たすメンバーが不足している場合は、
+        /// 全メンバーからランダムに選択して割り当てます。
         /// </remarks>
         public static List<ShiftAssignment> GenerateBaseShift(
             List<ShiftFrame> frames,
@@ -24,7 +24,8 @@ namespace ShiftPlanner
                 return assignments; // nullチェック
             }
 
-            int rotationIndex = 0; // メンバー選択用インデックス
+            // ランダム選択用のインスタンス
+            var random = new Random();
 
             foreach (var frame in frames.OrderBy(f => f.Date))
             {
@@ -63,6 +64,7 @@ namespace ShiftPlanner
 
                 var assigned = new List<Member>();
 
+                // 希望者を優先的に割り当て
                 foreach (var m in priorityMembers)
                 {
                     if (assigned.Count >= frame.RequiredNumber)
@@ -72,13 +74,19 @@ namespace ShiftPlanner
                     assigned.Add(m);
                 }
 
-                for (int i = 0; assigned.Count < frame.RequiredNumber && others.Count > 0 && i < others.Count; i++)
+                // 残りの枠はランダムに選択
+                if (others.Count > 0)
                 {
-                    var member = others[(rotationIndex + i) % others.Count];
-                    assigned.Add(member);
+                    var shuffled = others.OrderBy(_ => random.Next()).ToList();
+                    foreach (var m in shuffled)
+                    {
+                        if (assigned.Count >= frame.RequiredNumber)
+                        {
+                            break;
+                        }
+                        assigned.Add(m);
+                    }
                 }
-
-                rotationIndex++;
 
                 assignments.Add(new ShiftAssignment
                 {

@@ -627,13 +627,15 @@ namespace ShiftPlanner
                         var assign = assignments.FirstOrDefault(a => a.Date.Date == date);
                         if (assign != null)
                         {
-                            if (assign.Shortage)
+                            // 必要人数と割当人数が一致する場合は青、
+                            // 一致しない場合は赤の背景色にする
+                            if (assign.AssignedMembers.Count == assign.RequiredNumber)
                             {
-                                style.BackColor = Color.MistyRose;      // 不足時は薄い赤
+                                style.BackColor = Color.LightBlue;
                             }
-                            else if (assign.Excess)
+                            else
                             {
-                                style.BackColor = Color.LightBlue;      // 過剰時は薄い青
+                                style.BackColor = Color.LightCoral;
                             }
                         }
 
@@ -1093,8 +1095,7 @@ namespace ShiftPlanner
                 // 手入力分を優先して反映
                 ApplyManualAssignments(manual);
 
-                // 必要人数をリセット
-                ResetRequiredNumbers();
+                // 必要人数は保持したままにする
 
                 SetupDataGridView();
                 SaveAssignments();
