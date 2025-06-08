@@ -937,7 +937,8 @@ namespace ShiftPlanner
 
         private void btnAddRequest_Click(object sender, EventArgs e)
         {
-            using (var form = new ShiftRequestForm(members))
+            // 休み希望をデフォルトでチェックした状態でフォームを表示
+            using (var form = new ShiftRequestForm(members, true))
             {
                 if (form.ShowDialog() == DialogResult.OK && form.ShiftRequest != null)
                 {
