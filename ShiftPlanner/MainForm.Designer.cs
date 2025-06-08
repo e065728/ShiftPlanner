@@ -78,6 +78,7 @@ namespace ShiftPlanner
             this.menuMaster = new System.Windows.Forms.ToolStripMenuItem();
             this.menuHolidayMaster = new System.Windows.Forms.ToolStripMenuItem();
             this.menuMemberMaster = new System.Windows.Forms.ToolStripMenuItem();
+            this.dtRequestSummary = new System.Windows.Forms.DataGridView();
             this.dtp分析月 = new System.Windows.Forms.DateTimePicker();
             this.lbl総労働時間 = new System.Windows.Forms.Label();
             this.chartシフト分布 = new System.Windows.Forms.DataVisualization.Charting.Chart();
@@ -91,13 +92,10 @@ namespace ShiftPlanner
 
             // menuStrip1
             //
-            // nullチェックを行い、メニュー項目が作成されている場合のみ追加
-            if (this.menuStrip1 != null && this.menuFile != null && this.menuMaster != null)
-            {
-                this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-                this.menuFile,
-                this.menuMaster});
-            }
+            // メニュー項目を追加
+            this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menuFile,
+            this.menuMaster});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(1398, 24);
@@ -138,13 +136,10 @@ namespace ShiftPlanner
 
             // menuMaster
             //
-            // nullチェックを行い、メニュー項目が作成されている場合のみ追加
-            if (this.menuMaster != null && this.menuHolidayMaster != null && this.menuMemberMaster != null)
-            {
-                this.menuMaster.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-                this.menuHolidayMaster,
-                this.menuMemberMaster});
-            }
+            // サブメニュー項目を追加
+            this.menuMaster.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menuHolidayMaster,
+            this.menuMemberMaster});
             this.menuMaster.Name = "menuMaster";
             this.menuMaster.Size = new System.Drawing.Size(61, 20);
             this.menuMaster.Text = "マスター";
