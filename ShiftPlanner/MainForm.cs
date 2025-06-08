@@ -26,6 +26,7 @@ namespace ShiftPlanner
         private readonly string memberFilePath;
         private readonly string frameFilePath;
         private readonly string assignmentFilePath;
+        private readonly string holidayFilePath;
         private List<Member> members = new List<Member>();
         private List<ShiftFrame> shiftFrames = new List<ShiftFrame>();
         private List<ShiftAssignment> assignments = new List<ShiftAssignment>();
@@ -34,6 +35,7 @@ namespace ShiftPlanner
             "ShiftPlanner",
             "requests.json");
         private List<ShiftRequest> shiftRequests = new List<ShiftRequest>();
+        private List<CustomHoliday> customHolidays = new List<CustomHoliday>();
 
         public MainForm()
         {
@@ -41,6 +43,7 @@ namespace ShiftPlanner
             memberFilePath = Path.Combine(dataDir, "members.json");
             frameFilePath = Path.Combine(dataDir, "shiftFrames.json");
             assignmentFilePath = Path.Combine(dataDir, "shiftAssignments.json");
+            holidayFilePath = Path.Combine(dataDir, "customHolidays.json");
 
             InitializeComponent(); // これだけでOK
 
@@ -57,6 +60,9 @@ namespace ShiftPlanner
                     MessageBox.Show($"データ保存用ディレクトリの作成に失敗しました: {ex.Message}");
                 }
             }
+
+            LoadHolidays();
+            JapaneseHolidayHelper.SetCustomHolidays(customHolidays);
 
             InitializeData();
             SetupDataGridView();
@@ -112,6 +118,46 @@ namespace ShiftPlanner
             catch (Exception ex)
             {
                 MessageBox.Show($"メンバー情報の保存に失敗しました: {ex.Message}");
+            }
+        }
+
+        private void LoadHolidays()
+        {
+            if (File.Exists(holidayFilePath))
+            {
+                try
+                {
+                    var serializer = new DataContractJsonSerializer(typeof(List<CustomHoliday>));
+                    using (var stream = File.OpenRead(holidayFilePath))
+                    {
+                        var list = serializer.ReadObject(stream) as List<CustomHoliday>;
+                        if (list != null)
+                        {
+                            customHolidays = list;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"祝日情報の読み込みに失敗しました: {ex.Message}");
+                    customHolidays = new List<CustomHoliday>();
+                }
+            }
+        }
+
+        private void SaveHolidays()
+        {
+            try
+            {
+                var serializer = new DataContractJsonSerializer(typeof(List<CustomHoliday>));
+                using (var stream = File.Create(holidayFilePath))
+                {
+                    serializer.WriteObject(stream, customHolidays ?? new List<CustomHoliday>());
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"祝日情報の保存に失敗しました: {ex.Message}");
             }
         }
 
@@ -440,7 +486,10 @@ namespace ShiftPlanner
                     col.HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleCenter;
                     col.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
                     col.Width = 40;
-                    if (date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday)
+                    // 土日または祝日は背景色を変更
+                    if (date.DayOfWeek == DayOfWeek.Saturday ||
+                        date.DayOfWeek == DayOfWeek.Sunday ||
+                        JapaneseHolidayHelper.IsHoliday(date))
                     {
                         col.DefaultCellStyle.BackColor = Color.LightYellow;
                     }
@@ -932,6 +981,7 @@ namespace ShiftPlanner
             SaveRequests();
             SaveFrames();
             SaveAssignments();
+            SaveHolidays();
             base.OnFormClosing(e);
         }
 
@@ -957,6 +1007,22 @@ namespace ShiftPlanner
         private void menuExportAnalysisCsv_Click(object sender, EventArgs e)
         {
             ExportAnalysisCsv();
+        }
+
+        /// <summary>
+        /// 祝日マスター編集メニューのクリックイベント
+        /// </summary>
+        private void menuHolidayMaster_Click(object sender, EventArgs e)
+        {
+            using (var form = new HolidayMasterForm(customHolidays))
+            {
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    SaveHolidays();
+                    JapaneseHolidayHelper.SetCustomHolidays(customHolidays);
+                    SetupDataGridView();
+                }
+            }
         }
 
         /// <summary>
