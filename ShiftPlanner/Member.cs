@@ -30,6 +30,18 @@ namespace ShiftPlanner
         public List<string> Skills { get; set; } = new List<string>();
 
         /// <summary>
+        /// 土曜日に勤務可能かどうか。
+        /// </summary>
+        [DataMember]
+        public bool WorksOnSaturday { get; set; }
+
+        /// <summary>
+        /// 日曜日に勤務可能かどうか。
+        /// </summary>
+        [DataMember]
+        public bool WorksOnSunday { get; set; }
+
+        /// <summary>
         /// 希望休の日付一覧。
         /// </summary>
         [DataMember]
