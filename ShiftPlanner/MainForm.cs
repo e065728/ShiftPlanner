@@ -355,7 +355,9 @@ namespace ShiftPlanner
                     Name = "山田",
                     AvailableDays = new List<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday },
                     AvailableFrom = TimeSpan.FromHours(9),
-                    AvailableTo = TimeSpan.FromHours(17)
+                    AvailableTo = TimeSpan.FromHours(17),
+                    WorksOnSaturday = false,
+                    WorksOnSunday = false
                 });
                 members.Add(new Member
                 {
@@ -363,7 +365,9 @@ namespace ShiftPlanner
                     Name = "佐藤",
                     AvailableDays = new List<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Wednesday },
                     AvailableFrom = TimeSpan.FromHours(9),
-                    AvailableTo = TimeSpan.FromHours(17)
+                    AvailableTo = TimeSpan.FromHours(17),
+                    WorksOnSaturday = false,
+                    WorksOnSunday = false
                 });
                 members.Add(new Member
                 {
@@ -371,7 +375,9 @@ namespace ShiftPlanner
                     Name = "鈴木",
                     AvailableDays = new List<DayOfWeek> { DayOfWeek.Tuesday },
                     AvailableFrom = TimeSpan.FromHours(9),
-                    AvailableTo = TimeSpan.FromHours(17)
+                    AvailableTo = TimeSpan.FromHours(17),
+                    WorksOnSaturday = false,
+                    WorksOnSunday = false
                 });
             }
 
@@ -803,7 +809,14 @@ namespace ShiftPlanner
                             col.HeaderText = "希望休";
                             break;
                         case nameof(Member.Constraints):
-                            col.HeaderText = "制約";
+                            // 制約列は表示しない
+                            col.Visible = false;
+                            break;
+                        case nameof(Member.WorksOnSaturday):
+                            col.HeaderText = "土曜日";
+                            break;
+                        case nameof(Member.WorksOnSunday):
+                            col.HeaderText = "日曜日";
                             break;
                     }
                 }
@@ -897,7 +910,16 @@ namespace ShiftPlanner
         private void btnAddMember_Click(object sender, EventArgs e)
         {
             var nextId = members.Count > 0 ? members.Max(m => m.Id) + 1 : 1;
-            members.Add(new Member { Id = nextId, Name = "新規" });
+            members.Add(new Member
+            {
+                Id = nextId,
+                Name = "新規",
+                // デフォルトの勤務時間を設定
+                AvailableFrom = new TimeSpan(9, 0, 0),
+                AvailableTo = new TimeSpan(18, 0, 0),
+                WorksOnSaturday = false,
+                WorksOnSunday = false
+            });
             SetupMemberGrid();
             SaveMembers();
         }
