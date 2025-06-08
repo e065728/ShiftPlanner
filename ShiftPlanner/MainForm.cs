@@ -367,6 +367,36 @@ namespace ShiftPlanner
         }
 
         /// <summary>
+        /// 勤怠時間マスターの設定をシフトフレームへ適用します。
+        /// </summary>
+        private void ApplyShiftTimesFromMaster()
+        {
+            if (shiftFrames == null || shiftTimes == null)
+            {
+                return; // nullチェック
+            }
+
+            foreach (var frame in shiftFrames)
+            {
+                if (frame == null || string.IsNullOrWhiteSpace(frame.ShiftType))
+                {
+                    continue;
+                }
+
+                var master = shiftTimes.FirstOrDefault(t =>
+                    t != null && string.Equals(t.Name, frame.ShiftType, StringComparison.OrdinalIgnoreCase));
+
+                if (master != null)
+                {
+                    frame.ShiftStart = master.Start;
+                    frame.ShiftEnd = master.End;
+                }
+            }
+
+            SaveFrames();
+        }
+
+        /// <summary>
         /// 割り当て結果を読み込みます。
         /// </summary>
         private void LoadAssignments()
@@ -804,12 +834,15 @@ namespace ShiftPlanner
                 var frame = shiftFrames.FirstOrDefault(f => f.Date.Date == key.date && f.ShiftType == shiftType);
                 if (frame == null)
                 {
+                    var master = shiftTimes?.FirstOrDefault(t =>
+                        t != null && string.Equals(t.Name, shiftType, StringComparison.OrdinalIgnoreCase));
+
                     frame = new ShiftFrame
                     {
                         Date = key.date,
                         ShiftType = shiftType,
-                        ShiftStart = TimeSpan.FromHours(9),
-                        ShiftEnd = TimeSpan.FromHours(17),
+                        ShiftStart = master?.Start ?? TimeSpan.Zero,
+                        ShiftEnd = master?.End ?? TimeSpan.Zero,
                         RequiredNumber = 1
                     };
                     shiftFrames.Add(frame);
@@ -1051,6 +1084,9 @@ namespace ShiftPlanner
 
                 // 必要人数グリッドの内容をシフトフレームへ反映
                 ApplyRequiredNumbersFromGrid();
+
+                // シフト時間マスターの内容をシフトフレームへ反映
+                ApplyShiftTimesFromMaster();
 
                 // 自動割当を生成
                 assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members, shiftRequests);
