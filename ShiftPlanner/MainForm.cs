@@ -478,38 +478,12 @@ namespace ShiftPlanner
                 });
             }
 
-            // シフトフレームが無い場合は例としていくつか作成
-            if (shiftFrames.Count == 0)
-            {
-                shiftFrames.Add(new ShiftFrame
-                {
-                    Date = DateTime.Today.AddDays(1),
-                    ShiftType = "早番",
-                    ShiftStart = TimeSpan.FromHours(9),
-                    ShiftEnd = TimeSpan.FromHours(17),
-                    RequiredNumber = 2
-                });
-                shiftFrames.Add(new ShiftFrame
-                {
-                    Date = DateTime.Today.AddDays(2),
-                    ShiftType = "早番",
-                    ShiftStart = TimeSpan.FromHours(9),
-                    ShiftEnd = TimeSpan.FromHours(17),
-                    RequiredNumber = 1
-                });
-                shiftFrames.Add(new ShiftFrame
-                {
-                    Date = DateTime.Today.AddDays(3),
-                    ShiftType = "遅番",
-                    ShiftStart = TimeSpan.FromHours(13),
-                    ShiftEnd = TimeSpan.FromHours(21),
-                    RequiredNumber = 2
-                });
-                SaveFrames();
-            }
+            // シフトフレームが無い場合でもサンプルデータは作成しない
+            // 必要に応じて別画面からシフトフレームを登録してもらう
 
             // 割り当て結果が無い場合は自動生成
-            if (assignments.Count == 0)
+            // シフトフレームが存在しないときは生成しない
+            if (assignments.Count == 0 && shiftFrames.Count > 0)
             {
                 assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members, shiftRequests);
                 SaveAssignments();
