@@ -30,6 +30,12 @@ namespace ShiftPlanner
         public List<string> Skills { get; set; } = new List<string>();
 
         /// <summary>
+        /// スキルグループ名。
+        /// </summary>
+        [DataMember]
+        public string SkillGroup { get; set; } = string.Empty;
+
+        /// <summary>
         /// 土曜日に勤務可能かどうか。
         /// </summary>
         [DataMember]

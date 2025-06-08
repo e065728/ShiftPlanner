@@ -12,10 +12,12 @@ namespace ShiftPlanner
     public partial class MemberMasterForm : Form
     {
         private readonly BindingList<Member> _members;
+        private readonly List<SkillGroup> _skillGroups;
 
-        public MemberMasterForm(List<Member> members)
+        public MemberMasterForm(List<Member> members, List<SkillGroup> skillGroups)
         {
             _members = new BindingList<Member>(members ?? new List<Member>());
+            _skillGroups = skillGroups ?? new List<SkillGroup>();
             InitializeComponent();
             dtMembers.DataSource = _members;
             SetupMemberGrid();
@@ -61,6 +63,23 @@ namespace ShiftPlanner
         private void SetupMemberGrid()
         {
             dtMembers.AutoGenerateColumns = true;
+
+            // スキルグループ列をコンボボックスに置き換える
+            var sgCol = dtMembers.Columns[nameof(Member.SkillGroup)];
+            if (sgCol != null)
+            {
+                int index = sgCol.Index;
+                dtMembers.Columns.Remove(sgCol);
+                var combo = new DataGridViewComboBoxColumn
+                {
+                    Name = nameof(Member.SkillGroup),
+                    DataPropertyName = nameof(Member.SkillGroup),
+                    DataSource = _skillGroups?.Select(g => g.Name).ToList() ?? new List<string>(),
+                    HeaderText = "スキルグループ"
+                };
+                dtMembers.Columns.Insert(index, combo);
+            }
+
             foreach (DataGridViewColumn col in dtMembers.Columns)
             {
                 if (col == null || string.IsNullOrEmpty(col.Name))
@@ -87,6 +106,9 @@ namespace ShiftPlanner
                         break;
                     case nameof(Member.Skills):
                         col.HeaderText = "スキル";
+                        break;
+                    case nameof(Member.SkillGroup):
+                        col.HeaderText = "スキルグループ";
                         break;
                     case nameof(Member.DesiredHolidays):
                         col.HeaderText = "希望休";

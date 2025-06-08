@@ -38,6 +38,7 @@ namespace ShiftPlanner
         private ToolStripMenuItem menuMaster;
         private ToolStripMenuItem menuHolidayMaster;
         private ToolStripMenuItem menuMemberMaster;
+        private ToolStripMenuItem menuSkillGroupMaster;
         private DateTimePicker dtp分析月;
         private Label lbl総労働時間;
         private Chart chartシフト分布;
@@ -80,6 +81,7 @@ namespace ShiftPlanner
             this.menuMaster = new System.Windows.Forms.ToolStripMenuItem();
             this.menuHolidayMaster = new System.Windows.Forms.ToolStripMenuItem();
             this.menuMemberMaster = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuSkillGroupMaster = new System.Windows.Forms.ToolStripMenuItem();
             this.dtRequestSummary = new System.Windows.Forms.DataGridView();
             this.dtp分析月 = new System.Windows.Forms.DateTimePicker();
             this.lbl総労働時間 = new System.Windows.Forms.Label();
@@ -141,7 +143,8 @@ namespace ShiftPlanner
             // サブメニュー項目を追加
             this.menuMaster.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.menuHolidayMaster,
-            this.menuMemberMaster});
+            this.menuMemberMaster,
+            this.menuSkillGroupMaster});
             this.menuMaster.Name = "menuMaster";
             this.menuMaster.Size = new System.Drawing.Size(61, 20);
             this.menuMaster.Text = "マスター";
@@ -159,6 +162,13 @@ namespace ShiftPlanner
             this.menuMemberMaster.Size = new System.Drawing.Size(138, 22);
             this.menuMemberMaster.Text = "メンバーマスター";
             this.menuMemberMaster.Click += new System.EventHandler(this.menuMemberMaster_Click);
+
+            // menuSkillGroupMaster
+            //
+            this.menuSkillGroupMaster.Name = "menuSkillGroupMaster";
+            this.menuSkillGroupMaster.Size = new System.Drawing.Size(138, 22);
+            this.menuSkillGroupMaster.Text = "スキルグループ";
+            this.menuSkillGroupMaster.Click += new System.EventHandler(this.menuSkillGroupMaster_Click);
             //
             // tabControl1
             //
