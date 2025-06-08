@@ -63,6 +63,8 @@ namespace ShiftPlanner
             this.dtShift = new System.Windows.Forms.DataGridView();
             this.dtMembers = new System.Windows.Forms.DataGridView();
             this.dtRequests = new System.Windows.Forms.DataGridView();
+            this.cmbHolidayLimit = new System.Windows.Forms.ComboBox();
+            this.lblHolidayLimit = new System.Windows.Forms.Label();
             this.btnAddMember = new System.Windows.Forms.Button();
             this.btnRemoveMember = new System.Windows.Forms.Button();
             this.btnAddRequest = new System.Windows.Forms.Button();
