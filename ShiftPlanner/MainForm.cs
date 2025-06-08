@@ -28,6 +28,7 @@ namespace ShiftPlanner
         private readonly string assignmentFilePath;
         private readonly string holidayFilePath;
         private readonly string skillGroupFilePath;
+        private readonly string shiftTimeFilePath;
         private List<Member> members = new List<Member>();
         private List<ShiftFrame> shiftFrames = new List<ShiftFrame>();
         private List<ShiftAssignment> assignments = new List<ShiftAssignment>();
@@ -39,6 +40,7 @@ namespace ShiftPlanner
         private int holidayLimit = 3; // 休み希望上限
         private List<CustomHoliday> customHolidays = new List<CustomHoliday>();
         private List<SkillGroup> skillGroups = new List<SkillGroup>();
+        private List<ShiftTime> shiftTimes = new List<ShiftTime>();
 
         public MainForm()
         {
@@ -48,6 +50,7 @@ namespace ShiftPlanner
             assignmentFilePath = Path.Combine(dataDir, "shiftAssignments.json");
             holidayFilePath = Path.Combine(dataDir, "customHolidays.json");
             skillGroupFilePath = Path.Combine(dataDir, "skillGroups.json");
+            shiftTimeFilePath = Path.Combine(dataDir, "shiftTimes.json");
 
             InitializeComponent(); // これだけでOK
 
@@ -67,6 +70,7 @@ namespace ShiftPlanner
 
             LoadHolidays();
             LoadSkillGroups();
+            LoadShiftTimes();
             JapaneseHolidayHelper.SetCustomHolidays(customHolidays);
 
             InitializeData();
@@ -214,6 +218,46 @@ namespace ShiftPlanner
             catch (Exception ex)
             {
                 MessageBox.Show($"スキルグループ情報の保存に失敗しました: {ex.Message}");
+            }
+        }
+
+        private void LoadShiftTimes()
+        {
+            if (File.Exists(shiftTimeFilePath))
+            {
+                try
+                {
+                    var serializer = new DataContractJsonSerializer(typeof(List<ShiftTime>));
+                    using (var stream = File.OpenRead(shiftTimeFilePath))
+                    {
+                        var list = serializer.ReadObject(stream) as List<ShiftTime>;
+                        if (list != null)
+                        {
+                            shiftTimes = list;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"勤務時間情報の読み込みに失敗しました: {ex.Message}");
+                    shiftTimes = new List<ShiftTime>();
+                }
+            }
+        }
+
+        private void SaveShiftTimes()
+        {
+            try
+            {
+                var serializer = new DataContractJsonSerializer(typeof(List<ShiftTime>));
+                using (var stream = File.Create(shiftTimeFilePath))
+                {
+                    serializer.WriteObject(stream, shiftTimes);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"勤務時間情報の保存に失敗しました: {ex.Message}");
             }
         }
 
@@ -1127,7 +1171,7 @@ namespace ShiftPlanner
         /// </summary>
         private void menuMemberMaster_Click(object sender, EventArgs e)
         {
-            using (var form = new MemberMasterForm(members, skillGroups))
+            using (var form = new MemberMasterForm(members, skillGroups, shiftTimes))
             {
                 if (form.ShowDialog() == DialogResult.OK)
                 {
@@ -1148,6 +1192,21 @@ namespace ShiftPlanner
                 {
                     skillGroups = form.SkillGroups;
                     SaveSkillGroups();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 勤務時間マスター編集メニューのクリックイベント
+        /// </summary>
+        private void menuShiftTimeMaster_Click(object sender, EventArgs e)
+        {
+            using (var form = new ShiftTimeMasterForm(shiftTimes))
+            {
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    shiftTimes = form.ShiftTimes;
+                    SaveShiftTimes();
                 }
             }
         }

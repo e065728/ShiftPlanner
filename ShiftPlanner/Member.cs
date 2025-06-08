@@ -48,6 +48,12 @@ namespace ShiftPlanner
         public bool WorksOnSunday { get; set; }
 
         /// <summary>
+        /// 出勤時間マスタで定義された勤務名のうち、このメンバーが対応可能なもの。
+        /// </summary>
+        [DataMember]
+        public List<string> AvailableShiftNames { get; set; } = new List<string>();
+
+        /// <summary>
         /// 希望休の日付一覧。
         /// </summary>
         [DataMember]
