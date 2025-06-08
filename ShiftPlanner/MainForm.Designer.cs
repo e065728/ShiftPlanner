@@ -164,10 +164,12 @@ namespace ShiftPlanner
             this.tabControl1.Controls.Add(this.tabPage1);
             this.tabControl1.Controls.Add(this.tabPage2);
             this.tabControl1.Controls.Add(this.tabPage3);
-            this.tabControl1.Location = new System.Drawing.Point(2, 25);
+            // 月選択用DateTimePickerを表示するスペースを確保するため位置を下げる
+            this.tabControl1.Location = new System.Drawing.Point(2, 55);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(1393, 864);
+            // フォーム下端に合わせるため高さを調整
+            this.tabControl1.Size = new System.Drawing.Size(1393, 834);
             this.tabControl1.TabIndex = 0;
             // 
             // tabPage1
@@ -176,11 +178,11 @@ namespace ShiftPlanner
             this.tabPage1.Controls.Add(this.btnExportPdf);
             this.tabPage1.Controls.Add(this.btnExportCsv);
             this.tabPage1.Controls.Add(this.btnRefreshShift);
-            this.tabPage1.Controls.Add(this.dtpMonth);
             this.tabPage1.Location = new System.Drawing.Point(4, 22);
             this.tabPage1.Name = "tabPage1";
             this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage1.Size = new System.Drawing.Size(1385, 838);
+            // TabControl の高さを変更したため合わせて調整
+            this.tabPage1.Size = new System.Drawing.Size(1385, 808);
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "シフト表";
             this.tabPage1.UseVisualStyleBackColor = true;
@@ -194,7 +196,8 @@ namespace ShiftPlanner
             this.dtShift.Location = new System.Drawing.Point(3, 35);
             this.dtShift.Name = "dtShift";
             this.dtShift.RowTemplate.Height = 21;
-            this.dtShift.Size = new System.Drawing.Size(1379, 800);
+            // TabPage 高さ変更に合わせデータグリッドの高さを調整
+            this.dtShift.Size = new System.Drawing.Size(1379, 773);
             this.dtShift.TabIndex = 1;
 
             // btnRefreshShift
@@ -211,7 +214,8 @@ namespace ShiftPlanner
             //
             this.dtpMonth.CustomFormat = "yyyy/MM";
             this.dtpMonth.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
-            this.dtpMonth.Location = new System.Drawing.Point(87, 6);
+            // タブ外に表示するため位置を調整
+            this.dtpMonth.Location = new System.Drawing.Point(6, 27);
             this.dtpMonth.Name = "dtpMonth";
             this.dtpMonth.ShowUpDown = true;
             this.dtpMonth.Size = new System.Drawing.Size(100, 23);
@@ -221,7 +225,8 @@ namespace ShiftPlanner
 
             // btnExportCsv
             //
-            this.btnExportCsv.Location = new System.Drawing.Point(193, 6);
+            // 月選択を移動したため、左に詰める
+            this.btnExportCsv.Location = new System.Drawing.Point(87, 6);
             this.btnExportCsv.Name = "btnExportCsv";
             this.btnExportCsv.Size = new System.Drawing.Size(75, 23);
             this.btnExportCsv.TabIndex = 3;
@@ -231,7 +236,7 @@ namespace ShiftPlanner
 
             // btnExportPdf
             //
-            this.btnExportPdf.Location = new System.Drawing.Point(274, 6);
+            this.btnExportPdf.Location = new System.Drawing.Point(168, 6);
             this.btnExportPdf.Name = "btnExportPdf";
             this.btnExportPdf.Size = new System.Drawing.Size(75, 23);
             this.btnExportPdf.TabIndex = 4;
@@ -247,7 +252,8 @@ namespace ShiftPlanner
             this.tabPage2.Location = new System.Drawing.Point(4, 22);
             this.tabPage2.Name = "tabPage2";
             this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage2.Size = new System.Drawing.Size(1385, 838);
+            // TabControl の高さ変更に伴い調整
+            this.tabPage2.Size = new System.Drawing.Size(1385, 808);
             this.tabPage2.TabIndex = 1;
             this.tabPage2.Text = "メンバー";
             this.tabPage2.UseVisualStyleBackColor = true;
@@ -260,7 +266,8 @@ namespace ShiftPlanner
             this.tabPage3.Location = new System.Drawing.Point(4, 22);
             this.tabPage3.Name = "tabPage3";
             this.tabPage3.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage3.Size = new System.Drawing.Size(1385, 838);
+            // TabControl の高さ変更に伴い調整
+            this.tabPage3.Size = new System.Drawing.Size(1385, 808);
             this.tabPage3.TabIndex = 2;
             this.tabPage3.Text = "希望";
             this.tabPage3.UseVisualStyleBackColor = true;
@@ -294,7 +301,8 @@ namespace ShiftPlanner
             this.dtMembers.Location = new System.Drawing.Point(3, 35);
             this.dtMembers.Name = "dtMembers";
             this.dtMembers.RowTemplate.Height = 21;
-            this.dtMembers.Size = new System.Drawing.Size(1379, 800);
+            // TabPage 高さ変更に合わせデータグリッドの高さを調整
+            this.dtMembers.Size = new System.Drawing.Size(1379, 773);
             this.dtMembers.TabIndex = 2;
 
             // btnAddRequest
@@ -326,13 +334,16 @@ namespace ShiftPlanner
             this.dtRequests.Location = new System.Drawing.Point(3, 35);
             this.dtRequests.Name = "dtRequests";
             this.dtRequests.RowTemplate.Height = 21;
-            this.dtRequests.Size = new System.Drawing.Size(1379, 800);
+            // TabPage 高さ変更に合わせデータグリッドの高さを調整
+            this.dtRequests.Size = new System.Drawing.Size(1379, 773);
             this.dtRequests.TabIndex = 2;
 
             // 
             // MainForm
             // 
             this.ClientSize = new System.Drawing.Size(1398, 889);
+            // 月選択をタブ外に配置する
+            this.Controls.Add(this.dtpMonth);
             this.Controls.Add(this.tabControl1);
             this.Controls.Add(this.menuStrip1);
             this.MainMenuStrip = this.menuStrip1;
