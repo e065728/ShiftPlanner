@@ -10,13 +10,23 @@ namespace ShiftPlanner
     /// </summary>
     public partial class HolidayMasterForm : Form
     {
-        private readonly BindingList<CustomHoliday> holidays;
+        // 全祝日リスト
+        private readonly List<CustomHoliday> holidaySource;
+        // 表示用リスト
+        private readonly BindingList<CustomHoliday> filteredHolidays;
 
         public HolidayMasterForm(List<CustomHoliday> holidays)
         {
-            this.holidays = new BindingList<CustomHoliday>(holidays ?? new List<CustomHoliday>());
+            // 元のリストを保持
+            this.holidaySource = holidays ?? new List<CustomHoliday>();
+            // 表示年でフィルタしたリストを作成
+            int year = DateTime.Today.Year;
+            this.filteredHolidays = new BindingList<CustomHoliday>(
+                new List<CustomHoliday>(holidaySource.FindAll(h => h.Date.Year == year)));
             InitializeComponent();
-            dtHolidays.DataSource = this.holidays;
+            // 年の初期値を設定
+            nudYear.Value = year;
+            dtHolidays.DataSource = this.filteredHolidays;
             dtHolidays.AutoGenerateColumns = true;
 
             // ヘッダー文字列を日本語化
@@ -35,14 +45,18 @@ namespace ShiftPlanner
 
         private void BtnAdd_Click(object sender, EventArgs e)
         {
-            holidays.Add(new CustomHoliday { Date = DateTime.Today, Name = "新しい祝日" });
+            int year = (int)nudYear.Value;
+            var newHoliday = new CustomHoliday { Date = new DateTime(year, 1, 1), Name = "新しい祝日" };
+            holidaySource.Add(newHoliday);
+            filteredHolidays.Add(newHoliday);
         }
 
         private void BtnRemove_Click(object sender, EventArgs e)
         {
             if (dtHolidays.CurrentRow?.DataBoundItem is CustomHoliday h)
             {
-                holidays.Remove(h);
+                holidaySource.Remove(h);
+                filteredHolidays.Remove(h);
             }
         }
 
@@ -54,6 +68,27 @@ namespace ShiftPlanner
         private void BtnCancel_Click(object sender, EventArgs e)
         {
             this.DialogResult = DialogResult.Cancel;
+        }
+
+        private void NudYear_ValueChanged(object sender, EventArgs e)
+        {
+            UpdateFilteredHolidays();
+        }
+
+        /// <summary>
+        /// 表示年を変更した際にリストを更新します。
+        /// </summary>
+        private void UpdateFilteredHolidays()
+        {
+            int year = (int)nudYear.Value;
+            filteredHolidays.Clear();
+            foreach (var h in holidaySource)
+            {
+                if (h.Date.Year == year)
+                {
+                    filteredHolidays.Add(h);
+                }
+            }
         }
     }
 }
