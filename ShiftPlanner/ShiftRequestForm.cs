@@ -16,13 +16,31 @@ namespace ShiftPlanner
 
         public ShiftRequest? ShiftRequest { get; private set; }
 
-        public ShiftRequestForm(List<Member> members)
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="members">メンバー一覧</param>
+        /// <param name="holidayChecked">休み希望チェックの初期値</param>
+        public ShiftRequestForm(List<Member> members, bool holidayChecked = false)
         {
             this.members = members ?? new List<Member>();
             InitializeComponent();
-            cmbMember.DataSource = this.members;
-            cmbMember.DisplayMember = "Name";
-            cmbMember.ValueMember = "Id";
+
+            try
+            {
+                // メンバー情報をコンボボックスへ設定
+                cmbMember.DataSource = this.members;
+                cmbMember.DisplayMember = "Name";
+                cmbMember.ValueMember = "Id";
+            }
+            catch (Exception ex)
+            {
+                // 例外が発生してもアプリが終了しないよう通知のみ
+                MessageBox.Show($"メンバー情報の読込に失敗しました: {ex.Message}");
+            }
+
+            // 休み希望チェックボックスの初期状態を設定
+            chkHoliday.Checked = holidayChecked;
         }
 
         // このメソッドの内容は ShiftRequestForm.Designer.cs に移動しました。
