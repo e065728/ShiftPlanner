@@ -842,8 +842,8 @@ namespace ShiftPlanner
                         Date = key.date,
                         ShiftType = shiftType,
                         ShiftStart = master?.Start ?? TimeSpan.Zero,
-                        ShiftEnd = master?.End ?? TimeSpan.Zero,
-                        RequiredNumber = 1
+                        ShiftEnd = master?.End ?? TimeSpan.Zero
+                        // RequiredNumber は初期値 0 のままとする
                     };
                     shiftFrames.Add(frame);
                 }
