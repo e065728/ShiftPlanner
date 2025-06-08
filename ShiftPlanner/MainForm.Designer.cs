@@ -71,6 +71,8 @@ namespace ShiftPlanner
             this.menuFile = new System.Windows.Forms.ToolStripMenuItem();
             this.menuExportCsv = new System.Windows.Forms.ToolStripMenuItem();
             this.menuExportPdf = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuMaster = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuHolidayMaster = new System.Windows.Forms.ToolStripMenuItem();
             this.dtp分析月 = new System.Windows.Forms.DateTimePicker();
             this.lbl総労働時間 = new System.Windows.Forms.Label();
             this.chartシフト分布 = new System.Windows.Forms.DataVisualization.Charting.Chart();
@@ -83,9 +85,13 @@ namespace ShiftPlanner
 
             // menuStrip1
             //
-            this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.menuFile,
-            this.menuMaster});
+            // nullチェックを行い、メニュー項目が作成されている場合のみ追加
+            if (this.menuStrip1 != null && this.menuFile != null && this.menuMaster != null)
+            {
+                this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+                this.menuFile,
+                this.menuMaster});
+            }
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(1398, 24);
@@ -126,8 +132,12 @@ namespace ShiftPlanner
 
             // menuMaster
             //
-            this.menuMaster.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.menuHolidayMaster});
+            // nullチェックを行い、メニュー項目が作成されている場合のみ追加
+            if (this.menuMaster != null && this.menuHolidayMaster != null)
+            {
+                this.menuMaster.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+                this.menuHolidayMaster});
+            }
             this.menuMaster.Name = "menuMaster";
             this.menuMaster.Size = new System.Drawing.Size(61, 20);
             this.menuMaster.Text = "マスター";
