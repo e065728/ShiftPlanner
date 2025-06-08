@@ -454,8 +454,7 @@ namespace ShiftPlanner
                     Id = 1,
                     Name = "山田",
                     AvailableDays = new List<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday },
-                    AvailableFrom = TimeSpan.FromHours(9),
-                    AvailableTo = TimeSpan.FromHours(17),
+                    // デフォルトの勤務時間列は廃止
                     WorksOnSaturday = false,
                     WorksOnSunday = false
                 });
@@ -464,8 +463,7 @@ namespace ShiftPlanner
                     Id = 2,
                     Name = "佐藤",
                     AvailableDays = new List<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Wednesday },
-                    AvailableFrom = TimeSpan.FromHours(9),
-                    AvailableTo = TimeSpan.FromHours(17),
+                    // デフォルトの勤務時間列は廃止
                     WorksOnSaturday = false,
                     WorksOnSunday = false
                 });
@@ -474,8 +472,7 @@ namespace ShiftPlanner
                     Id = 3,
                     Name = "鈴木",
                     AvailableDays = new List<DayOfWeek> { DayOfWeek.Tuesday },
-                    AvailableFrom = TimeSpan.FromHours(9),
-                    AvailableTo = TimeSpan.FromHours(17),
+                    // デフォルトの勤務時間列は廃止
                     WorksOnSaturday = false,
                     WorksOnSunday = false
                 });
@@ -898,12 +895,6 @@ namespace ShiftPlanner
                         case nameof(Member.AvailableDays):
                             col.HeaderText = "勤務可能曜日";
                             break;
-                        case nameof(Member.AvailableFrom):
-                            col.HeaderText = "開始時間";
-                            break;
-                        case nameof(Member.AvailableTo):
-                            col.HeaderText = "終了時間";
-                            break;
                         case nameof(Member.Skills):
                             col.HeaderText = "スキル";
                             break;
@@ -1020,9 +1011,7 @@ namespace ShiftPlanner
             {
                 Id = nextId,
                 Name = "新規",
-                // デフォルトの勤務時間を設定
-                AvailableFrom = new TimeSpan(9, 0, 0),
-                AvailableTo = new TimeSpan(18, 0, 0),
+                // 勤務開始・終了時間列は廃止
                 WorksOnSaturday = false,
                 WorksOnSunday = false
             });

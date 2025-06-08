@@ -20,11 +20,6 @@ namespace ShiftPlanner
         [DataMember]
         public List<DayOfWeek> AvailableDays { get; set; } = new List<DayOfWeek>();
 
-        [DataMember]
-        public TimeSpan AvailableFrom { get; set; }
-
-        [DataMember]
-        public TimeSpan AvailableTo { get; set; }
 
         [DataMember]
         public List<string> Skills { get; set; } = new List<string>();
