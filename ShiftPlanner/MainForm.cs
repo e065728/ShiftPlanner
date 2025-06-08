@@ -7,31 +7,76 @@ using System.Windows.Forms;
 using System.IO;
 using System.Runtime.Serialization.Json;
 using System.Runtime.Serialization;
+using System.Windows.Forms.DataVisualization.Charting;
 
 namespace ShiftPlanner
 {
     public partial class MainForm : Form
     {
-        private TabControl tabControl1;
-        private TabPage tabPage1;
-        private TabPage tabPage2;
-        private DataGridView dtShift;
-        private DataGridView dtMembers;
-        private Button btnAddMember;
-        private Button btnRemoveMember;
-        private Button btnRefreshShift;
-        private DateTimePicker dtpMonth;
-        private readonly string memberFilePath = Path.Combine(Application.StartupPath, "members.json");
+        // 以下のUIコントロール定義はデザイナー部に移動しました
+
+        // メンバー情報保存用のファイルパス
+        // %APPDATA%/ShiftPlanner/members.json の形で保存する
+        // データ保存ディレクトリ
+        private readonly string dataDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "ShiftPlanner");
+
+        // 各種データ保存用ファイルパス
+        private readonly string memberFilePath;
+        private readonly string frameFilePath;
+        private readonly string assignmentFilePath;
         private List<Member> members = new List<Member>();
         private List<ShiftFrame> shiftFrames = new List<ShiftFrame>();
         private List<ShiftAssignment> assignments = new List<ShiftAssignment>();
+        private readonly string requestFilePath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "ShiftPlanner",
+            "requests.json");
+        private List<ShiftRequest> shiftRequests = new List<ShiftRequest>();
 
         public MainForm()
         {
+            // 各ファイルパスを生成
+            memberFilePath = Path.Combine(dataDir, "members.json");
+            frameFilePath = Path.Combine(dataDir, "shiftFrames.json");
+            assignmentFilePath = Path.Combine(dataDir, "shiftAssignments.json");
+
             InitializeComponent(); // これだけでOK
+
+            // データ保存用ディレクトリが無い場合は作成する
+            var dir = dataDir;
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+            {
+                try
+                {
+                    Directory.CreateDirectory(dir);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"データ保存用ディレクトリの作成に失敗しました: {ex.Message}");
+                }
+            }
+
             InitializeData();
             SetupDataGridView();
             SetupMemberGrid();
+            SetupRequestGrid();
+
+            // グリッド編集内容を保存するイベントを設定
+            if (dtMembers != null)
+            {
+                dtMembers.CellEndEdit += (s, e) => SaveMembers();
+            }
+            if (dtRequests != null)
+            {
+                dtRequests.CellEndEdit += (s, e) => SaveRequests();
+            }
+            if (dtShift != null)
+            {
+                // Delete キーで選択セルをクリアするイベントを登録
+                dtShift.KeyDown += dtShift_KeyDown;
+            }
         }
 
         private void LoadMembers()
@@ -70,9 +115,190 @@ namespace ShiftPlanner
             }
         }
 
+
+        private void LoadRequests()
+        {
+            if (File.Exists(requestFilePath))
+            {
+                try
+                {
+                    var serializer = new DataContractJsonSerializer(typeof(List<ShiftRequest>));
+                    using (var stream = File.OpenRead(requestFilePath))
+                    {
+                        shiftRequests = (List<ShiftRequest>)serializer.ReadObject(stream);
+
+                    }
+                }
+                catch (Exception ex)
+                {
+
+                    MessageBox.Show($"希望情報の読み込みに失敗しました: {ex.Message}");
+                    shiftRequests = new List<ShiftRequest>();
+                }
+            }
+        }
+
+        private void SaveRequests()
+        {
+            try
+            {
+                var serializer = new DataContractJsonSerializer(typeof(List<ShiftRequest>));
+                using (var stream = File.Create(requestFilePath))
+                {
+                    serializer.WriteObject(stream, shiftRequests);
+
+                }
+            }
+            catch (Exception ex)
+            {
+
+                MessageBox.Show($"希望情報の保存に失敗しました: {ex.Message}");
+
+            }
+        }
+
+        /// <summary>
+        /// シフトフレームを読み込みます。
+        /// </summary>
+        private void LoadFrames()
+        {
+            if (File.Exists(frameFilePath))
+            {
+                try
+                {
+                    var serializer = new DataContractJsonSerializer(typeof(List<ShiftFrame>));
+                    using (var stream = File.OpenRead(frameFilePath))
+                    {
+                        shiftFrames = (List<ShiftFrame>)serializer.ReadObject(stream);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"シフトフレームの読み込みに失敗しました: {ex.Message}");
+                    shiftFrames = new List<ShiftFrame>();
+                }
+            }
+        }
+
+        /// <summary>
+        /// シフトフレームを保存します。
+        /// </summary>
+        private void SaveFrames()
+        {
+            try
+            {
+                var serializer = new DataContractJsonSerializer(typeof(List<ShiftFrame>));
+                using (var stream = File.Create(frameFilePath))
+                {
+                    serializer.WriteObject(stream, shiftFrames);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"シフトフレームの保存に失敗しました: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// すべてのシフトフレームの必要人数をリセットします。
+        /// </summary>
+        private void ResetRequiredNumbers()
+        {
+            if (shiftFrames == null)
+            {
+                return; // null 安全対策
+            }
+
+            foreach (var frame in shiftFrames)
+            {
+                if (frame != null)
+                {
+                    frame.RequiredNumber = 0;
+                }
+            }
+
+            SaveFrames();
+        }
+
+        /// <summary>
+        /// 割り当て結果を読み込みます。
+        /// </summary>
+        private void LoadAssignments()
+        {
+            if (File.Exists(assignmentFilePath))
+            {
+                try
+                {
+                    var serializer = new DataContractJsonSerializer(typeof(List<ShiftAssignment>));
+                    using (var stream = File.OpenRead(assignmentFilePath))
+                    {
+                        assignments = (List<ShiftAssignment>)serializer.ReadObject(stream);
+                    }
+                    // 読み込んだメンバーを既存の参照に置き換える
+                    ReconcileAssignmentMembers();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"割り当て結果の読み込みに失敗しました: {ex.Message}");
+                    assignments = new List<ShiftAssignment>();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 割り当て結果を保存します。
+        /// </summary>
+        private void SaveAssignments()
+        {
+            try
+            {
+                var serializer = new DataContractJsonSerializer(typeof(List<ShiftAssignment>));
+                using (var stream = File.Create(assignmentFilePath))
+                {
+                    serializer.WriteObject(stream, assignments ?? new List<ShiftAssignment>());
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"割り当て結果の保存に失敗しました: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 読み込んだ割り当てデータのメンバー参照を既存メンバーリストのものに合わせます。
+        /// </summary>
+        private void ReconcileAssignmentMembers()
+        {
+            if (assignments == null || members == null)
+            {
+                return;
+            }
+
+            foreach (var assign in assignments)
+            {
+                if (assign?.AssignedMembers == null)
+                {
+                    continue;
+                }
+
+                for (int i = 0; i < assign.AssignedMembers.Count; i++)
+                {
+                    var m = assign.AssignedMembers[i];
+                    var existing = members.FirstOrDefault(x => x.Id == m.Id);
+                    if (existing != null)
+                    {
+                        assign.AssignedMembers[i] = existing;
+                    }
+                }
+            }
+        }
+
         private void InitializeData()
         {
             LoadMembers();
+            LoadFrames();
+            LoadRequests();
+            LoadAssignments();
 
             if (members.Count == 0)
             {
@@ -103,34 +329,42 @@ namespace ShiftPlanner
                 });
             }
 
-            // シフトフレーム例
-            shiftFrames.Add(new ShiftFrame
+            // シフトフレームが無い場合は例としていくつか作成
+            if (shiftFrames.Count == 0)
             {
-                Date = DateTime.Today.AddDays(1),
-                ShiftType = "早番",
-                ShiftStart = TimeSpan.FromHours(9),
-                ShiftEnd = TimeSpan.FromHours(17),
-                RequiredNumber = 2
-            });
-            shiftFrames.Add(new ShiftFrame
-            {
-                Date = DateTime.Today.AddDays(2),
-                ShiftType = "早番",
-                ShiftStart = TimeSpan.FromHours(9),
-                ShiftEnd = TimeSpan.FromHours(17),
-                RequiredNumber = 1
-            });
-            // 例として 3 日目の遅番を追加
-            shiftFrames.Add(new ShiftFrame
-            {
-                Date = DateTime.Today.AddDays(3),
-                ShiftType = "遅番",
-                ShiftStart = TimeSpan.FromHours(13),
-                ShiftEnd = TimeSpan.FromHours(21),
-                RequiredNumber = 2
-            });
+                shiftFrames.Add(new ShiftFrame
+                {
+                    Date = DateTime.Today.AddDays(1),
+                    ShiftType = "早番",
+                    ShiftStart = TimeSpan.FromHours(9),
+                    ShiftEnd = TimeSpan.FromHours(17),
+                    RequiredNumber = 2
+                });
+                shiftFrames.Add(new ShiftFrame
+                {
+                    Date = DateTime.Today.AddDays(2),
+                    ShiftType = "早番",
+                    ShiftStart = TimeSpan.FromHours(9),
+                    ShiftEnd = TimeSpan.FromHours(17),
+                    RequiredNumber = 1
+                });
+                shiftFrames.Add(new ShiftFrame
+                {
+                    Date = DateTime.Today.AddDays(3),
+                    ShiftType = "遅番",
+                    ShiftStart = TimeSpan.FromHours(13),
+                    ShiftEnd = TimeSpan.FromHours(21),
+                    RequiredNumber = 2
+                });
+                SaveFrames();
+            }
 
-            assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members);
+            // 割り当て結果が無い場合は自動生成
+            if (assignments.Count == 0)
+            {
+                assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members, shiftRequests);
+                SaveAssignments();
+            }
         }
 
         private void SetupDataGridView()
@@ -158,7 +392,10 @@ namespace ShiftPlanner
                 {
                     var date = new DateTime(year, month, day);
                     var header = $"{day}({GetJapaneseDayOfWeek(date.DayOfWeek)})";
-                    var assign = assignments.FirstOrDefault(a => a.Date.Date == date && a.AssignedMembers.Contains(member));
+                    var assign = assignments.FirstOrDefault(a =>
+                        a.Date.Date == date &&
+                        a.AssignedMembers != null &&
+                        a.AssignedMembers.Any(m => m.Id == member.Id));
                     row[header] = assign != null ? assign.ShiftType : "休";
                 }
                 table.Rows.Add(row);
@@ -188,6 +425,8 @@ namespace ShiftPlanner
 
             dtShift.AutoGenerateColumns = true;
             dtShift.DataSource = table;
+            dtShift.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
+            dtShift.ColumnHeadersDefaultCellStyle.WrapMode = DataGridViewTriState.False;
 
             for (int day = 1; day <= daysInMonth; day++)
             {
@@ -196,7 +435,11 @@ namespace ShiftPlanner
                 var col = dtShift.Columns[header];
                 if (col != null)
                 {
-                    col.Width = 45;
+                    col.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
+                    col.HeaderCell.Style.WrapMode = DataGridViewTriState.False;
+                    col.HeaderCell.Style.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                    col.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+                    col.Width = 40;
                     if (date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday)
                     {
                         col.DefaultCellStyle.BackColor = Color.LightYellow;
@@ -204,7 +447,51 @@ namespace ShiftPlanner
                 }
             }
 
-            dtShift.AutoResizeColumns();
+            // すべての列をソート不可に設定
+            SetColumnsNotSortable(dtShift);
+
+            // 割当人数行の不足・過剰を色分け
+            try
+            {
+                int assignedRowIndex = table.Rows.IndexOf(assignedRow);
+                if (assignedRowIndex >= 0 && assignedRowIndex < dtShift.Rows.Count)
+                {
+                    for (int day = 1; day <= daysInMonth; day++)
+                    {
+                        var date = new DateTime(year, month, day);
+                        var header = $"{day}({GetJapaneseDayOfWeek(date.DayOfWeek)})";
+                        var col = dtShift.Columns[header];
+                        if (col == null)
+                        {
+                            continue;
+                        }
+
+                        var cell = dtShift.Rows[assignedRowIndex].Cells[col.Index];
+                        var style = new DataGridViewCellStyle(cell.Style);
+
+                        var assign = assignments.FirstOrDefault(a => a.Date.Date == date);
+                        if (assign != null)
+                        {
+                            if (assign.Shortage)
+                            {
+                                style.BackColor = Color.MistyRose;      // 不足時は薄い赤
+                            }
+                            else if (assign.Excess)
+                            {
+                                style.BackColor = Color.LightBlue;      // 過剰時は薄い青
+                            }
+                        }
+
+                        cell.Style = style;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"セルの着色中にエラーが発生しました: {ex.Message}");
+            }
+
+            // 自動リサイズは行わず固定幅を維持
         }
 
         /// <summary>
@@ -235,11 +522,327 @@ namespace ShiftPlanner
             return string.Empty;
         }
 
+        /// <summary>
+        /// 指定したグリッドの列をすべてソート不可に設定します。
+        /// </summary>
+        /// <param name="grid">対象のDataGridView</param>
+        private static void SetColumnsNotSortable(DataGridView grid)
+        {
+            if (grid == null || grid.Columns == null)
+            {
+                return; // null 安全対策
+            }
+
+            foreach (DataGridViewColumn column in grid.Columns)
+            {
+                if (column != null)
+                {
+                    column.SortMode = DataGridViewColumnSortMode.NotSortable;
+                }
+            }
+        }
+
+        /// <summary>
+        /// シフト表の「必要人数」行から値を取得してシフトフレームを更新します。
+        /// </summary>
+        private void ApplyRequiredNumbersFromGrid()
+        {
+            if (!(dtShift.DataSource is DataTable table))
+            {
+                return; // データテーブルが取得できない場合は何もしない
+            }
+
+            dtShift.EndEdit(); // 編集中の値を確定させる
+
+            var requiredRow = table.AsEnumerable()
+                .FirstOrDefault(r => string.Equals(r["人名"]?.ToString(), "必要人数", StringComparison.Ordinal));
+            if (requiredRow == null)
+            {
+                return; // 行が見つからない場合も処理しない
+            }
+
+            int year = dtpMonth.Value.Year;
+            int month = dtpMonth.Value.Month;
+            int daysInMonth = DateTime.DaysInMonth(year, month);
+
+            for (int day = 1; day <= daysInMonth; day++)
+            {
+                var date = new DateTime(year, month, day);
+                string header = $"{day}({GetJapaneseDayOfWeek(date.DayOfWeek)})";
+                if (!table.Columns.Contains(header))
+                {
+                    continue; // 列が存在しない場合はスキップ
+                }
+
+                int number = 0;
+                var val = requiredRow[header];
+                if (val != null && !string.IsNullOrEmpty(val.ToString()))
+                {
+                    int.TryParse(val.ToString(), out number);
+                }
+
+                var frame = shiftFrames.FirstOrDefault(f => f.Date.Date == date);
+                if (frame != null)
+                {
+                    frame.RequiredNumber = number;
+                }
+            }
+
+            SaveFrames();
+        }
+
+        /// <summary>
+        /// グリッドで手入力されたシフト内容を取得します。
+        /// </summary>
+        private Dictionary<(int memberId, DateTime date), string?> CaptureManualAssignmentsFromGrid()
+        {
+            var result = new Dictionary<(int, DateTime), string?>();
+
+            if (!(dtShift.DataSource is DataTable table))
+            {
+                return result;
+            }
+
+            dtShift.EndEdit();
+
+            int year = dtpMonth.Value.Year;
+            int month = dtpMonth.Value.Month;
+            int daysInMonth = DateTime.DaysInMonth(year, month);
+
+            foreach (DataRow row in table.Rows)
+            {
+                var name = row["人名"]?.ToString();
+                if (string.IsNullOrEmpty(name) || name == "必要人数" || name == "割当人数")
+                {
+                    continue;
+                }
+
+                var member = members.FirstOrDefault(m => m.Name == name);
+                if (member == null)
+                {
+                    continue;
+                }
+
+                for (int day = 1; day <= daysInMonth; day++)
+                {
+                    var date = new DateTime(year, month, day);
+                    var header = $"{day}({GetJapaneseDayOfWeek(date.DayOfWeek)})";
+                    if (!table.Columns.Contains(header))
+                    {
+                        continue;
+                    }
+
+                    var val = row[header]?.ToString();
+                    result[(member.Id, date)] = string.IsNullOrWhiteSpace(val) ? "休" : val;
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 自動生成後の割り当てに手入力内容を反映します。
+        /// </summary>
+        private void ApplyManualAssignments(Dictionary<(int memberId, DateTime date), string?> manual)
+        {
+            if (manual == null || manual.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var kv in manual)
+            {
+                var key = kv.Key;
+                var shiftType = kv.Value ?? "休";
+                var member = members.FirstOrDefault(m => m.Id == key.memberId);
+                if (member == null)
+                {
+                    continue;
+                }
+
+                // その日の既存割当からメンバーを除外
+                foreach (var a in assignments.Where(a => a.Date.Date == key.date).ToList())
+                {
+                    a.AssignedMembers.RemoveAll(m => m.Id == member.Id);
+                }
+
+                if (string.IsNullOrEmpty(shiftType) || shiftType == "休")
+                {
+                    // 休み指定なので割当なし
+                    continue;
+                }
+
+                // シフトフレームを取得または作成
+                var frame = shiftFrames.FirstOrDefault(f => f.Date.Date == key.date && f.ShiftType == shiftType);
+                if (frame == null)
+                {
+                    frame = new ShiftFrame
+                    {
+                        Date = key.date,
+                        ShiftType = shiftType,
+                        ShiftStart = TimeSpan.FromHours(9),
+                        ShiftEnd = TimeSpan.FromHours(17),
+                        RequiredNumber = 1
+                    };
+                    shiftFrames.Add(frame);
+                }
+
+                // 割当を取得または作成
+                var assign = assignments.FirstOrDefault(a => a.Date.Date == key.date && a.ShiftType == shiftType);
+                if (assign == null)
+                {
+                    assign = new ShiftAssignment
+                    {
+                        Date = key.date,
+                        ShiftType = shiftType,
+                        RequiredNumber = frame.RequiredNumber,
+                        AssignedMembers = new List<Member>()
+                    };
+                    assignments.Add(assign);
+                }
+
+                if (!assign.AssignedMembers.Any(m => m.Id == member.Id))
+                {
+                    assign.AssignedMembers.Add(member);
+                }
+            }
+
+            // 不要になった割当を整理
+            assignments.RemoveAll(a => a.AssignedMembers == null || a.AssignedMembers.Count == 0);
+
+            SaveFrames();
+        }
+
         private void SetupMemberGrid()
         {
+            // データソースを一旦解除してから設定
             dtMembers.DataSource = null;
             dtMembers.DataSource = members;
+
+            // 自動生成された列のヘッダーを日本語へ変換
             dtMembers.AutoGenerateColumns = true;
+            try
+            {
+                foreach (DataGridViewColumn col in dtMembers.Columns)
+                {
+                    if (col == null || string.IsNullOrEmpty(col.Name))
+                    {
+                        continue; // null 安全対策
+                    }
+
+                    switch (col.Name)
+                    {
+                        case nameof(Member.Id):
+                            col.HeaderText = "ID";
+                            break;
+                        case nameof(Member.Name):
+                            col.HeaderText = "名前";
+                            break;
+                        case nameof(Member.AvailableDays):
+                            col.HeaderText = "勤務可能曜日";
+                            break;
+                        case nameof(Member.AvailableFrom):
+                            col.HeaderText = "開始時間";
+                            break;
+                        case nameof(Member.AvailableTo):
+                            col.HeaderText = "終了時間";
+                            break;
+                        case nameof(Member.Skills):
+                            col.HeaderText = "スキル";
+                            break;
+                        case nameof(Member.DesiredHolidays):
+                            col.HeaderText = "希望休";
+                            break;
+                        case nameof(Member.Constraints):
+                            col.HeaderText = "制約";
+                            break;
+                    }
+                }
+
+                // 列をソート不可に設定
+                SetColumnsNotSortable(dtMembers);
+            }
+            catch (Exception ex)
+            {
+                // ヘッダー変更に失敗してもアプリが落ちないよう通知のみ
+                MessageBox.Show($"ヘッダー設定中にエラーが発生しました: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 分析タブの情報を更新します。
+        /// </summary>
+        private void UpdateAnalysis()
+        {
+            try
+            {
+                int 年 = dtp分析月.Value.Year;
+                int 月 = dtp分析月.Value.Month;
+
+                // 総労働時間計算
+                var 時間 = ShiftAnalyzer.CalculateMonthlyHours(shiftFrames, 年, 月);
+                lbl総労働時間.Text = $"総労働時間: {時間.TotalHours:F1} 時間";
+
+                // シフトタイプ分布
+                var 分布 = ShiftAnalyzer.GetShiftTypeDistribution(shiftFrames, 年, 月);
+                if (chartシフト分布.Series.Count == 0)
+                {
+                    var series = new Series { ChartType = SeriesChartType.Pie };
+                    chartシフト分布.Series.Add(series);
+                }
+
+                var s = chartシフト分布.Series[0];
+                s.Points.Clear();
+                foreach (var kv in 分布)
+                {
+                    s.Points.AddXY(kv.Key, kv.Value);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"分析情報の更新に失敗しました: {ex.Message}");
+            }
+        }
+
+        private void SetupRequestGrid()
+        {
+            // データソースを一旦解除してから再設定
+            dtRequests.DataSource = null;
+            dtRequests.DataSource = shiftRequests ?? new List<ShiftRequest>();
+            dtRequests.AutoGenerateColumns = true;
+
+            // 生成された列ヘッダーを日本語へ変更
+            try
+            {
+                foreach (DataGridViewColumn col in dtRequests.Columns)
+                {
+                    if (col == null || string.IsNullOrEmpty(col.Name))
+                    {
+                        continue; // null 安全対策
+                    }
+
+                    switch (col.Name)
+                    {
+                        case nameof(ShiftRequest.MemberId):
+                            col.HeaderText = "メンバーID";
+                            break;
+                        case nameof(ShiftRequest.Date):
+                            col.HeaderText = "希望日";
+                            break;
+                        case nameof(ShiftRequest.IsHolidayRequest):
+                            col.HeaderText = "休み希望";
+                            break;
+                    }
+                }
+
+                // 列をソート不可に設定
+                SetColumnsNotSortable(dtRequests);
+            }
+            catch (Exception ex)
+            {
+                // ヘッダー設定失敗時もアプリが落ちないよう通知のみ
+                MessageBox.Show($"ヘッダー設定中にエラーが発生しました: {ex.Message}");
+            }
         }
 
         private void btnAddMember_Click(object sender, EventArgs e)
@@ -260,10 +863,57 @@ namespace ShiftPlanner
             }
         }
 
+
+        private void btnAddRequest_Click(object sender, EventArgs e)
+        {
+            using (var form = new ShiftRequestForm(members))
+            {
+                if (form.ShowDialog() == DialogResult.OK && form.ShiftRequest != null)
+                {
+                    shiftRequests.Add(form.ShiftRequest);
+                    SetupRequestGrid();
+                    SaveRequests();
+                }
+            }
+        }
+
+        private void btnRemoveRequest_Click(object sender, EventArgs e)
+        {
+            if (dtRequests.CurrentRow?.DataBoundItem is ShiftRequest r)
+            {
+                shiftRequests.Remove(r);
+                SetupRequestGrid();
+                SaveRequests();
+
+            }
+        }
+
         private void btnRefreshShift_Click(object sender, EventArgs e)
         {
-            assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members);
-            SetupDataGridView();
+            try
+            {
+                // 手入力されたシフト内容を取得しておく
+                var manual = CaptureManualAssignmentsFromGrid();
+
+                // 必要人数グリッドの内容をシフトフレームへ反映
+                ApplyRequiredNumbersFromGrid();
+
+                // 自動割当を生成
+                assignments = ShiftGenerator.GenerateBaseShift(shiftFrames, members, shiftRequests);
+
+                // 手入力分を優先して反映
+                ApplyManualAssignments(manual);
+
+                // 必要人数をリセット
+                ResetRequiredNumbers();
+
+                SetupDataGridView();
+                SaveAssignments();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"シフト更新中にエラーが発生しました: {ex.Message}");
+            }
         }
 
         private void dtpMonth_ValueChanged(object sender, EventArgs e)
@@ -271,141 +921,155 @@ namespace ShiftPlanner
             SetupDataGridView();
         }
 
+        private void dtp分析月_ValueChanged(object sender, EventArgs e)
+        {
+            UpdateAnalysis();
+        }
+
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             SaveMembers();
+            SaveRequests();
+            SaveFrames();
+            SaveAssignments();
             base.OnFormClosing(e);
         }
 
-        private void InitializeComponent()
+        /// <summary>
+        /// CSV 出力メニューまたはボタンのクリックイベント
+        /// </summary>
+        private void btnExportCsv_Click(object sender, EventArgs e)
         {
-            this.tabControl1 = new System.Windows.Forms.TabControl();
-            this.tabPage1 = new System.Windows.Forms.TabPage();
-            this.tabPage2 = new System.Windows.Forms.TabPage();
-            this.dtShift = new System.Windows.Forms.DataGridView();
-            this.dtMembers = new System.Windows.Forms.DataGridView();
-            this.btnAddMember = new System.Windows.Forms.Button();
-            this.btnRemoveMember = new System.Windows.Forms.Button();
-            this.btnRefreshShift = new System.Windows.Forms.Button();
-            this.dtpMonth = new System.Windows.Forms.DateTimePicker();
-            this.tabControl1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.dtShift)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.dtMembers)).BeginInit();
-            this.SuspendLayout();
-            // 
-            // tabControl1
-            // 
-            this.tabControl1.Controls.Add(this.tabPage1);
-            this.tabControl1.Controls.Add(this.tabPage2);
-            this.tabControl1.Location = new System.Drawing.Point(2, 25);
-            this.tabControl1.Name = "tabControl1";
-            this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(1393, 864);
-            this.tabControl1.TabIndex = 0;
-            // 
-            // tabPage1
-            //
-            this.tabPage1.Controls.Add(this.dtShift);
-            this.tabPage1.Controls.Add(this.btnRefreshShift);
-            this.tabPage1.Controls.Add(this.dtpMonth);
-            this.tabPage1.Location = new System.Drawing.Point(4, 22);
-            this.tabPage1.Name = "tabPage1";
-            this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage1.Size = new System.Drawing.Size(1385, 838);
-            this.tabPage1.TabIndex = 0;
-            this.tabPage1.Text = "シフト表";
-            this.tabPage1.UseVisualStyleBackColor = true;
-
-            // dtShift
-            //
-            this.dtShift.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.dtShift.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dtShift.Location = new System.Drawing.Point(3, 35);
-            this.dtShift.Name = "dtShift";
-            this.dtShift.RowTemplate.Height = 21;
-            this.dtShift.Size = new System.Drawing.Size(1379, 800);
-            this.dtShift.TabIndex = 1;
-
-            // btnRefreshShift
-            //
-            this.btnRefreshShift.Location = new System.Drawing.Point(6, 6);
-            this.btnRefreshShift.Name = "btnRefreshShift";
-            this.btnRefreshShift.Size = new System.Drawing.Size(75, 23);
-            this.btnRefreshShift.TabIndex = 0;
-            this.btnRefreshShift.Text = "更新";
-            this.btnRefreshShift.UseVisualStyleBackColor = true;
-            this.btnRefreshShift.Click += new System.EventHandler(this.btnRefreshShift_Click);
-
-            // dtpMonth
-            //
-            this.dtpMonth.CustomFormat = "yyyy/MM";
-            this.dtpMonth.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
-            this.dtpMonth.Location = new System.Drawing.Point(87, 6);
-            this.dtpMonth.Name = "dtpMonth";
-            this.dtpMonth.ShowUpDown = true;
-            this.dtpMonth.Size = new System.Drawing.Size(100, 23);
-            this.dtpMonth.TabIndex = 2;
-            this.dtpMonth.Value = new System.DateTime(System.DateTime.Now.Year, System.DateTime.Now.Month, 1);
-            this.dtpMonth.ValueChanged += new System.EventHandler(this.dtpMonth_ValueChanged);
-            // 
-            // tabPage2
-            // 
-            this.tabPage2.Controls.Add(this.dtMembers);
-            this.tabPage2.Controls.Add(this.btnRemoveMember);
-            this.tabPage2.Controls.Add(this.btnAddMember);
-            this.tabPage2.Location = new System.Drawing.Point(4, 22);
-            this.tabPage2.Name = "tabPage2";
-            this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage2.Size = new System.Drawing.Size(1385, 838);
-            this.tabPage2.TabIndex = 1;
-            this.tabPage2.Text = "メンバー";
-            this.tabPage2.UseVisualStyleBackColor = true;
-
-            // btnAddMember
-            //
-            this.btnAddMember.Location = new System.Drawing.Point(6, 6);
-            this.btnAddMember.Name = "btnAddMember";
-            this.btnAddMember.Size = new System.Drawing.Size(75, 23);
-            this.btnAddMember.TabIndex = 0;
-            this.btnAddMember.Text = "追加";
-            this.btnAddMember.UseVisualStyleBackColor = true;
-            this.btnAddMember.Click += new System.EventHandler(this.btnAddMember_Click);
-
-            // btnRemoveMember
-            //
-            this.btnRemoveMember.Location = new System.Drawing.Point(87, 6);
-            this.btnRemoveMember.Name = "btnRemoveMember";
-            this.btnRemoveMember.Size = new System.Drawing.Size(75, 23);
-            this.btnRemoveMember.TabIndex = 1;
-            this.btnRemoveMember.Text = "削除";
-            this.btnRemoveMember.UseVisualStyleBackColor = true;
-            this.btnRemoveMember.Click += new System.EventHandler(this.btnRemoveMember_Click);
-
-            // dtMembers
-            //
-            this.dtMembers.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.dtMembers.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dtMembers.Location = new System.Drawing.Point(3, 35);
-            this.dtMembers.Name = "dtMembers";
-            this.dtMembers.RowTemplate.Height = 21;
-            this.dtMembers.Size = new System.Drawing.Size(1379, 800);
-            this.dtMembers.TabIndex = 2;
-            // 
-            // MainForm
-            // 
-            this.ClientSize = new System.Drawing.Size(1398, 889);
-            this.Controls.Add(this.tabControl1);
-            this.Name = "MainForm";
-            this.tabControl1.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.dtShift)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.dtMembers)).EndInit();
-            this.ResumeLayout(false);
-
+            ExportCsv();
         }
+
+        /// <summary>
+        /// PDF 出力メニューまたはボタンのクリックイベント
+        /// </summary>
+        private void btnExportPdf_Click(object sender, EventArgs e)
+        {
+            ExportPdf();
+        }
+
+        /// <summary>
+        /// 分析CSV出力メニューのクリックイベント
+        /// </summary>
+        private void menuExportAnalysisCsv_Click(object sender, EventArgs e)
+        {
+            ExportAnalysisCsv();
+        }
+
+        /// <summary>
+        /// CSV を保存します。
+        /// </summary>
+        private void ExportCsv()
+        {
+            using (var dialog = new SaveFileDialog())
+            {
+                dialog.Filter = "CSVファイル (*.csv)|*.csv|すべてのファイル (*.*)|*.*";
+                dialog.Title = "CSVの保存先を選択してください";
+
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    try
+                    {
+                        var frames = shiftFrames ?? new List<ShiftFrame>();
+                        ShiftExporter.ExportToCsv(frames, dialog.FileName);
+                        MessageBox.Show("CSV出力が完了しました。", "情報");
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"CSV出力に失敗しました: {ex.Message}");
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// PDF を保存します。
+        /// </summary>
+        private void ExportPdf()
+        {
+            using (var dialog = new SaveFileDialog())
+            {
+                dialog.Filter = "PDFファイル (*.pdf)|*.pdf|すべてのファイル (*.*)|*.*";
+                dialog.Title = "PDFの保存先を選択してください";
+
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    try
+                    {
+                        var frames = shiftFrames ?? new List<ShiftFrame>();
+                        var message = ShiftExporter.ExportToPdf(frames, dialog.FileName);
+                        MessageBox.Show(message, "情報");
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"PDF出力に失敗しました: {ex.Message}");
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 分析結果をCSVとして保存します。
+        /// </summary>
+        private void ExportAnalysisCsv()
+        {
+            using (var dialog = new SaveFileDialog())
+            {
+                dialog.Filter = "CSVファイル (*.csv)|*.csv|すべてのファイル (*.*)|*.*";
+                dialog.Title = "分析CSVの保存先を選択してください";
+
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    try
+                    {
+                        var frames = shiftFrames ?? new List<ShiftFrame>();
+                        var year = dtp分析月.Value.Year;
+                        var month = dtp分析月.Value.Month;
+                        var message = ShiftAnalyzer.ExportDistributionToCsv(frames, year, month, dialog.FileName);
+                        MessageBox.Show(message, "情報");
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"分析CSV出力に失敗しました: {ex.Message}");
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// シフト表グリッドで Delete キーが押されたとき、選択セルの値をクリアします。
+        /// </summary>
+        private void dtShift_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode != Keys.Delete || dtShift == null)
+            {
+                return;
+            }
+
+            foreach (DataGridViewCell cell in dtShift.SelectedCells)
+            {
+                if (cell == null || cell.ReadOnly)
+                {
+                    continue;
+                }
+
+                // 行や列が無効な場合もスキップ
+                if (cell.RowIndex < 0 || cell.ColumnIndex < 0)
+                {
+                    continue;
+                }
+
+                cell.Value = string.Empty;
+            }
+
+            // 既定の処理を抑制
+            e.Handled = true;
+        }
+
+        // このメソッドの内容は MainForm.Designer.cs に移動しました。
     }
 }
 

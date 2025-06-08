@@ -13,6 +13,9 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
     <TargetFrameworkProfile />
+    <!-- C# 8.0 機能を利用するため言語バージョンを指定 -->
+    <LangVersion>8.0</LangVersion>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -51,16 +54,25 @@
     <!-- Json シリアライズ用 -->
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml" />
+    <!-- PDF 出力用ライブラリ -->
+    <Reference Include="itextsharp" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MainForm.Designer.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Member.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ShiftFrame.cs" />
     <Compile Include="ShiftRequest.cs" />
+    <Compile Include="ShiftRequestForm.cs" />
+    <Compile Include="ShiftRequestForm.Designer.cs">
+      <DependentUpon>ShiftRequestForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="ShiftExporter.cs" />
     <Compile Include="ShiftAnalyzer.cs" />
     <Compile Include="ShiftAssignment.cs" />
