@@ -13,11 +13,13 @@ namespace ShiftPlanner
     {
         private readonly BindingList<Member> _members;
         private readonly List<SkillGroup> _skillGroups;
+        private readonly List<ShiftTime> _shiftTimes;
 
-        public MemberMasterForm(List<Member> members, List<SkillGroup> skillGroups)
+        public MemberMasterForm(List<Member> members, List<SkillGroup> skillGroups, List<ShiftTime> shiftTimes)
         {
             _members = new BindingList<Member>(members ?? new List<Member>());
             _skillGroups = skillGroups ?? new List<SkillGroup>();
+            _shiftTimes = shiftTimes ?? new List<ShiftTime>();
             InitializeComponent();
             dtMembers.DataSource = _members;
             SetupMemberGrid();
@@ -124,7 +126,95 @@ namespace ShiftPlanner
                         break;
                 }
             }
+
+            // 出勤時間ごとの可否チェック列を追加
+            foreach (var st in _shiftTimes)
+            {
+                if (st == null)
+                {
+                    continue;
+                }
+
+                var col = new DataGridViewCheckBoxColumn
+                {
+                    Name = $"Shift_{st.Name}",
+                    HeaderText = st.Name,
+                    DataPropertyName = string.Empty
+                };
+                dtMembers.Columns.Add(col);
+            }
+
+            dtMembers.CellFormatting += DtMembers_CellFormatting;
+            dtMembers.CellParsing += DtMembers_CellParsing;
+            dtMembers.CurrentCellDirtyStateChanged += DtMembers_CurrentCellDirtyStateChanged;
             SetColumnsNotSortable(dtMembers);
+        }
+
+        private void DtMembers_CurrentCellDirtyStateChanged(object? sender, EventArgs e)
+        {
+            if (dtMembers.IsCurrentCellDirty)
+            {
+                dtMembers.CommitEdit(DataGridViewDataErrorContexts.Commit);
+            }
+        }
+
+        private void DtMembers_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (e.RowIndex < 0)
+            {
+                return;
+            }
+
+            var column = dtMembers.Columns[e.ColumnIndex];
+            if (column != null && column.Name.StartsWith("Shift_"))
+            {
+                if (dtMembers.Rows[e.RowIndex].DataBoundItem is Member m)
+                {
+                    string shiftName = column.HeaderText;
+                    e.Value = m.AvailableShiftNames != null && m.AvailableShiftNames.Contains(shiftName);
+                    e.FormattingApplied = true;
+                }
+            }
+        }
+
+        private void DtMembers_CellParsing(object? sender, DataGridViewCellParsingEventArgs e)
+        {
+            if (e.RowIndex < 0)
+            {
+                return;
+            }
+
+            var column = dtMembers.Columns[e.ColumnIndex];
+            if (column != null && column.Name.StartsWith("Shift_"))
+            {
+                if (dtMembers.Rows[e.RowIndex].DataBoundItem is Member m)
+                {
+                    string shiftName = column.HeaderText;
+                    bool val = false;
+                    if (e.Value != null && bool.TryParse(e.Value.ToString(), out bool b))
+                    {
+                        val = b;
+                    }
+
+                    if (val)
+                    {
+                        if (m.AvailableShiftNames == null)
+                        {
+                            m.AvailableShiftNames = new List<string>();
+                        }
+                        if (!m.AvailableShiftNames.Contains(shiftName))
+                        {
+                            m.AvailableShiftNames.Add(shiftName);
+                        }
+                    }
+                    else
+                    {
+                        m.AvailableShiftNames?.Remove(shiftName);
+                    }
+
+                    e.ParsingApplied = true;
+                }
+            }
         }
 
         /// <summary>

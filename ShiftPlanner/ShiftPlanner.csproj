@@ -107,6 +107,13 @@
     <Compile Include="SkillGroupMasterForm.Designer.cs">
       <DependentUpon>SkillGroupMasterForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="ShiftTime.cs" />
+    <Compile Include="ShiftTimeMasterForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ShiftTimeMasterForm.Designer.cs">
+      <DependentUpon>ShiftTimeMasterForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="ShiftConstraints.cs" />
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
