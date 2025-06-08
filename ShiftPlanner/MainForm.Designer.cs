@@ -279,6 +279,5 @@ namespace ShiftPlanner
 
         }
 
-        private ToolStripMenuItem menuExportAnalysisCsv;
     }
 }
