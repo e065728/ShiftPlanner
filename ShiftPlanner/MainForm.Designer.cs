@@ -14,31 +14,24 @@ namespace ShiftPlanner
 
         // --- UI コントロール定義 ---
         private TabControl tabControl1;
-        private TabPage tabPage1;
         private TabPage tabPage3;
-        private DataGridView dtShift;
         private DataGridView dtRequests;
         private DataGridView dtRequestSummary;
         private ComboBox cmbHolidayLimit;
         private Label lblHolidayLimit;
         private Button btnAddRequest;
         private Button btnRemoveRequest;
-        private Button btnRefreshShift;
-        private DateTimePicker dtpMonth;
-        private Button btnExportCsv;
-        private Button btnExportPdf;
+        private DateTimePicker dtp分析月;
+        private Label lbl総労働時間;
+        private Chart chartシフト分布;
         private MenuStrip menuStrip1;
         private ToolStripMenuItem menuFile;
-        private ToolStripMenuItem menuExportCsv;
-        private ToolStripMenuItem menuExportPdf;
         private ToolStripMenuItem menuMaster;
         private ToolStripMenuItem menuHolidayMaster;
         private ToolStripMenuItem menuMemberMaster;
         private ToolStripMenuItem menuSkillGroupMaster;
         private ToolStripMenuItem menuShiftTimeMaster;
-        private DateTimePicker dtp分析月;
-        private Label lbl総労働時間;
-        private Chart chartシフト分布;
+        private ToolStripMenuItem menuExportAnalysisCsv;
 
         /// <summary>
         /// 使用中のリソースをすべて解放します。
@@ -55,11 +48,6 @@ namespace ShiftPlanner
         private void InitializeComponent()
         {
             this.tabControl1 = new System.Windows.Forms.TabControl();
-            this.tabPage1 = new System.Windows.Forms.TabPage();
-            this.dtShift = new System.Windows.Forms.DataGridView();
-            this.btnExportPdf = new System.Windows.Forms.Button();
-            this.btnExportCsv = new System.Windows.Forms.Button();
-            this.btnRefreshShift = new System.Windows.Forms.Button();
             this.tabPage3 = new System.Windows.Forms.TabPage();
             this.dtRequestSummary = new System.Windows.Forms.DataGridView();
             this.dtRequests = new System.Windows.Forms.DataGridView();
@@ -67,11 +55,8 @@ namespace ShiftPlanner
             this.btnAddRequest = new System.Windows.Forms.Button();
             this.cmbHolidayLimit = new System.Windows.Forms.ComboBox();
             this.lblHolidayLimit = new System.Windows.Forms.Label();
-            this.dtpMonth = new System.Windows.Forms.DateTimePicker();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.menuFile = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuExportCsv = new System.Windows.Forms.ToolStripMenuItem();
-            this.menuExportPdf = new System.Windows.Forms.ToolStripMenuItem();
             this.menuExportAnalysisCsv = new System.Windows.Forms.ToolStripMenuItem();
             this.menuMaster = new System.Windows.Forms.ToolStripMenuItem();
             this.menuHolidayMaster = new System.Windows.Forms.ToolStripMenuItem();
@@ -82,8 +67,6 @@ namespace ShiftPlanner
             this.lbl総労働時間 = new System.Windows.Forms.Label();
             this.chartシフト分布 = new System.Windows.Forms.DataVisualization.Charting.Chart();
             this.tabControl1.SuspendLayout();
-            this.tabPage1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.dtShift)).BeginInit();
             this.tabPage3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dtRequestSummary)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtRequests)).BeginInit();
@@ -93,70 +76,12 @@ namespace ShiftPlanner
             // 
             // tabControl1
             // 
-            this.tabControl1.Controls.Add(this.tabPage1);
             this.tabControl1.Controls.Add(this.tabPage3);
             this.tabControl1.Location = new System.Drawing.Point(2, 55);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
             this.tabControl1.Size = new System.Drawing.Size(1393, 834);
             this.tabControl1.TabIndex = 0;
-            // 
-            // tabPage1
-            // 
-            this.tabPage1.Controls.Add(this.dtShift);
-            this.tabPage1.Controls.Add(this.btnExportPdf);
-            this.tabPage1.Controls.Add(this.btnExportCsv);
-            this.tabPage1.Controls.Add(this.btnRefreshShift);
-            this.tabPage1.Location = new System.Drawing.Point(4, 22);
-            this.tabPage1.Name = "tabPage1";
-            this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage1.Size = new System.Drawing.Size(1385, 808);
-            this.tabPage1.TabIndex = 0;
-            this.tabPage1.Text = "シフト表";
-            this.tabPage1.UseVisualStyleBackColor = true;
-            // 
-            // dtShift
-            // 
-            this.dtShift.AllowUserToAddRows = false;
-            this.dtShift.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.dtShift.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dtShift.Location = new System.Drawing.Point(6, 38);
-            this.dtShift.Name = "dtShift";
-            this.dtShift.RowTemplate.Height = 21;
-            this.dtShift.Size = new System.Drawing.Size(2558, 1475);
-            this.dtShift.TabIndex = 1;
-            // 
-            // btnExportPdf
-            // 
-            this.btnExportPdf.Location = new System.Drawing.Point(168, 6);
-            this.btnExportPdf.Name = "btnExportPdf";
-            this.btnExportPdf.Size = new System.Drawing.Size(75, 23);
-            this.btnExportPdf.TabIndex = 4;
-            this.btnExportPdf.Text = "PDF出力";
-            this.btnExportPdf.UseVisualStyleBackColor = true;
-            this.btnExportPdf.Click += new System.EventHandler(this.btnExportPdf_Click);
-            // 
-            // btnExportCsv
-            // 
-            this.btnExportCsv.Location = new System.Drawing.Point(87, 6);
-            this.btnExportCsv.Name = "btnExportCsv";
-            this.btnExportCsv.Size = new System.Drawing.Size(75, 23);
-            this.btnExportCsv.TabIndex = 3;
-            this.btnExportCsv.Text = "CSV出力";
-            this.btnExportCsv.UseVisualStyleBackColor = true;
-            this.btnExportCsv.Click += new System.EventHandler(this.btnExportCsv_Click);
-            // 
-            // btnRefreshShift
-            // 
-            this.btnRefreshShift.Location = new System.Drawing.Point(6, 6);
-            this.btnRefreshShift.Name = "btnRefreshShift";
-            this.btnRefreshShift.Size = new System.Drawing.Size(75, 23);
-            this.btnRefreshShift.TabIndex = 0;
-            this.btnRefreshShift.Text = "更新";
-            this.btnRefreshShift.UseVisualStyleBackColor = true;
-            this.btnRefreshShift.Click += new System.EventHandler(this.btnRefreshShift_Click);
             // 
             // tabPage3
             // 
@@ -247,18 +172,6 @@ namespace ShiftPlanner
             this.lblHolidayLimit.TabIndex = 5;
             this.lblHolidayLimit.Text = "休み希望上限";
             // 
-            // dtpMonth
-            // 
-            this.dtpMonth.CustomFormat = "yyyy/MM";
-            this.dtpMonth.Format = System.Windows.Forms.DateTimePickerFormat.Custom;
-            this.dtpMonth.Location = new System.Drawing.Point(6, 27);
-            this.dtpMonth.Name = "dtpMonth";
-            this.dtpMonth.ShowUpDown = true;
-            this.dtpMonth.Size = new System.Drawing.Size(100, 19);
-            this.dtpMonth.TabIndex = 2;
-            this.dtpMonth.Value = new System.DateTime(2025, 6, 1, 0, 0, 0, 0);
-            this.dtpMonth.ValueChanged += new System.EventHandler(this.dtpMonth_ValueChanged);
-            // 
             // menuStrip1
             // 
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -273,26 +186,10 @@ namespace ShiftPlanner
             // menuFile
             // 
             this.menuFile.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.menuExportCsv,
-            this.menuExportPdf,
             this.menuExportAnalysisCsv});
             this.menuFile.Name = "menuFile";
             this.menuFile.Size = new System.Drawing.Size(53, 20);
             this.menuFile.Text = "ファイル";
-            // 
-            // menuExportCsv
-            // 
-            this.menuExportCsv.Name = "menuExportCsv";
-            this.menuExportCsv.Size = new System.Drawing.Size(142, 22);
-            this.menuExportCsv.Text = "CSV出力";
-            this.menuExportCsv.Click += new System.EventHandler(this.btnExportCsv_Click);
-            // 
-            // menuExportPdf
-            // 
-            this.menuExportPdf.Name = "menuExportPdf";
-            this.menuExportPdf.Size = new System.Drawing.Size(142, 22);
-            this.menuExportPdf.Text = "PDF出力";
-            this.menuExportPdf.Click += new System.EventHandler(this.btnExportPdf_Click);
             // 
             // menuExportAnalysisCsv
             // 
@@ -364,14 +261,11 @@ namespace ShiftPlanner
             // MainForm
             // 
             this.ClientSize = new System.Drawing.Size(1398, 889);
-            this.Controls.Add(this.dtpMonth);
             this.Controls.Add(this.tabControl1);
             this.Controls.Add(this.menuStrip1);
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "MainForm";
             this.tabControl1.ResumeLayout(false);
-            this.tabPage1.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.dtShift)).EndInit();
             this.tabPage3.ResumeLayout(false);
             this.tabPage3.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dtRequestSummary)).EndInit();
