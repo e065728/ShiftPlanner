@@ -105,10 +105,11 @@ namespace ShiftPlanner
             this.dtRequestSummary.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.dtRequestSummary.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dtRequestSummary.Location = new System.Drawing.Point(1871, 38);
+            // 右側に表示できるよう座標を調整
+            this.dtRequestSummary.Location = new System.Drawing.Point(692, 38);
             this.dtRequestSummary.Name = "dtRequestSummary";
             this.dtRequestSummary.RowTemplate.Height = 21;
-            this.dtRequestSummary.Size = new System.Drawing.Size(693, 1502);
+            this.dtRequestSummary.Size = new System.Drawing.Size(680, 764);
             this.dtRequestSummary.TabIndex = 7;
             // 
             // dtRequests
@@ -120,7 +121,7 @@ namespace ShiftPlanner
             this.dtRequests.Location = new System.Drawing.Point(6, 38);
             this.dtRequests.Name = "dtRequests";
             this.dtRequests.RowTemplate.Height = 21;
-            this.dtRequests.Size = new System.Drawing.Size(680, 1502);
+            this.dtRequests.Size = new System.Drawing.Size(680, 764);
             this.dtRequests.TabIndex = 2;
             // 
             // btnRemoveRequest
