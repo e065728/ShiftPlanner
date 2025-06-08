@@ -32,6 +32,8 @@ namespace ShiftPlanner
         private ToolStripMenuItem menuFile;
         private ToolStripMenuItem menuExportCsv;
         private ToolStripMenuItem menuExportPdf;
+        private ToolStripMenuItem menuMaster;
+        private ToolStripMenuItem menuHolidayMaster;
         private DateTimePicker dtp分析月;
         private Label lbl総労働時間;
         private Chart chartシフト分布;
@@ -82,7 +84,8 @@ namespace ShiftPlanner
             // menuStrip1
             //
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.menuFile});
+            this.menuFile,
+            this.menuMaster});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(1398, 24);
@@ -120,6 +123,21 @@ namespace ShiftPlanner
             menuExportAnalysisCsv.Size = new System.Drawing.Size(134, 22);
             menuExportAnalysisCsv.Text = "分析CSV出力";
             menuExportAnalysisCsv.Click += new System.EventHandler(this.menuExportAnalysisCsv_Click);
+
+            // menuMaster
+            //
+            this.menuMaster.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menuHolidayMaster});
+            this.menuMaster.Name = "menuMaster";
+            this.menuMaster.Size = new System.Drawing.Size(61, 20);
+            this.menuMaster.Text = "マスター";
+
+            // menuHolidayMaster
+            //
+            this.menuHolidayMaster.Name = "menuHolidayMaster";
+            this.menuHolidayMaster.Size = new System.Drawing.Size(138, 22);
+            this.menuHolidayMaster.Text = "祝日マスター";
+            this.menuHolidayMaster.Click += new System.EventHandler(this.menuHolidayMaster_Click);
             // 
             // tabControl1
             // 
