@@ -35,6 +35,7 @@ namespace ShiftPlanner
             "ShiftPlanner",
             "requests.json");
         private List<ShiftRequest> shiftRequests = new List<ShiftRequest>();
+        private int holidayLimit = 3; // 休み希望上限
         private List<CustomHoliday> customHolidays = new List<CustomHoliday>();
 
         public MainForm()
@@ -67,6 +68,16 @@ namespace ShiftPlanner
             InitializeData();
             SetupDataGridView();
             SetupRequestGrid();
+            UpdateRequestSummary();
+
+            if (cmbHolidayLimit != null)
+            {
+                // コンボボックスの選択値から上限を設定
+                if (int.TryParse(cmbHolidayLimit.SelectedItem?.ToString(), out int v))
+                {
+                    holidayLimit = v;
+                }
+            }
 
             // メンバータブはメニューから表示するため削除
             if (tabControl1.TabPages.Contains(tabPage2))
@@ -77,7 +88,7 @@ namespace ShiftPlanner
             // グリッド編集内容を保存するイベントを設定
             if (dtRequests != null)
             {
-                dtRequests.CellEndEdit += (s, e) => SaveRequests();
+                dtRequests.CellEndEdit += DtRequests_CellEndEdit;
             }
             if (dtShift != null)
             {
@@ -908,6 +919,8 @@ namespace ShiftPlanner
             {
                 MessageBox.Show($"グリッド設定中にエラーが発生しました: {ex.Message}");
             }
+
+            UpdateRequestSummary();
         }
 
         private void btnAddMember_Click(object sender, EventArgs e)
@@ -945,9 +958,21 @@ namespace ShiftPlanner
             {
                 if (form.ShowDialog() == DialogResult.OK && form.ShiftRequest != null)
                 {
-                    shiftRequests.Add(form.ShiftRequest);
+                    var req = form.ShiftRequest;
+                    if (req.IsHolidayRequest)
+                    {
+                        int count = shiftRequests.Count(r => r.MemberId == req.MemberId && r.IsHolidayRequest);
+                        if (count >= holidayLimit)
+                        {
+                            MessageBox.Show($"{GetMemberName(req.MemberId)} の休み希望は最大 {holidayLimit} 件までです。");
+                            return;
+                        }
+                    }
+
+                    shiftRequests.Add(req);
                     SetupRequestGrid();
                     SaveRequests();
+                    UpdateRequestSummary();
                 }
             }
         }
@@ -959,6 +984,7 @@ namespace ShiftPlanner
                 shiftRequests.Remove(r);
                 SetupRequestGrid();
                 SaveRequests();
+                UpdateRequestSummary();
 
             }
         }
@@ -1174,6 +1200,69 @@ namespace ShiftPlanner
 
             // 既定の処理を抑制
             e.Handled = true;
+        }
+
+        private void DtRequests_CellEndEdit(object sender, DataGridViewCellEventArgs e)
+        {
+            SaveRequests();
+            UpdateRequestSummary();
+
+            if (dtRequests == null || e.RowIndex < 0)
+            {
+                return;
+            }
+
+            if (dtRequests.Rows[e.RowIndex].DataBoundItem is ShiftRequest req && req.IsHolidayRequest)
+            {
+                int count = shiftRequests.Count(r => r.MemberId == req.MemberId && r.IsHolidayRequest);
+                if (count > holidayLimit)
+                {
+                    MessageBox.Show($"{GetMemberName(req.MemberId)} の休み希望は最大 {holidayLimit} 件までです。");
+                    req.IsHolidayRequest = false;
+                    dtRequests.Refresh();
+                    SaveRequests();
+                    UpdateRequestSummary();
+                }
+            }
+        }
+
+        private void CmbHolidayLimit_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (int.TryParse(cmbHolidayLimit?.SelectedItem?.ToString(), out int v))
+            {
+                holidayLimit = v;
+            }
+            UpdateRequestSummary();
+        }
+
+        private void UpdateRequestSummary()
+        {
+            if (dtRequestSummary == null)
+            {
+                return;
+            }
+
+            try
+            {
+                var list = members.Select(m => new RequestSummary
+                {
+                    メンバー = m.Name,
+                    出勤希望数 = shiftRequests.Count(r => r.MemberId == m.Id && !r.IsHolidayRequest),
+                    休希望数 = shiftRequests.Count(r => r.MemberId == m.Id && r.IsHolidayRequest)
+                }).ToList();
+
+                dtRequestSummary.DataSource = list;
+                SetColumnsNotSortable(dtRequestSummary);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"サマリの更新に失敗しました: {ex.Message}");
+            }
+        }
+
+        private string GetMemberName(int id)
+        {
+            return members.FirstOrDefault(m => m.Id == id)?.Name ?? string.Empty;
         }
 
         // このメソッドの内容は MainForm.Designer.cs に移動しました。

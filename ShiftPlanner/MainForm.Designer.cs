@@ -20,6 +20,9 @@ namespace ShiftPlanner
         private DataGridView dtShift;
         private DataGridView dtMembers;
         private DataGridView dtRequests;
+        private DataGridView dtRequestSummary;
+        private ComboBox cmbHolidayLimit;
+        private Label lblHolidayLimit;
         private Button btnAddMember;
         private Button btnRemoveMember;
         private Button btnAddRequest;
@@ -82,6 +85,7 @@ namespace ShiftPlanner
             ((System.ComponentModel.ISupportInitialize)(this.dtShift)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtMembers)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtRequests)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dtRequestSummary)).BeginInit();
 
             this.SuspendLayout();
 
@@ -254,9 +258,12 @@ namespace ShiftPlanner
 
             // tabPage3
             //
+            this.tabPage3.Controls.Add(this.dtRequestSummary);
             this.tabPage3.Controls.Add(this.dtRequests);
             this.tabPage3.Controls.Add(this.btnRemoveRequest);
             this.tabPage3.Controls.Add(this.btnAddRequest);
+            this.tabPage3.Controls.Add(this.cmbHolidayLimit);
+            this.tabPage3.Controls.Add(this.lblHolidayLimit);
             this.tabPage3.Location = new System.Drawing.Point(4, 22);
             this.tabPage3.Name = "tabPage3";
             this.tabPage3.Padding = new System.Windows.Forms.Padding(3);
@@ -297,6 +304,27 @@ namespace ShiftPlanner
             this.dtMembers.Size = new System.Drawing.Size(1379, 800);
             this.dtMembers.TabIndex = 2;
 
+            // lblHolidayLimit
+            //
+            this.lblHolidayLimit.AutoSize = true;
+            this.lblHolidayLimit.Location = new System.Drawing.Point(180, 11);
+            this.lblHolidayLimit.Name = "lblHolidayLimit";
+            this.lblHolidayLimit.Size = new System.Drawing.Size(95, 12);
+            this.lblHolidayLimit.TabIndex = 5;
+            this.lblHolidayLimit.Text = "休み希望上限";
+
+            // cmbHolidayLimit
+            //
+            this.cmbHolidayLimit.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbHolidayLimit.FormattingEnabled = true;
+            this.cmbHolidayLimit.Items.AddRange(new object[] {"1","2","3","4","5","6","7","8","9"});
+            this.cmbHolidayLimit.Location = new System.Drawing.Point(281, 8);
+            this.cmbHolidayLimit.Name = "cmbHolidayLimit";
+            this.cmbHolidayLimit.Size = new System.Drawing.Size(60, 20);
+            this.cmbHolidayLimit.TabIndex = 6;
+            this.cmbHolidayLimit.SelectedIndex = 2;
+            this.cmbHolidayLimit.SelectedIndexChanged += new System.EventHandler(this.CmbHolidayLimit_SelectedIndexChanged);
+
             // btnAddRequest
             //
             this.btnAddRequest.Location = new System.Drawing.Point(6, 6);
@@ -319,15 +347,25 @@ namespace ShiftPlanner
 
             // dtRequests
             //
-            this.dtRequests.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.dtRequests.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Left)));
             this.dtRequests.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dtRequests.Location = new System.Drawing.Point(3, 35);
             this.dtRequests.Name = "dtRequests";
             this.dtRequests.RowTemplate.Height = 21;
-            this.dtRequests.Size = new System.Drawing.Size(1379, 800);
+            this.dtRequests.Size = new System.Drawing.Size(680, 800);
             this.dtRequests.TabIndex = 2;
+
+            // dtRequestSummary
+            //
+            this.dtRequestSummary.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.dtRequestSummary.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dtRequestSummary.Location = new System.Drawing.Point(689, 35);
+            this.dtRequestSummary.Name = "dtRequestSummary";
+            this.dtRequestSummary.RowTemplate.Height = 21;
+            this.dtRequestSummary.Size = new System.Drawing.Size(693, 800);
+            this.dtRequestSummary.TabIndex = 7;
 
             // 
             // MainForm
@@ -341,6 +379,7 @@ namespace ShiftPlanner
             ((System.ComponentModel.ISupportInitialize)(this.dtShift)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtMembers)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtRequests)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dtRequestSummary)).EndInit();
 
             this.ResumeLayout(false);
             this.PerformLayout();
