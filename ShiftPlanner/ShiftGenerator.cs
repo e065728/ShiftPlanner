@@ -32,9 +32,7 @@ namespace ShiftPlanner
                 var eligible = members.Where(m =>
                     (m.AvailableDays == null || m.AvailableDays.Contains(frame.Date.DayOfWeek)) &&
                     (frame.Date.DayOfWeek != DayOfWeek.Saturday || m.WorksOnSaturday) &&
-                    (frame.Date.DayOfWeek != DayOfWeek.Sunday || m.WorksOnSunday) &&
-                    m.AvailableFrom <= frame.ShiftStart &&
-                    m.AvailableTo >= frame.ShiftEnd)
+                    (frame.Date.DayOfWeek != DayOfWeek.Sunday || m.WorksOnSunday))
                     .ToList();
 
                 // 休み希望があれば割当対象から除外

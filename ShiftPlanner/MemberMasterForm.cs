@@ -37,8 +37,6 @@ namespace ShiftPlanner
             {
                 Id = nextId,
                 Name = "新規",
-                AvailableFrom = new TimeSpan(9, 0, 0),
-                AvailableTo = new TimeSpan(18, 0, 0),
                 WorksOnSaturday = false,
                 WorksOnSunday = false
             });
@@ -99,12 +97,6 @@ namespace ShiftPlanner
                         break;
                     case nameof(Member.AvailableDays):
                         col.HeaderText = "勤務可能曜日";
-                        break;
-                    case nameof(Member.AvailableFrom):
-                        col.HeaderText = "開始時間";
-                        break;
-                    case nameof(Member.AvailableTo):
-                        col.HeaderText = "終了時間";
                         break;
                     case nameof(Member.Skills):
                         col.HeaderText = "スキル";
