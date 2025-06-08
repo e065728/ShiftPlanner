@@ -41,6 +41,8 @@ namespace ShiftPlanner
             this.dtHolidays.Name = "dtHolidays";
             this.dtHolidays.RowTemplate.Height = 21;
             this.dtHolidays.Size = new System.Drawing.Size(360, 208);
+            // 直接行を追加できないよう設定
+            this.dtHolidays.AllowUserToAddRows = false;
 
             // lblYear
             this.lblYear.AutoSize = true;

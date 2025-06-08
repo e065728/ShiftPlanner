@@ -37,6 +37,8 @@ namespace ShiftPlanner
             this.dtMembers.Name = "dtMembers";
             this.dtMembers.RowTemplate.Height = 21;
             this.dtMembers.Size = new System.Drawing.Size(560, 308);
+            // 直接行を追加できないよう設定
+            this.dtMembers.AllowUserToAddRows = false;
 
             // btnAdd
             this.btnAdd.Location = new System.Drawing.Point(12, 12);
