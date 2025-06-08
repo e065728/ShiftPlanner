@@ -86,6 +86,8 @@
     <Compile Include="ShiftGenerator.cs" />
     <Compile Include="JapaneseHolidayHelper.cs" />
     <Compile Include="CustomHoliday.cs" />
+    <!-- DataGridView の拡張メソッド -->
+    <Compile Include="DataGridViewHelper.cs" />
     <!-- メンバーごとの希望件数サマリ表示用クラス -->
     <Compile Include="RequestSummary.cs" />
     <Compile Include="HolidayMasterForm.cs">
