@@ -37,6 +37,8 @@ namespace ShiftPlanner
             dtSkillGroups.Name = "dtSkillGroups";
             dtSkillGroups.RowTemplate.Height = 21;
             dtSkillGroups.Size = new System.Drawing.Size(360, 208);
+            // 直接行を追加できないよう設定
+            dtSkillGroups.AllowUserToAddRows = false;
 
             // btnAdd
             btnAdd.Location = new System.Drawing.Point(12, 12);

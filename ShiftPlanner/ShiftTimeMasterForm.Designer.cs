@@ -37,6 +37,8 @@ namespace ShiftPlanner
             dtShiftTimes.Name = "dtShiftTimes";
             dtShiftTimes.RowTemplate.Height = 21;
             dtShiftTimes.Size = new System.Drawing.Size(360, 208);
+            // 直接行を追加できないよう設定
+            dtShiftTimes.AllowUserToAddRows = false;
 
             // btnAdd
             btnAdd.Location = new System.Drawing.Point(12, 12);

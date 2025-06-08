@@ -217,6 +217,7 @@ namespace ShiftPlanner
             this.dtShift.Location = new System.Drawing.Point(3, 35);
             this.dtShift.Name = "dtShift";
             this.dtShift.RowTemplate.Height = 21;
+            this.dtShift.AllowUserToAddRows = false; // 直接行を追加させない
             // TabPage 高さ変更に合わせデータグリッドの高さを調整
             this.dtShift.Size = new System.Drawing.Size(1379, 773);
             this.dtShift.TabIndex = 1;
@@ -325,6 +326,7 @@ namespace ShiftPlanner
             this.dtMembers.Location = new System.Drawing.Point(3, 35);
             this.dtMembers.Name = "dtMembers";
             this.dtMembers.RowTemplate.Height = 21;
+            this.dtMembers.AllowUserToAddRows = false; // 直接行を追加させない
             // TabPage 高さ変更に合わせデータグリッドの高さを調整
             this.dtMembers.Size = new System.Drawing.Size(1379, 773);
             this.dtMembers.TabIndex = 2;
@@ -378,6 +380,7 @@ namespace ShiftPlanner
             this.dtRequests.Location = new System.Drawing.Point(3, 35);
             this.dtRequests.Name = "dtRequests";
             this.dtRequests.RowTemplate.Height = 21;
+            this.dtRequests.AllowUserToAddRows = false; // 直接行を追加させない
             this.dtRequests.Size = new System.Drawing.Size(680, 800);
             this.dtRequests.TabIndex = 2;
 
@@ -389,6 +392,7 @@ namespace ShiftPlanner
             this.dtRequestSummary.Location = new System.Drawing.Point(689, 35);
             this.dtRequestSummary.Name = "dtRequestSummary";
             this.dtRequestSummary.RowTemplate.Height = 21;
+            this.dtRequestSummary.AllowUserToAddRows = false; // 直接行を追加させない
             this.dtRequestSummary.Size = new System.Drawing.Size(693, 800);
             this.dtRequestSummary.TabIndex = 7;
 
