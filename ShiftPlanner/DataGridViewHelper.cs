@@ -26,5 +26,20 @@ namespace ShiftPlanner
                 }
             }
         }
+
+        /// <summary>
+        /// 列幅をヘッダー文字列が収まる程度に自動調整します。
+        /// </summary>
+        /// <param name="grid">対象の DataGridView</param>
+        public static void AdjustColumnWidthToHeader(DataGridView? grid)
+        {
+            if (grid == null)
+            {
+                return;
+            }
+
+            // 列ごとにヘッダーを基準に自動サイズ設定
+            grid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.ColumnHeader;
+        }
     }
 }

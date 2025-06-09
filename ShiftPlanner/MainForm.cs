@@ -872,6 +872,8 @@ namespace ShiftPlanner
 
             dtShifts.DataSource = shiftTable;
             DataGridViewHelper.SetColumnsNotSortable(dtShifts);
+            // 列幅をヘッダー表示に合わせて調整
+            DataGridViewHelper.AdjustColumnWidthToHeader(dtShifts);
 
             dtShifts.CellFormatting -= DtShifts_CellFormatting;
             dtShifts.CellFormatting += DtShifts_CellFormatting;
