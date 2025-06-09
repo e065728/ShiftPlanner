@@ -33,6 +33,12 @@ namespace ShiftPlanner
         private ToolStripMenuItem menuShiftTimeMaster;
         private ToolStripMenuItem menuExportAnalysisCsv;
 
+        private DateTimePicker dtp対象月;
+        private Button btn月更新;
+        private TabPage tabShift;
+        private DataGridView dtShifts;
+        private Button btnShiftGenerate;
+
         /// <summary>
         /// 使用中のリソースをすべて解放します。
         /// </summary>
@@ -66,25 +72,65 @@ namespace ShiftPlanner
             this.dtp分析月 = new System.Windows.Forms.DateTimePicker();
             this.lbl総労働時間 = new System.Windows.Forms.Label();
             this.chartシフト分布 = new System.Windows.Forms.DataVisualization.Charting.Chart();
+            this.tabShift = new System.Windows.Forms.TabPage();
+            this.dtShifts = new System.Windows.Forms.DataGridView();
+            this.btnShiftGenerate = new System.Windows.Forms.Button();
             this.tabControl1.SuspendLayout();
+            this.tabShift.SuspendLayout();
             this.tabPage3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dtRequestSummary)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtRequests)).BeginInit();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.chartシフト分布)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dtShifts)).BeginInit();
             this.SuspendLayout();
             // 
             // tabControl1
             // 
+            this.tabControl1.Controls.Add(this.tabShift);
             this.tabControl1.Controls.Add(this.tabPage3);
             this.tabControl1.Location = new System.Drawing.Point(2, 55);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
             this.tabControl1.Size = new System.Drawing.Size(1393, 834);
             this.tabControl1.TabIndex = 0;
-            // 
+            //
+            // tabShift
+            //
+            this.tabShift.Controls.Add(this.dtShifts);
+            this.tabShift.Controls.Add(this.btnShiftGenerate);
+            this.tabShift.Location = new System.Drawing.Point(4, 22);
+            this.tabShift.Name = "tabShift";
+            this.tabShift.Padding = new System.Windows.Forms.Padding(3);
+            this.tabShift.Size = new System.Drawing.Size(1385, 808);
+            this.tabShift.TabIndex = 0;
+            this.tabShift.Text = "シフト表";
+            this.tabShift.UseVisualStyleBackColor = true;
+            //
+            // dtShifts
+            //
+            this.dtShifts.AllowUserToAddRows = false;
+            this.dtShifts.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right));
+            this.dtShifts.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dtShifts.Location = new System.Drawing.Point(6, 38);
+            this.dtShifts.Name = "dtShifts";
+            this.dtShifts.RowTemplate.Height = 21;
+            this.dtShifts.Size = new System.Drawing.Size(1373, 764);
+            this.dtShifts.TabIndex = 1;
+            //
+            // btnShiftGenerate
+            //
+            this.btnShiftGenerate.Location = new System.Drawing.Point(6, 6);
+            this.btnShiftGenerate.Name = "btnShiftGenerate";
+            this.btnShiftGenerate.Size = new System.Drawing.Size(75, 23);
+            this.btnShiftGenerate.TabIndex = 0;
+            this.btnShiftGenerate.Text = "更新";
+            this.btnShiftGenerate.UseVisualStyleBackColor = true;
+            this.btnShiftGenerate.Click += new System.EventHandler(this.BtnShiftGenerate_Click);
+            //
             // tabPage3
-            // 
+            //
             this.tabPage3.Controls.Add(this.dtRequestSummary);
             this.tabPage3.Controls.Add(this.dtRequests);
             this.tabPage3.Controls.Add(this.btnRemoveRequest);
@@ -237,9 +283,27 @@ namespace ShiftPlanner
             this.menuShiftTimeMaster.Size = new System.Drawing.Size(157, 22);
             this.menuShiftTimeMaster.Text = "勤務時間マスター";
             this.menuShiftTimeMaster.Click += new System.EventHandler(this.menuShiftTimeMaster_Click);
-            // 
+            //
+            // dtp対象月
+            //
+            this.dtp対象月 = new DateTimePicker();
+            this.dtp対象月.Location = new System.Drawing.Point(12, 27);
+            this.dtp対象月.Size = new System.Drawing.Size(120, 19);
+            this.dtp対象月.Format = DateTimePickerFormat.Custom;
+            this.dtp対象月.CustomFormat = "yyyy/MM";
+            this.dtp対象月.ShowUpDown = true;
+            //
+            // btn月更新
+            //
+            this.btn月更新 = new Button();
+            this.btn月更新.Location = new System.Drawing.Point(138, 25);
+            this.btn月更新.Size = new System.Drawing.Size(75, 23);
+            this.btn月更新.Text = "月更新";
+            this.btn月更新.UseVisualStyleBackColor = true;
+            this.btn月更新.Click += new System.EventHandler(this.Btn月更新_Click);
+            //
             // dtp分析月
-            // 
+            //
             this.dtp分析月.Location = new System.Drawing.Point(0, 0);
             this.dtp分析月.Name = "dtp分析月";
             this.dtp分析月.Size = new System.Drawing.Size(200, 19);
@@ -263,14 +327,18 @@ namespace ShiftPlanner
             // 
             this.ClientSize = new System.Drawing.Size(1398, 889);
             this.Controls.Add(this.tabControl1);
+            this.Controls.Add(this.btn月更新);
+            this.Controls.Add(this.dtp対象月);
             this.Controls.Add(this.menuStrip1);
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "MainForm";
             this.tabControl1.ResumeLayout(false);
+            this.tabShift.ResumeLayout(false);
             this.tabPage3.ResumeLayout(false);
             this.tabPage3.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dtRequestSummary)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtRequests)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dtShifts)).EndInit();
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.chartシフト分布)).EndInit();

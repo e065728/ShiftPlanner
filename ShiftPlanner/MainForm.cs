@@ -42,6 +42,9 @@ namespace ShiftPlanner
         private List<SkillGroup> skillGroups = new List<SkillGroup>();
         private List<ShiftTime> shiftTimes = new List<ShiftTime>();
 
+        // シフト表用のテーブル
+        private DataTable shiftTable = new DataTable();
+
         public MainForm()
         {
             // 各ファイルパスを生成
@@ -53,6 +56,12 @@ namespace ShiftPlanner
             shiftTimeFilePath = Path.Combine(dataDir, "shiftTimes.json");
 
             InitializeComponent(); // これだけでOK
+
+            // 初期表示月を当月に設定
+            if (dtp対象月 != null)
+            {
+                dtp対象月.Value = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+            }
 
             // データ保存用ディレクトリが無い場合は作成する
             var dir = dataDir;
@@ -76,6 +85,7 @@ namespace ShiftPlanner
             InitializeData();
             SetupRequestGrid();
             UpdateRequestSummary();
+            SetupShiftGrid();
 
             if (cmbHolidayLimit != null)
             {
@@ -798,6 +808,218 @@ namespace ShiftPlanner
         private string GetMemberName(int id)
         {
             return members.FirstOrDefault(m => m.Id == id)?.Name ?? string.Empty;
+        }
+
+        /// <summary>
+        /// 月を変更してシフト表を再構築します。
+        /// </summary>
+        private void Btn月更新_Click(object? sender, EventArgs e)
+        {
+            SetupShiftGrid();
+            SetupRequestGrid();
+            if (dtp対象月 != null && dtp分析月 != null)
+            {
+                dtp分析月.Value = dtp対象月.Value;
+            }
+        }
+
+        /// <summary>
+        /// シフト自動生成ボタンのハンドラ
+        /// </summary>
+        private void BtnShiftGenerate_Click(object? sender, EventArgs e)
+        {
+            GenerateRandomShifts();
+            UpdateAttendanceCounts();
+        }
+
+        /// <summary>
+        /// シフト表のグリッドを作成します。
+        /// </summary>
+        private void SetupShiftGrid()
+        {
+            if (dtShifts == null || dtp対象月 == null)
+            {
+                return;
+            }
+
+            shiftTable = new DataTable();
+            shiftTable.Columns.Add("メンバー名", typeof(string));
+
+            var baseDate = new DateTime(dtp対象月.Value.Year, dtp対象月.Value.Month, 1);
+            var days = DateTime.DaysInMonth(baseDate.Year, baseDate.Month);
+            for (int i = 0; i < days; i++)
+            {
+                var d = baseDate.AddDays(i);
+                shiftTable.Columns.Add($"{d.Day}({GetJapaneseDayOfWeek(d.DayOfWeek)})", typeof(string));
+            }
+
+            foreach (var m in members)
+            {
+                var row = shiftTable.NewRow();
+                row[0] = m.Name;
+                shiftTable.Rows.Add(row);
+            }
+
+            // 必要人数行
+            var reqRow = shiftTable.NewRow();
+            reqRow[0] = "必要人数";
+            shiftTable.Rows.Add(reqRow);
+
+            // 出勤人数行
+            var countRow = shiftTable.NewRow();
+            countRow[0] = "出勤人数";
+            shiftTable.Rows.Add(countRow);
+
+            dtShifts.DataSource = shiftTable;
+            DataGridViewHelper.SetColumnsNotSortable(dtShifts);
+
+            dtShifts.CellFormatting -= DtShifts_CellFormatting;
+            dtShifts.CellFormatting += DtShifts_CellFormatting;
+            dtShifts.CellEndEdit -= DtShifts_CellEndEdit;
+            dtShifts.CellEndEdit += DtShifts_CellEndEdit;
+
+            UpdateAttendanceCounts();
+        }
+
+        /// <summary>
+        /// シフト表セルの色付け処理
+        /// </summary>
+        private void DtShifts_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (dtShifts == null || dtp対象月 == null || e.ColumnIndex <= 0 || e.RowIndex < 0)
+            {
+                return;
+            }
+
+            var baseDate = new DateTime(dtp対象月.Value.Year, dtp対象月.Value.Month, 1);
+            var date = baseDate.AddDays(e.ColumnIndex - 1);
+
+            if (JapaneseHolidayHelper.IsHoliday(date) || date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday)
+            {
+                e.CellStyle.BackColor = Color.LightYellow;
+            }
+
+            // 出勤人数行の色付け
+            if (shiftTable.Rows[e.RowIndex][0].ToString() == "出勤人数")
+            {
+                var reqRow = shiftTable.Rows[shiftTable.Rows.Count - 2];
+                int.TryParse(reqRow[e.ColumnIndex]?.ToString(), out int req);
+                int.TryParse(shiftTable.Rows[e.RowIndex][e.ColumnIndex]?.ToString(), out int actual);
+                e.CellStyle.BackColor = req == actual ? Color.LightBlue : Color.LightPink;
+            }
+        }
+
+        /// <summary>
+        /// シフトをランダム生成します。
+        /// </summary>
+        private void GenerateRandomShifts()
+        {
+            if (dtp対象月 == null)
+            {
+                return;
+            }
+
+            var baseDate = new DateTime(dtp対象月.Value.Year, dtp対象月.Value.Month, 1);
+            var days = DateTime.DaysInMonth(baseDate.Year, baseDate.Month);
+            var rand = new Random();
+
+            // 連勤カウンタ
+            var workStreak = members.ToDictionary(m => m.Id, _ => 0);
+
+            for (int col = 1; col <= days; col++)
+            {
+                var date = baseDate.AddDays(col - 1);
+                for (int row = 0; row < members.Count; row++)
+                {
+                    var m = members[row];
+                    string value = string.Empty;
+
+                    var req = shiftRequests.FirstOrDefault(r => r.MemberId == m.Id && r.Date.Date == date.Date);
+
+                    if (req != null && req.IsHolidayRequest)
+                    {
+                        value = "希休";
+                        workStreak[m.Id] = 0;
+                    }
+                    else
+                    {
+                        bool canWork = m.AvailableDays.Contains(date.DayOfWeek) &&
+                            (date.DayOfWeek != DayOfWeek.Saturday || m.WorksOnSaturday) &&
+                            (date.DayOfWeek != DayOfWeek.Sunday || m.WorksOnSunday);
+
+                        if (workStreak[m.Id] >= 5)
+                        {
+                            canWork = false;
+                        }
+
+                        if (!canWork)
+                        {
+                            value = "休";
+                            workStreak[m.Id] = 0;
+                        }
+                        else
+                        {
+                            var shifts = m.AvailableShiftNames.Count > 0 ? m.AvailableShiftNames : shiftTimes.Select(s => s.Name).ToList();
+                            var shiftName = shifts.Count > 0 ? shifts[rand.Next(shifts.Count)] : string.Empty;
+                            if (req != null)
+                            {
+                                value = $"希{shiftName}";
+                            }
+                            else
+                            {
+                                value = shiftName;
+                            }
+                            workStreak[m.Id]++;
+                        }
+                    }
+
+                    shiftTable.Rows[row][col] = value;
+                }
+            }
+
+            UpdateAttendanceCounts();
+            dtShifts.Refresh();
+        }
+
+        /// <summary>
+        /// 出勤人数行を更新します。
+        /// </summary>
+        private void UpdateAttendanceCounts()
+        {
+            if (shiftTable.Rows.Count < members.Count + 2)
+            {
+                return;
+            }
+
+            var reqRow = shiftTable.Rows[shiftTable.Rows.Count - 2];
+            var countRow = shiftTable.Rows[shiftTable.Rows.Count - 1];
+
+            for (int col = 1; col < shiftTable.Columns.Count; col++)
+            {
+                int count = 0;
+                for (int row = 0; row < members.Count; row++)
+                {
+                    var v = shiftTable.Rows[row][col]?.ToString();
+                    if (!string.IsNullOrEmpty(v) && v != "休" && v != "希休")
+                    {
+                        count++;
+                    }
+                }
+                countRow[col] = count;
+
+                int.TryParse(reqRow[col]?.ToString(), out int req);
+                // カラー更新は CellFormatting で処理
+            }
+
+            dtShifts.Refresh();
+        }
+
+        /// <summary>
+        /// セル編集完了時に出勤人数を更新します。
+        /// </summary>
+        private void DtShifts_CellEndEdit(object? sender, DataGridViewCellEventArgs e)
+        {
+            UpdateAttendanceCounts();
         }
 
         // このメソッドの内容は MainForm.Designer.cs に移動しました。
