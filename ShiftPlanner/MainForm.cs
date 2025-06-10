@@ -987,8 +987,12 @@ namespace ShiftPlanner
 
             dtShifts.CellFormatting -= DtShifts_CellFormatting;
             dtShifts.CellFormatting += DtShifts_CellFormatting;
+            dtShifts.CellBeginEdit -= DtShifts_CellBeginEdit;
+            dtShifts.CellBeginEdit += DtShifts_CellBeginEdit;
             dtShifts.CellEndEdit -= DtShifts_CellEndEdit;
             dtShifts.CellEndEdit += DtShifts_CellEndEdit;
+            dtShifts.EditingControlShowing -= DtShifts_EditingControlShowing;
+            dtShifts.EditingControlShowing += DtShifts_EditingControlShowing;
 
             LoadShiftTable();
             UpdateAttendanceCounts();
@@ -1224,8 +1228,97 @@ namespace ShiftPlanner
         /// </summary>
         private void DtShifts_CellEndEdit(object? sender, DataGridViewCellEventArgs e)
         {
+            if (dtShifts != null)
+            {
+                var cell = dtShifts[e.ColumnIndex, e.RowIndex];
+                if (cell is DataGridViewComboBoxCell)
+                {
+                    var val = cell.Value;
+                    dtShifts[e.ColumnIndex, e.RowIndex] = new DataGridViewTextBoxCell { Value = val };
+                }
+            }
+
             UpdateAttendanceCounts();
             SaveShiftTable();
+        }
+
+        /// <summary>
+        /// 編集開始時にセルの種類を差し替えます。
+        /// メンバー行の日付列のみコンボボックスを表示します。
+        /// </summary>
+        private void DtShifts_CellBeginEdit(object? sender, DataGridViewCellCancelEventArgs e)
+        {
+            if (dtShifts == null)
+            {
+                return;
+            }
+
+            if (e.RowIndex < 0 || e.ColumnIndex < dateColumnStartIndex)
+            {
+                return;
+            }
+
+            // メンバー行のみ対象
+            if (e.RowIndex >= members.Count)
+            {
+                return;
+            }
+
+            var cell = dtShifts[e.ColumnIndex, e.RowIndex];
+            if (cell is DataGridViewComboBoxCell)
+            {
+                return;
+            }
+
+            var combo = new DataGridViewComboBoxCell();
+            foreach (var st in shiftTimes)
+            {
+                combo.Items.Add(st.Name);
+            }
+            combo.Items.Add("休");
+            combo.Value = cell.Value;
+            dtShifts[e.ColumnIndex, e.RowIndex] = combo;
+        }
+
+        /// <summary>
+        /// 編集コントロール表示時に入力制限を設定します。
+        /// 必要人数行では数値のみ入力可能にします。
+        /// </summary>
+        private void DtShifts_EditingControlShowing(object? sender, DataGridViewEditingControlShowingEventArgs e)
+        {
+            if (dtShifts?.CurrentCell == null)
+            {
+                return;
+            }
+
+            int rowIndex = dtShifts.CurrentCell.RowIndex;
+            int colIndex = dtShifts.CurrentCell.ColumnIndex;
+            if (rowIndex < 0 || colIndex < 0)
+            {
+                return;
+            }
+
+            string rowName = shiftTable.Rows[rowIndex][0]?.ToString() ?? string.Empty;
+            if (rowName == "必要人数" && e.Control is TextBox tb)
+            {
+                tb.KeyPress -= NumericTextBox_KeyPress;
+                tb.KeyPress += NumericTextBox_KeyPress;
+            }
+            else if (e.Control is TextBox tb2)
+            {
+                tb2.KeyPress -= NumericTextBox_KeyPress;
+            }
+        }
+
+        /// <summary>
+        /// 数値以外の入力を抑制します。
+        /// </summary>
+        private void NumericTextBox_KeyPress(object? sender, KeyPressEventArgs e)
+        {
+            if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar))
+            {
+                e.Handled = true;
+            }
         }
 
         private void LoadShiftTable()
