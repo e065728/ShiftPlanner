@@ -33,12 +33,16 @@ namespace ShiftPlanner
         private void BtnAdd_Click(object sender, EventArgs e)
         {
             var nextId = _members.Count > 0 ? _members.Max(m => m.Id) + 1 : 1;
+            // 新規メンバー作成時は全曜日勤務可能とする
             _members.Add(new Member
             {
                 Id = nextId,
                 Name = "新規",
-                WorksOnSaturday = false,
-                WorksOnSunday = false
+                AvailableDays = Enum.GetValues(typeof(DayOfWeek))
+                    .Cast<DayOfWeek>()
+                    .ToList(),
+                WorksOnSaturday = true,
+                WorksOnSunday = true
             });
         }
 
@@ -80,6 +84,7 @@ namespace ShiftPlanner
                 dtMembers.Columns.Insert(index, combo);
             }
 
+            // 自動生成された列に日本語ヘッダーを設定
             foreach (DataGridViewColumn col in dtMembers.Columns)
             {
                 if (col == null || string.IsNullOrEmpty(col.Name))
@@ -96,7 +101,8 @@ namespace ShiftPlanner
                         col.HeaderText = "名前";
                         break;
                     case nameof(Member.AvailableDays):
-                        col.HeaderText = "勤務可能曜日";
+                        // この列は後で曜日ごとのチェックボックス列に置き換えるため非表示
+                        col.Visible = false;
                         break;
                     case nameof(Member.Skills):
                         col.HeaderText = "スキル";
@@ -111,12 +117,30 @@ namespace ShiftPlanner
                         col.Visible = false;
                         break;
                     case nameof(Member.WorksOnSaturday):
-                        col.HeaderText = "土曜日";
+                        // 個別の曜日列を表示するため非表示
+                        col.Visible = false;
                         break;
                     case nameof(Member.WorksOnSunday):
-                        col.HeaderText = "日曜日";
+                        // 個別の曜日列を表示するため非表示
+                        col.Visible = false;
                         break;
                 }
+            }
+
+            // 曜日ごとの勤務可否チェック列を追加
+            var days = Enum.GetValues(typeof(DayOfWeek))
+                .Cast<DayOfWeek>()
+                .OrderBy(d => (int)d == 0 ? 7 : (int)d); // 月曜始まりでソート
+
+            foreach (DayOfWeek day in days)
+            {
+                var dayCol = new DataGridViewCheckBoxColumn
+                {
+                    Name = $"Day_{day}",
+                    HeaderText = GetJapaneseDayName(day),
+                    DataPropertyName = string.Empty
+                };
+                dtMembers.Columns.Add(dayCol);
             }
 
             // 出勤時間ごとの可否チェック列を追加
@@ -166,7 +190,18 @@ namespace ShiftPlanner
             }
 
             var column = dtMembers.Columns[e.ColumnIndex];
-            if (column != null && column.Name.StartsWith("Shift_"))
+            if (column != null && column.Name.StartsWith("Day_"))
+            {
+                if (dtMembers.Rows[e.RowIndex].DataBoundItem is Member m)
+                {
+                    if (Enum.TryParse(column.Name.Substring(4), out DayOfWeek day))
+                    {
+                        e.Value = m.AvailableDays != null && m.AvailableDays.Contains(day);
+                        e.FormattingApplied = true;
+                    }
+                }
+            }
+            else if (column != null && column.Name.StartsWith("Shift_"))
             {
                 if (dtMembers.Rows[e.RowIndex].DataBoundItem is Member m)
                 {
@@ -185,7 +220,49 @@ namespace ShiftPlanner
             }
 
             var column = dtMembers.Columns[e.ColumnIndex];
-            if (column != null && column.Name.StartsWith("Shift_"))
+            if (column != null && column.Name.StartsWith("Day_"))
+            {
+                if (dtMembers.Rows[e.RowIndex].DataBoundItem is Member m)
+                {
+                    bool val = false;
+                    if (e.Value != null && bool.TryParse(e.Value.ToString(), out bool b))
+                    {
+                        val = b;
+                    }
+
+                    if (Enum.TryParse(column.Name.Substring(4), out DayOfWeek day))
+                    {
+                        if (val)
+                        {
+                            if (m.AvailableDays == null)
+                            {
+                                m.AvailableDays = new List<DayOfWeek>();
+                            }
+                            if (!m.AvailableDays.Contains(day))
+                            {
+                                m.AvailableDays.Add(day);
+                            }
+                        }
+                        else
+                        {
+                            m.AvailableDays?.Remove(day);
+                        }
+
+                        // 土日の列は旧プロパティとも連動させる
+                        if (day == DayOfWeek.Saturday)
+                        {
+                            m.WorksOnSaturday = val;
+                        }
+                        else if (day == DayOfWeek.Sunday)
+                        {
+                            m.WorksOnSunday = val;
+                        }
+                    }
+
+                    e.ParsingApplied = true;
+                }
+            }
+            else if (column != null && column.Name.StartsWith("Shift_"))
             {
                 if (dtMembers.Rows[e.RowIndex].DataBoundItem is Member m)
                 {
@@ -218,6 +295,29 @@ namespace ShiftPlanner
         }
 
         /// <summary>
-        /// 指定グリッドの列をすべてソート不可にします。
+        /// DayOfWeek を日本語一文字表記へ変換します。
+        /// </summary>
+        private static string GetJapaneseDayName(DayOfWeek day)
+        {
+            switch (day)
+            {
+                case DayOfWeek.Sunday:
+                    return "日";
+                case DayOfWeek.Monday:
+                    return "月";
+                case DayOfWeek.Tuesday:
+                    return "火";
+                case DayOfWeek.Wednesday:
+                    return "水";
+                case DayOfWeek.Thursday:
+                    return "木";
+                case DayOfWeek.Friday:
+                    return "金";
+                case DayOfWeek.Saturday:
+                    return "土";
+                default:
+                    return day.ToString();
+            }
+        }
     }
 }
