@@ -41,6 +41,7 @@ namespace ShiftPlanner
             "requests.json");
         private List<ShiftRequest> shiftRequests = new List<ShiftRequest>();
         private int holidayLimit = 3; // 休み希望上限
+        private int minHolidayCount = 4; // 最低休日日数
         private List<CustomHoliday> customHolidays = new List<CustomHoliday>();
         private List<SkillGroup> skillGroups = new List<SkillGroup>();
         private List<ShiftTime> shiftTimes = new List<ShiftTime>();
@@ -106,6 +107,12 @@ namespace ShiftPlanner
             if (cmbDefaultRequired != null)
             {
                 cmbDefaultRequired.SelectedItem = settings.DefaultRequired.ToString();
+            }
+
+            if (cmbMinHolidayCount != null)
+            {
+                cmbMinHolidayCount.SelectedItem = settings.MinHolidayCount.ToString();
+                minHolidayCount = settings.MinHolidayCount;
             }
 
           
@@ -858,6 +865,18 @@ namespace ShiftPlanner
             }
         }
 
+        private void CmbMinHolidayCount_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (!int.TryParse(cmbMinHolidayCount?.SelectedItem?.ToString(), out int v))
+            {
+                return;
+            }
+
+            minHolidayCount = v;
+            settings.MinHolidayCount = v;
+            SaveSettings();
+        }
+
         private void UpdateRequestSummary()
         {
             if (dtRequestSummary == null)
@@ -1068,6 +1087,25 @@ namespace ShiftPlanner
             var days = DateTime.DaysInMonth(baseDate.Year, baseDate.Month);
             var rand = new Random();
 
+            // メンバーごとの追加休日日リストを作成
+            var extraHolidays = new Dictionary<int, HashSet<int>>();
+            foreach (var m in members)
+            {
+                int currentHoliday = shiftRequests.Count(r => r.MemberId == m.Id && r.IsHolidayRequest && r.Date.Year == baseDate.Year && r.Date.Month == baseDate.Month);
+                int need = Math.Max(0, minHolidayCount - currentHoliday);
+                var cand = Enumerable.Range(0, days)
+                    .Where(d => !shiftRequests.Any(r => r.MemberId == m.Id && r.Date.Date == baseDate.AddDays(d).Date))
+                    .ToList();
+                var set = new HashSet<int>();
+                for (int i = 0; i < need && cand.Count > 0; i++)
+                {
+                    int idx = rand.Next(cand.Count);
+                    set.Add(cand[idx]);
+                    cand.RemoveAt(idx);
+                }
+                extraHolidays[m.Id] = set;
+            }
+
             // 連勤カウンタ
             var workStreak = members.ToDictionary(m => m.Id, _ => 0);
 
@@ -1084,6 +1122,11 @@ namespace ShiftPlanner
                     if (req != null && req.IsHolidayRequest)
                     {
                         value = "希休";
+                        workStreak[m.Id] = 0;
+                    }
+                    else if (extraHolidays.TryGetValue(m.Id, out var set) && set.Contains(col - dateColumnStartIndex))
+                    {
+                        value = "休";
                         workStreak[m.Id] = 0;
                     }
                     else

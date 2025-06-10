@@ -13,5 +13,11 @@ namespace ShiftPlanner
 
         [DataMember]
         public int DefaultRequired { get; set; } = 1;
+
+        /// <summary>
+        /// メンバーごとの最低休日日数
+        /// </summary>
+        [DataMember]
+        public int MinHolidayCount { get; set; } = 4;
     }
 }

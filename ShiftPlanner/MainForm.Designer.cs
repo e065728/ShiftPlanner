@@ -21,6 +21,8 @@ namespace ShiftPlanner
         private Label lblHolidayLimit;
         private ComboBox cmbDefaultRequired;
         private Label lblDefaultRequired;
+        private ComboBox cmbMinHolidayCount;
+        private Label lblMinHolidayCount;
         private Button btnAddRequest;
         private Button btnRemoveRequest;
         private DateTimePicker dtp分析月;
@@ -65,6 +67,8 @@ namespace ShiftPlanner
             this.lblHolidayLimit = new System.Windows.Forms.Label();
             this.cmbDefaultRequired = new System.Windows.Forms.ComboBox();
             this.lblDefaultRequired = new System.Windows.Forms.Label();
+            this.cmbMinHolidayCount = new System.Windows.Forms.ComboBox();
+            this.lblMinHolidayCount = new System.Windows.Forms.Label();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.menuFile = new System.Windows.Forms.ToolStripMenuItem();
             this.menuExportAnalysisCsv = new System.Windows.Forms.ToolStripMenuItem();
@@ -102,6 +106,8 @@ namespace ShiftPlanner
             // tabShift
             //
             this.tabShift.Controls.Add(this.dtShifts);
+            this.tabShift.Controls.Add(this.cmbMinHolidayCount);
+            this.tabShift.Controls.Add(this.lblMinHolidayCount);
             this.tabShift.Controls.Add(this.cmbDefaultRequired);
             this.tabShift.Controls.Add(this.lblDefaultRequired);
             this.tabShift.Controls.Add(this.btnShiftGenerate);
@@ -146,6 +152,28 @@ namespace ShiftPlanner
             this.cmbDefaultRequired.TabIndex = 3;
             this.cmbDefaultRequired.SelectedIndexChanged += new System.EventHandler(this.CmbDefaultRequired_SelectedIndexChanged);
             //
+            // cmbMinHolidayCount
+            //
+            this.cmbMinHolidayCount.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmbMinHolidayCount.FormattingEnabled = true;
+            this.cmbMinHolidayCount.Items.AddRange(new object[] {
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10"});
+            this.cmbMinHolidayCount.Location = new System.Drawing.Point(360, 8);
+            this.cmbMinHolidayCount.Name = "cmbMinHolidayCount";
+            this.cmbMinHolidayCount.Size = new System.Drawing.Size(60, 20);
+            this.cmbMinHolidayCount.TabIndex = 5;
+            this.cmbMinHolidayCount.SelectedIndexChanged += new System.EventHandler(this.CmbMinHolidayCount_SelectedIndexChanged);
+            //
             // lblDefaultRequired
             //
             this.lblDefaultRequired.AutoSize = true;
@@ -154,6 +182,15 @@ namespace ShiftPlanner
             this.lblDefaultRequired.Size = new System.Drawing.Size(84, 12);
             this.lblDefaultRequired.TabIndex = 2;
             this.lblDefaultRequired.Text = "必要人数デフォルト";
+            //
+            // lblMinHolidayCount
+            //
+            this.lblMinHolidayCount.AutoSize = true;
+            this.lblMinHolidayCount.Location = new System.Drawing.Point(266, 11);
+            this.lblMinHolidayCount.Name = "lblMinHolidayCount";
+            this.lblMinHolidayCount.Size = new System.Drawing.Size(87, 12);
+            this.lblMinHolidayCount.TabIndex = 4;
+            this.lblMinHolidayCount.Text = "最低休日日数";
             //
             // btnShiftGenerate
             //
