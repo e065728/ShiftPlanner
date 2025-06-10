@@ -45,6 +45,9 @@ namespace ShiftPlanner
         // シフト表用のテーブル
         private DataTable shiftTable = new DataTable();
 
+        // 日付列が開始するインデックス
+        private int dateColumnStartIndex = 1;
+
         public MainForm()
         {
             // 各ファイルパスを生成
@@ -845,6 +848,25 @@ namespace ShiftPlanner
             shiftTable = new DataTable();
             shiftTable.Columns.Add("メンバー名", typeof(string));
 
+            // 勤怠時間ごとの集計列
+            foreach (var st in shiftTimes)
+            {
+                shiftTable.Columns.Add(st.Name, typeof(int));
+            }
+
+            // 休み集計列
+            shiftTable.Columns.Add("休", typeof(int));
+
+            // 曜日ごとの出勤日数列
+            string[] daysOfWeek = { "月", "火", "水", "木", "金", "土", "日" };
+            foreach (var d in daysOfWeek)
+            {
+                shiftTable.Columns.Add(d, typeof(int));
+            }
+
+            // 日付列開始位置を記憶
+            dateColumnStartIndex = shiftTable.Columns.Count;
+
             var baseDate = new DateTime(dtp対象月.Value.Year, dtp対象月.Value.Month, 1);
             var days = DateTime.DaysInMonth(baseDate.Year, baseDate.Month);
             for (int i = 0; i < days; i++)
@@ -863,11 +885,19 @@ namespace ShiftPlanner
             // 必要人数行
             var reqRow = shiftTable.NewRow();
             reqRow[0] = "必要人数";
+            for (int i = 1; i < shiftTable.Columns.Count; i++)
+            {
+                reqRow[i] = 0;
+            }
             shiftTable.Rows.Add(reqRow);
 
             // 出勤人数行
             var countRow = shiftTable.NewRow();
             countRow[0] = "出勤人数";
+            for (int i = 1; i < shiftTable.Columns.Count; i++)
+            {
+                countRow[i] = 0;
+            }
             shiftTable.Rows.Add(countRow);
 
             dtShifts.DataSource = shiftTable;
@@ -888,13 +918,13 @@ namespace ShiftPlanner
         /// </summary>
         private void DtShifts_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
         {
-            if (dtShifts == null || dtp対象月 == null || e.ColumnIndex <= 0 || e.RowIndex < 0)
+            if (dtShifts == null || dtp対象月 == null || e.ColumnIndex < dateColumnStartIndex || e.RowIndex < 0)
             {
                 return;
             }
 
             var baseDate = new DateTime(dtp対象月.Value.Year, dtp対象月.Value.Month, 1);
-            var date = baseDate.AddDays(e.ColumnIndex - 1);
+            var date = baseDate.AddDays(e.ColumnIndex - dateColumnStartIndex);
 
             if (JapaneseHolidayHelper.IsHoliday(date) || date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday)
             {
@@ -956,9 +986,9 @@ namespace ShiftPlanner
             // 連勤カウンタ
             var workStreak = members.ToDictionary(m => m.Id, _ => 0);
 
-            for (int col = 1; col <= days; col++)
+            for (int col = dateColumnStartIndex; col < dateColumnStartIndex + days; col++)
             {
-                var date = baseDate.AddDays(col - 1);
+                var date = baseDate.AddDays(col - dateColumnStartIndex);
                 for (int row = 0; row < members.Count; row++)
                 {
                     var m = members[row];
@@ -1024,7 +1054,7 @@ namespace ShiftPlanner
             var reqRow = shiftTable.Rows[shiftTable.Rows.Count - 2];
             var countRow = shiftTable.Rows[shiftTable.Rows.Count - 1];
 
-            for (int col = 1; col < shiftTable.Columns.Count; col++)
+            for (int col = dateColumnStartIndex; col < shiftTable.Columns.Count; col++)
             {
                 int count = 0;
                 for (int row = 0; row < members.Count; row++)
@@ -1041,7 +1071,70 @@ namespace ShiftPlanner
                 // カラー更新は CellFormatting で処理
             }
 
+            UpdateMemberSummaryColumns();
             dtShifts.Refresh();
+        }
+
+        /// <summary>
+        /// メンバーごとの集計列を更新します。
+        /// </summary>
+        private void UpdateMemberSummaryColumns()
+        {
+            if (dtp対象月 == null)
+            {
+                return;
+            }
+
+            var baseDate = new DateTime(dtp対象月.Value.Year, dtp対象月.Value.Month, 1);
+            var days = DateTime.DaysInMonth(baseDate.Year, baseDate.Month);
+            int weekdayStart = 1 + shiftTimes.Count + 1; // 月曜日列の開始位置
+
+            for (int row = 0; row < members.Count; row++)
+            {
+                int[] shiftCount = new int[shiftTimes.Count];
+                int restCount = 0;
+                int[] weekdayCount = new int[7];
+
+                for (int col = dateColumnStartIndex; col < dateColumnStartIndex + days; col++)
+                {
+                    string val = shiftTable.Rows[row][col]?.ToString() ?? string.Empty;
+                    string name = val.StartsWith("希") ? val.Substring(1) : val;
+
+                    var date = baseDate.AddDays(col - dateColumnStartIndex);
+
+                    if (name == "休" || name == "希休")
+                    {
+                        restCount++;
+                    }
+                    else if (!string.IsNullOrEmpty(name))
+                    {
+                        int idx = shiftTimes.FindIndex(s => s.Name == name);
+                        if (idx >= 0)
+                        {
+                            shiftCount[idx]++;
+                        }
+                        weekdayCount[(int)date.DayOfWeek]++;
+                    }
+                }
+
+                // 勤怠時間列
+                for (int i = 0; i < shiftTimes.Count; i++)
+                {
+                    shiftTable.Rows[row][1 + i] = shiftCount[i];
+                }
+
+                // 休列
+                shiftTable.Rows[row][1 + shiftTimes.Count] = restCount;
+
+                // 曜日列 (月〜日)
+                shiftTable.Rows[row][weekdayStart + 0] = weekdayCount[(int)DayOfWeek.Monday];
+                shiftTable.Rows[row][weekdayStart + 1] = weekdayCount[(int)DayOfWeek.Tuesday];
+                shiftTable.Rows[row][weekdayStart + 2] = weekdayCount[(int)DayOfWeek.Wednesday];
+                shiftTable.Rows[row][weekdayStart + 3] = weekdayCount[(int)DayOfWeek.Thursday];
+                shiftTable.Rows[row][weekdayStart + 4] = weekdayCount[(int)DayOfWeek.Friday];
+                shiftTable.Rows[row][weekdayStart + 5] = weekdayCount[(int)DayOfWeek.Saturday];
+                shiftTable.Rows[row][weekdayStart + 6] = weekdayCount[(int)DayOfWeek.Sunday];
+            }
         }
 
         /// <summary>
