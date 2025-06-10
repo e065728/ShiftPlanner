@@ -909,6 +909,34 @@ namespace ShiftPlanner
                 int.TryParse(shiftTable.Rows[e.RowIndex][e.ColumnIndex]?.ToString(), out int actual);
                 e.CellStyle.BackColor = req == actual ? Color.LightBlue : Color.LightPink;
             }
+            else if (shiftTable.Rows[e.RowIndex][0].ToString() != "必要人数")
+            {
+                // メンバー行の色付け
+                var val = shiftTable.Rows[e.RowIndex][e.ColumnIndex]?.ToString();
+                if (!string.IsNullOrEmpty(val))
+                {
+                    string name = val.StartsWith("希") ? val.Substring(1) : val;
+                    if (!string.IsNullOrEmpty(name) && name != "休")
+                    {
+                        var st = shiftTimes.FirstOrDefault(s => s.Name == name);
+                        if (st != null)
+                        {
+                            try
+                            {
+                                e.CellStyle.BackColor = ColorTranslator.FromHtml(st.ColorCode);
+                            }
+                            catch
+                            {
+                                // 無効な色コードの場合は既定色
+                            }
+                        }
+                    }
+                    else if (name == "休")
+                    {
+                        e.CellStyle.BackColor = Color.LightGray;
+                    }
+                }
+            }
         }
 
         /// <summary>
