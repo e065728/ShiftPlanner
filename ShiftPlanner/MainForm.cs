@@ -29,6 +29,9 @@ namespace ShiftPlanner
         private readonly string holidayFilePath;
         private readonly string skillGroupFilePath;
         private readonly string shiftTimeFilePath;
+        private readonly string settingsFilePath;
+        private readonly string shiftTableFilePath;
+        private AppSettings settings = new AppSettings();
         private List<Member> members = new List<Member>();
         private List<ShiftFrame> shiftFrames = new List<ShiftFrame>();
         private List<ShiftAssignment> assignments = new List<ShiftAssignment>();
@@ -54,6 +57,10 @@ namespace ShiftPlanner
             holidayFilePath = Path.Combine(dataDir, "customHolidays.json");
             skillGroupFilePath = Path.Combine(dataDir, "skillGroups.json");
             shiftTimeFilePath = Path.Combine(dataDir, "shiftTimes.json");
+            settingsFilePath = Path.Combine(dataDir, "settings.json");
+            shiftTableFilePath = Path.Combine(dataDir, "shiftTable.json");
+
+            LoadSettings();
 
             InitializeComponent(); // これだけでOK
 
@@ -89,11 +96,13 @@ namespace ShiftPlanner
 
             if (cmbHolidayLimit != null)
             {
-                // コンボボックスの選択値から上限を設定
-                if (int.TryParse(cmbHolidayLimit.SelectedItem?.ToString(), out int v))
-                {
-                    holidayLimit = v;
-                }
+                cmbHolidayLimit.SelectedItem = settings.HolidayLimit.ToString();
+                holidayLimit = settings.HolidayLimit;
+            }
+
+            if (cmbDefaultRequired != null)
+            {
+                cmbDefaultRequired.SelectedItem = settings.DefaultRequired.ToString();
             }
 
           
@@ -257,6 +266,46 @@ namespace ShiftPlanner
             catch (Exception ex)
             {
                 MessageBox.Show($"勤務時間情報の保存に失敗しました: {ex.Message}");
+            }
+        }
+
+        private void LoadSettings()
+        {
+            if (File.Exists(settingsFilePath))
+            {
+                try
+                {
+                    var serializer = new DataContractJsonSerializer(typeof(AppSettings));
+                    using (var stream = File.OpenRead(settingsFilePath))
+                    {
+                        var obj = serializer.ReadObject(stream) as AppSettings;
+                        if (obj != null)
+                        {
+                            settings = obj;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"設定の読み込みに失敗しました: {ex.Message}");
+                    settings = new AppSettings();
+                }
+            }
+        }
+
+        private void SaveSettings()
+        {
+            try
+            {
+                var serializer = new DataContractJsonSerializer(typeof(AppSettings));
+                using (var stream = File.Create(settingsFilePath))
+                {
+                    serializer.WriteObject(stream, settings ?? new AppSettings());
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"設定の保存に失敗しました: {ex.Message}");
             }
         }
 
@@ -643,6 +692,8 @@ namespace ShiftPlanner
             SaveAssignments();
             SaveHolidays();
             SaveSkillGroups();
+            SaveShiftTable();
+            SaveSettings();
             base.OnFormClosing(e);
         }
 
@@ -776,8 +827,32 @@ namespace ShiftPlanner
             if (int.TryParse(cmbHolidayLimit?.SelectedItem?.ToString(), out int v))
             {
                 holidayLimit = v;
+                settings.HolidayLimit = v;
+                SaveSettings();
             }
             UpdateRequestSummary();
+        }
+
+        private void CmbDefaultRequired_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (!int.TryParse(cmbDefaultRequired?.SelectedItem?.ToString(), out int v))
+            {
+                return;
+            }
+
+            settings.DefaultRequired = v;
+            SaveSettings();
+
+            if (shiftTable.Rows.Count >= members.Count + 2)
+            {
+                var reqRow = shiftTable.Rows[shiftTable.Rows.Count - 2];
+                for (int col = 1; col < shiftTable.Columns.Count; col++)
+                {
+                    reqRow[col] = v;
+                }
+                UpdateAttendanceCounts();
+                SaveShiftTable();
+            }
         }
 
         private void UpdateRequestSummary()
@@ -865,6 +940,11 @@ namespace ShiftPlanner
             reqRow[0] = "必要人数";
             shiftTable.Rows.Add(reqRow);
 
+            for (int col = 1; col < shiftTable.Columns.Count; col++)
+            {
+                reqRow[col] = settings.DefaultRequired;
+            }
+
             // 出勤人数行
             var countRow = shiftTable.NewRow();
             countRow[0] = "出勤人数";
@@ -880,6 +960,7 @@ namespace ShiftPlanner
             dtShifts.CellEndEdit -= DtShifts_CellEndEdit;
             dtShifts.CellEndEdit += DtShifts_CellEndEdit;
 
+            LoadShiftTable();
             UpdateAttendanceCounts();
         }
 
@@ -1009,6 +1090,7 @@ namespace ShiftPlanner
 
             UpdateAttendanceCounts();
             dtShifts.Refresh();
+            SaveShiftTable();
         }
 
         /// <summary>
@@ -1050,6 +1132,69 @@ namespace ShiftPlanner
         private void DtShifts_CellEndEdit(object? sender, DataGridViewCellEventArgs e)
         {
             UpdateAttendanceCounts();
+            SaveShiftTable();
+        }
+
+        private void LoadShiftTable()
+        {
+            if (!File.Exists(shiftTableFilePath))
+            {
+                return;
+            }
+
+            try
+            {
+                var serializer = new DataContractJsonSerializer(typeof(List<List<string>>));
+                using (var stream = File.OpenRead(shiftTableFilePath))
+                {
+                    var data = serializer.ReadObject(stream) as List<List<string>>;
+                    if (data == null)
+                    {
+                        return;
+                    }
+
+                    int rows = Math.Min(data.Count, shiftTable.Rows.Count);
+                    for (int r = 0; r < rows; r++)
+                    {
+                        int cols = Math.Min(data[r].Count, shiftTable.Columns.Count);
+                        for (int c = 0; c < cols; c++)
+                        {
+                            shiftTable.Rows[r][c] = data[r][c];
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"シフト表の読み込みに失敗しました: {ex.Message}");
+            }
+        }
+
+        private void SaveShiftTable()
+        {
+            try
+            {
+                var data = new List<List<string>>();
+                foreach (DataRow row in shiftTable.Rows)
+                {
+                    var list = new List<string>();
+                    foreach (var item in row.ItemArray)
+                    {
+                        list.Add(item?.ToString() ?? string.Empty);
+                    }
+                    data.Add(list);
+                }
+
+                var serializer = new DataContractJsonSerializer(typeof(List<List<string>>));
+                using (var stream = File.Create(shiftTableFilePath))
+                {
+                    serializer.WriteObject(stream, data);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"シフト表の保存に失敗しました: {ex.Message}");
+            }
         }
 
         // このメソッドの内容は MainForm.Designer.cs に移動しました。
