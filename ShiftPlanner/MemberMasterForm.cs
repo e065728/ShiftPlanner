@@ -133,6 +133,14 @@ namespace ShiftPlanner
                     HeaderText = st.Name,
                     DataPropertyName = string.Empty
                 };
+                try
+                {
+                    col.HeaderCell.Style.BackColor = System.Drawing.ColorTranslator.FromHtml(st.ColorCode);
+                }
+                catch
+                {
+                    // 無効な色コードは無視
+                }
                 dtMembers.Columns.Add(col);
             }
 

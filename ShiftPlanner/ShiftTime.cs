@@ -20,5 +20,9 @@ namespace ShiftPlanner
         /// <summary>終了時間</summary>
         [DataMember]
         public TimeSpan End { get; set; }
+
+        /// <summary>表示用の色コード (HTML形式)</summary>
+        [DataMember]
+        public string ColorCode { get; set; } = "#FFFFFF";
     }
 }

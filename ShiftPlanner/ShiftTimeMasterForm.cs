@@ -19,6 +19,8 @@ namespace ShiftPlanner
             InitializeComponent();
             dtShiftTimes.DataSource = _shiftTimes;
             SetupGrid();
+            dtShiftTimes.CellFormatting += DtShiftTimes_CellFormatting;
+            dtShiftTimes.CellClick += DtShiftTimes_CellClick;
         }
 
         /// <summary>
@@ -32,7 +34,8 @@ namespace ShiftPlanner
             {
                 Name = "新規勤務",
                 Start = new TimeSpan(9, 0, 0),
-                End = new TimeSpan(18, 0, 0)
+                End = new TimeSpan(18, 0, 0),
+                ColorCode = "#FFFFFF"
             });
         }
 
@@ -57,6 +60,21 @@ namespace ShiftPlanner
         private void SetupGrid()
         {
             dtShiftTimes.AutoGenerateColumns = true;
+
+            // 色選択用のボタン列を追加
+            var colorColumn = new DataGridViewButtonColumn
+            {
+                Name = nameof(ShiftTime.ColorCode),
+                HeaderText = "色",
+                DataPropertyName = nameof(ShiftTime.ColorCode),
+                Width = 60,
+                UseColumnTextForButtonValue = false
+            };
+            if (!dtShiftTimes.Columns.Contains(nameof(ShiftTime.ColorCode)))
+            {
+                dtShiftTimes.Columns.Add(colorColumn);
+            }
+
             foreach (DataGridViewColumn col in dtShiftTimes.Columns)
             {
                 if (col == null || string.IsNullOrEmpty(col.Name))
@@ -75,6 +93,62 @@ namespace ShiftPlanner
                     case nameof(ShiftTime.End):
                         col.HeaderText = "終了時間";
                         break;
+                    case nameof(ShiftTime.ColorCode):
+                        col.HeaderText = "色";
+                        break;
+                }
+            }
+        }
+
+        private void DtShiftTimes_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (dtShiftTimes.Columns[e.ColumnIndex].Name == nameof(ShiftTime.ColorCode))
+            {
+                if (e.Value != null)
+                {
+                    try
+                    {
+                        var color = System.Drawing.ColorTranslator.FromHtml(e.Value.ToString());
+                        e.CellStyle.BackColor = color;
+                        e.Value = string.Empty;
+                        e.FormattingApplied = true;
+                    }
+                    catch
+                    {
+                        // カラー変換失敗時は何もしない
+                    }
+                }
+            }
+        }
+
+        private void DtShiftTimes_CellClick(object? sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0)
+            {
+                return;
+            }
+
+            if (dtShiftTimes.Columns[e.ColumnIndex].Name == nameof(ShiftTime.ColorCode))
+            {
+                if (dtShiftTimes.Rows[e.RowIndex].DataBoundItem is ShiftTime st)
+                {
+                    using (var dlg = new ColorDialog())
+                    {
+                        try
+                        {
+                            dlg.Color = System.Drawing.ColorTranslator.FromHtml(st.ColorCode);
+                        }
+                        catch
+                        {
+                            // 無効なカラーコードの場合は既定値
+                        }
+
+                        if (dlg.ShowDialog() == DialogResult.OK)
+                        {
+                            st.ColorCode = System.Drawing.ColorTranslator.ToHtml(dlg.Color);
+                            dtShiftTimes.InvalidateCell(e.ColumnIndex, e.RowIndex);
+                        }
+                    }
                 }
             }
         }
