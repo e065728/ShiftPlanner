@@ -641,13 +641,33 @@ namespace ShiftPlanner
         private void btnAddMember_Click(object sender, EventArgs e)
         {
             var nextId = members.Count > 0 ? members.Max(m => m.Id) + 1 : 1;
-            members.Add(new Member
+
+            var member = new Member
             {
                 Id = nextId,
                 Name = "新規",
-             
-            });
-           
+            };
+
+            // 連続勤務上限が未設定であれば 5 日を設定
+            if (member.Constraints == null)
+            {
+                member.Constraints = new ShiftConstraints();
+            }
+            if (member.Constraints.MaxConsecutiveDays <= 0)
+            {
+                member.Constraints.MaxConsecutiveDays = 5;
+            }
+
+            try
+            {
+                members.Add(member);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"メンバー追加中にエラーが発生しました: {ex.Message}");
+                return;
+            }
+
             SaveMembers();
         }
 
@@ -1135,7 +1155,9 @@ namespace ShiftPlanner
                             (date.DayOfWeek != DayOfWeek.Saturday || m.WorksOnSaturday) &&
                             (date.DayOfWeek != DayOfWeek.Sunday || m.WorksOnSunday);
 
-                        if (workStreak[m.Id] >= 5)
+                        // 各メンバーの連続勤務上限を取得。設定が無い場合は5日とする
+                        int maxConsecutive = m.Constraints?.MaxConsecutiveDays ?? 5;
+                        if (workStreak[m.Id] >= maxConsecutive)
                         {
                             canWork = false;
                         }
