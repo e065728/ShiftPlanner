@@ -6,6 +6,8 @@ namespace ShiftPlanner
 {
     public static class ShiftGenerator
     {
+        // 乱数生成用の共有インスタンス
+        private static readonly Random _rand = new Random();
         /// <summary>
         /// シフト枠に必要な人数を満たすようメンバーを割り当てます。
         /// </summary>
@@ -24,8 +26,7 @@ namespace ShiftPlanner
                 return assignments; // nullチェック
             }
 
-            // ランダム選択用のインスタンス
-            var random = new Random();
+            // 乱数生成用インスタンスはクラスで共有
 
             foreach (var frame in frames.OrderBy(f => f.Date))
             {
@@ -75,7 +76,8 @@ namespace ShiftPlanner
                 // 残りの枠はランダムに選択
                 if (others.Count > 0)
                 {
-                    var shuffled = others.OrderBy(_ => random.Next()).ToList();
+                    // OrderBy で乱数を使用してシャッフル
+                    var shuffled = others.OrderBy(_ => _rand.Next()).ToList();
                     foreach (var m in shuffled)
                     {
                         if (assigned.Count >= frame.RequiredNumber)
