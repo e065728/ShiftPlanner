@@ -672,6 +672,9 @@ namespace ShiftPlanner
             }
 
             SaveMembers();
+            // 新規メンバーをシフト表と希望一覧に反映
+            SetupShiftGrid();
+            SetupRequestGrid();
         }
 
         private void btnAddRequest_Click(object sender, EventArgs e)
@@ -766,6 +769,9 @@ namespace ShiftPlanner
                 {
                     // 編集結果はそのまま反映されるため再表示のみ
                     SaveMembers();
+                    // メンバー変更をシフト表と希望一覧に反映
+                    SetupShiftGrid();
+                    SetupRequestGrid();
                 }
             }
         }
@@ -948,6 +954,9 @@ namespace ShiftPlanner
         /// </summary>
         private void BtnShiftGenerate_Click(object? sender, EventArgs e)
         {
+            // メンバー数が変更されている可能性があるため
+            // 事前にグリッドを再構築して反映させる
+            SetupShiftGrid();
             GenerateRandomShifts();
             UpdateAttendanceCounts();
         }
