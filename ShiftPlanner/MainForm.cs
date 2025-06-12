@@ -162,6 +162,42 @@ namespace ShiftPlanner
             }
         }
 
+        /// <summary>
+        /// メンバーの制約設定を補正します。
+        /// 読み込み後に必ず呼び出してください。
+        /// </summary>
+        private void NormalizeMemberConstraints()
+        {
+            if (members == null)
+            {
+                return; // null安全対策
+            }
+
+            try
+            {
+                foreach (var メンバー in members)
+                {
+                    if (メンバー == null)
+                    {
+                        continue;
+                    }
+
+                    // 制約オブジェクトが無い場合は生成
+                    メンバー.Constraints ??= new ShiftConstraints();
+
+                    // 連続勤務上限が0以下なら既定値5日を設定
+                    if (メンバー.Constraints.MaxConsecutiveDays <= 0)
+                    {
+                        メンバー.Constraints.MaxConsecutiveDays = 5;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"メンバー制約の正規化中にエラーが発生しました: {ex.Message}");
+            }
+        }
+
         private void LoadHolidays()
         {
             if (File.Exists(holidayFilePath))
@@ -505,6 +541,7 @@ namespace ShiftPlanner
         private void InitializeData()
         {
             LoadMembers();
+            NormalizeMemberConstraints();
             LoadFrames();
             LoadRequests();
             LoadAssignments();
