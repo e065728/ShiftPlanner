@@ -49,6 +49,9 @@ namespace ShiftPlanner
         // シフト表用のテーブル
         private DataTable shiftTable = new DataTable();
 
+        // 乱数生成用の共有インスタンス
+        private static readonly Random _rand = new Random();
+
         // 日付列が開始するインデックス
         private int dateColumnStartIndex = 1;
 
@@ -1085,7 +1088,6 @@ namespace ShiftPlanner
 
             var baseDate = new DateTime(dtp対象月.Value.Year, dtp対象月.Value.Month, 1);
             var days = DateTime.DaysInMonth(baseDate.Year, baseDate.Month);
-            var rand = new Random();
 
             // メンバーごとの追加休日日リストを作成
             var extraHolidays = new Dictionary<int, HashSet<int>>();
@@ -1099,7 +1101,7 @@ namespace ShiftPlanner
                 var set = new HashSet<int>();
                 for (int i = 0; i < need && cand.Count > 0; i++)
                 {
-                    int idx = rand.Next(cand.Count);
+                    int idx = _rand.Next(cand.Count);
                     set.Add(cand[idx]);
                     cand.RemoveAt(idx);
                 }
@@ -1148,7 +1150,7 @@ namespace ShiftPlanner
                         else
                         {
                             var shifts = m.AvailableShiftNames.Count > 0 ? m.AvailableShiftNames : shiftTimes.Select(s => s.Name).ToList();
-                            var shiftName = shifts.Count > 0 ? shifts[rand.Next(shifts.Count)] : string.Empty;
+                            var shiftName = shifts.Count > 0 ? shifts[_rand.Next(shifts.Count)] : string.Empty;
                             if (req != null)
                             {
                                 value = $"希{shiftName}";
