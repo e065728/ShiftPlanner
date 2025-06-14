@@ -1016,7 +1016,9 @@ namespace ShiftPlanner
                     NormalizeMemberShiftNames();
                     SaveShiftTimes();
                     SaveMembers();
-                    SetupShiftGrid();
+                    // 勤務時間マスター変更時はシフト表の内容を一旦クリア
+                    SetupShiftGrid(false);
+                    SaveShiftTable();
                 }
             }
         }
@@ -1181,7 +1183,11 @@ namespace ShiftPlanner
         /// <summary>
         /// シフト表のグリッドを作成します。
         /// </summary>
-        private void SetupShiftGrid()
+        /// <summary>
+        /// シフト表のグリッドを作成します。
+        /// </summary>
+        /// <param name="loadSavedData">保存済みシフト表を読み込むかどうか</param>
+        private void SetupShiftGrid(bool loadSavedData = true)
         {
             if (dtShifts == null || dtp対象月 == null)
             {
@@ -1280,7 +1286,10 @@ namespace ShiftPlanner
             dtShifts.EditingControlShowing -= DtShifts_EditingControlShowing;
             dtShifts.EditingControlShowing += DtShifts_EditingControlShowing;
 
-            LoadShiftTable();
+            if (loadSavedData)
+            {
+                LoadShiftTable();
+            }
             UpdateAttendanceCounts();
         }
 
