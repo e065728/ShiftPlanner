@@ -98,12 +98,26 @@ namespace ShiftPlanner
             {
                 int index = sgCol.Index;
                 dtMembers.Columns.Remove(sgCol);
+
+                // スキルグループはメンバー側に存在する値も含めてリスト化
+                var sgList = _skillGroups?.Select(g => g.Name).ToList() ?? new List<string>();
+                var memberGroups = _members.Where(m => !string.IsNullOrEmpty(m.SkillGroup))
+                                           .Select(m => m.SkillGroup);
+                foreach (var g in memberGroups)
+                {
+                    if (!sgList.Contains(g))
+                    {
+                        sgList.Add(g);
+                    }
+                }
+
                 var combo = new DataGridViewComboBoxColumn
                 {
                     Name = nameof(Member.SkillGroup),
                     DataPropertyName = nameof(Member.SkillGroup),
-                    DataSource = _skillGroups?.Select(g => g.Name).ToList() ?? new List<string>(),
-                    HeaderText = "スキルグループ"
+                    DataSource = sgList,
+                    HeaderText = "スキルグループ",
+                    DisplayStyleForCurrentCellOnly = true
                 };
                 dtMembers.Columns.Insert(index, combo);
             }
