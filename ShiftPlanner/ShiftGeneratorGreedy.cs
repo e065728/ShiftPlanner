@@ -77,21 +77,48 @@ namespace ShiftPlanner
             // メンバー状態の初期化
             var states = members.ToDictionary(m => m.Id, m => new MemberState(m));
 
+            // 各日の休み許容量を計算
+            var dailyHolidayCapacity = new Dictionary<int, int>();
+            for (int d = 0; d < days; d++)
+            {
+                var date = baseDate.AddDays(d);
+                int required = 0;
+                if (shiftRequirements.TryGetValue(date, out var sr) && sr != null)
+                {
+                    required = sr.Values.Sum();
+                }
+                int capacity = members.Count - required;
+                if (capacity < 0)
+                {
+                    capacity = 0;
+                }
+                dailyHolidayCapacity[d] = capacity;
+            }
+
+            // メンバーごとの現在休日数をカウント
+            var holidayCounts = members.ToDictionary(m => m.Id, m =>
+                requests.Count(r => r.MemberId == m.Id && r.IsHolidayRequest && r.Date.Year == baseDate.Year && r.Date.Month == baseDate.Month));
+
             // 最低休日日数を満たすための追加休み候補を生成
             var extraHolidays = new Dictionary<int, HashSet<int>>();
             foreach (var m in members)
             {
-                int currentHoliday = requests.Count(r => r.MemberId == m.Id && r.IsHolidayRequest && r.Date.Year == baseDate.Year && r.Date.Month == baseDate.Month);
-                int need = Math.Max(0, minHolidayCount - currentHoliday);
+                int need = Math.Max(0, minHolidayCount - holidayCounts[m.Id]);
                 var candidateDays = Enumerable.Range(0, days)
                     .Where(d => !requests.Any(r => r.MemberId == m.Id && r.Date.Date == baseDate.AddDays(d).Date))
+                    .Where(d => dailyHolidayCapacity.ContainsKey(d) && dailyHolidayCapacity[d] > 0)
                     .ToList();
                 var set = new HashSet<int>();
-                for (int i = 0; i < need && candidateDays.Count > 0; i++)
+                while (need > 0 && candidateDays.Count > 0)
                 {
                     int idx = _rand.Next(candidateDays.Count);
-                    set.Add(candidateDays[idx]);
+                    int dayIndex = candidateDays[idx];
+                    set.Add(dayIndex);
+                    dailyHolidayCapacity[dayIndex]--;
+                    holidayCounts[m.Id]++;
                     candidateDays.RemoveAt(idx);
+                    candidateDays = candidateDays.Where(c => dailyHolidayCapacity[c] > 0 && !set.Contains(c)).ToList();
+                    need--;
                 }
                 extraHolidays[m.Id] = set;
             }
@@ -125,6 +152,11 @@ namespace ShiftPlanner
                     {
                         result[m.Id][date] = "希休";
                         states[m.Id].WorkStreak = 0;
+                        if (dailyHolidayCapacity.ContainsKey(d))
+                        {
+                            dailyHolidayCapacity[d]--;
+                        }
+                        holidayCounts[m.Id]++;
                         continue;
                     }
 
@@ -149,6 +181,11 @@ namespace ShiftPlanner
                     {
                         result[m.Id][date] = "休";
                         states[m.Id].WorkStreak = 0;
+                        if (dailyHolidayCapacity.ContainsKey(d))
+                        {
+                            dailyHolidayCapacity[d]--;
+                        }
+                        holidayCounts[m.Id]++;
                         continue;
                     }
 
