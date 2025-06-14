@@ -1592,13 +1592,35 @@ namespace ShiftPlanner
                         return;
                     }
 
-                    int rows = Math.Min(data.Count, shiftTable.Rows.Count);
-                    for (int r = 0; r < rows; r++)
+                    // 1列目の値をキーとした辞書に変換
+                    var rowMap = new Dictionary<string, List<string>>();
+                    foreach (var row in data)
                     {
-                        int cols = Math.Min(data[r].Count, shiftTable.Columns.Count);
-                        for (int c = 0; c < cols; c++)
+                        if (row == null || row.Count == 0)
                         {
-                            shiftTable.Rows[r][c] = data[r][c];
+                            continue;
+                        }
+
+                        var key = row[0] ?? string.Empty;
+                        if (!rowMap.ContainsKey(key))
+                        {
+                            rowMap[key] = row;
+                        }
+                    }
+
+                    // 現在のテーブルの行名を基にデータを上書き
+                    foreach (DataRow row in shiftTable.Rows)
+                    {
+                        var name = row[0]?.ToString() ?? string.Empty;
+                        if (!rowMap.TryGetValue(name, out var savedRow))
+                        {
+                            continue; // 保存データに該当行がなければスキップ
+                        }
+
+                        int cols = Math.Min(savedRow.Count, shiftTable.Columns.Count);
+                        for (int c = 1; c < cols; c++)
+                        {
+                            row[c] = savedRow[c];
                         }
                     }
                 }
