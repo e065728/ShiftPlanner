@@ -1016,6 +1016,11 @@ namespace ShiftPlanner
             // 勤怠時間ごとの集計列
             foreach (var st in shiftTimes)
             {
+                if (st == null || !st.IsEnabled)
+                {
+                    // 無効な勤務時間は集計対象外
+                    continue;
+                }
                 shiftTable.Columns.Add(st.Name, typeof(int));
             }
 
@@ -1220,17 +1225,28 @@ namespace ShiftPlanner
                         }
                         else
                         {
-                            var shifts = m.AvailableShiftNames.Count > 0 ? m.AvailableShiftNames : shiftTimes.Select(s => s.Name).ToList();
-                            var shiftName = shifts.Count > 0 ? shifts[_rand.Next(shifts.Count)] : string.Empty;
-                            if (req != null)
+                            // 有効な勤務時間のみ候補とする
+                            var activeNames = shiftTimes
+                                .Where(s => s != null && s.IsEnabled)
+                                .Select(s => s.Name)
+                                .ToList();
+
+                            var shifts = m.AvailableShiftNames.Count > 0
+                                ? m.AvailableShiftNames.Intersect(activeNames).ToList()
+                                : activeNames;
+
+                            if (shifts.Count > 0)
                             {
-                                value = $"希{shiftName}";
+                                var shiftName = shifts[_rand.Next(shifts.Count)];
+                                value = req != null ? $"希{shiftName}" : shiftName;
+                                workStreak[m.Id]++;
                             }
                             else
                             {
-                                value = shiftName;
+                                // 利用可能な勤務時間が無ければ休み扱い
+                                value = "休";
+                                workStreak[m.Id] = 0;
                             }
-                            workStreak[m.Id]++;
                         }
                     }
 

@@ -35,7 +35,8 @@ namespace ShiftPlanner
                 Name = "新規勤務",
                 Start = new TimeSpan(9, 0, 0),
                 End = new TimeSpan(18, 0, 0),
-                ColorCode = "#FFFFFF"
+                ColorCode = "#FFFFFF",
+                IsEnabled = true
             });
         }
 
@@ -95,6 +96,9 @@ namespace ShiftPlanner
                         break;
                     case nameof(ShiftTime.ColorCode):
                         col.HeaderText = "色";
+                        break;
+                    case nameof(ShiftTime.IsEnabled):
+                        col.HeaderText = "有効";
                         break;
                 }
             }

@@ -183,8 +183,9 @@ namespace ShiftPlanner
             // 出勤時間ごとの可否チェック列を追加
             foreach (var st in _shiftTimes)
             {
-                if (st == null)
+                if (st == null || !st.IsEnabled)
                 {
+                    // 無効な勤務時間は表示しない
                     continue;
                 }
 

@@ -24,5 +24,9 @@ namespace ShiftPlanner
         /// <summary>表示用の色コード (HTML形式)</summary>
         [DataMember]
         public string ColorCode { get; set; } = "#FFFFFF";
+
+        /// <summary>この勤務時間が有効かどうか</summary>
+        [DataMember]
+        public bool IsEnabled { get; set; } = true;
     }
 }
