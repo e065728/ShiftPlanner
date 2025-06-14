@@ -70,6 +70,10 @@ namespace ShiftPlanner
                         break;
                 }
             }
+
+            // 列幅をフォームのサイズに合わせて調整
+            DataGridViewHelper.SetColumnsNotSortable(dtSkillGroups);
+            DataGridViewHelper.FitColumnsToGrid(dtSkillGroups);
         }
     }
 }

@@ -81,7 +81,7 @@ namespace ShiftPlanner
             Controls.Add(btnRemove);
             Controls.Add(btnOk);
             Controls.Add(btnCancel);
-            FormBorderStyle = FormBorderStyle.FixedDialog;
+            FormBorderStyle = FormBorderStyle.Sizable;
             StartPosition = FormStartPosition.CenterParent;
             Text = "勤務時間マスター";
 

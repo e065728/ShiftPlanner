@@ -209,6 +209,8 @@ namespace ShiftPlanner
             dtMembers.CellParsing += DtMembers_CellParsing;
             dtMembers.CurrentCellDirtyStateChanged += DtMembers_CurrentCellDirtyStateChanged;
             DataGridViewHelper.SetColumnsNotSortable(dtMembers);
+            // フォームサイズに合わせて列幅を自動調整
+            DataGridViewHelper.FitColumnsToGrid(dtMembers);
         }
 
         private void DtMembers_CurrentCellDirtyStateChanged(object? sender, EventArgs e)

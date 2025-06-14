@@ -102,7 +102,7 @@ namespace ShiftPlanner
             this.Controls.Add(this.nudYear);
             this.Controls.Add(this.btnOk);
             this.Controls.Add(this.btnCancel);
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.FormBorderStyle = FormBorderStyle.Sizable;
             this.StartPosition = FormStartPosition.CenterParent;
             this.Text = "祝日マスター";
 
