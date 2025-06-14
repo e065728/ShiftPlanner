@@ -1390,163 +1390,59 @@ namespace ShiftPlanner
             var baseDate = new DateTime(dtp対象月.Value.Year, dtp対象月.Value.Month, 1);
             var days = DateTime.DaysInMonth(baseDate.Year, baseDate.Month);
 
-            // メンバーごとの追加休日日リストを作成
-            var extraHolidays = new Dictionary<int, HashSet<int>>();
-            foreach (var m in members)
-            {
-                int currentHoliday = shiftRequests.Count(r => r.MemberId == m.Id && r.IsHolidayRequest && r.Date.Year == baseDate.Year && r.Date.Month == baseDate.Month);
-                int need = Math.Max(0, minHolidayCount - currentHoliday);
-                var cand = Enumerable.Range(0, days)
-                    .Where(d => !shiftRequests.Any(r => r.MemberId == m.Id && r.Date.Date == baseDate.AddDays(d).Date))
-                    .ToList();
-                var set = new HashSet<int>();
-                for (int i = 0; i < need && cand.Count > 0; i++)
-                {
-                    int idx = _rand.Next(cand.Count);
-                    set.Add(cand[idx]);
-                    cand.RemoveAt(idx);
-                }
-                extraHolidays[m.Id] = set;
-            }
-
-            // 月内での割当回数をカウントして公平性を保つ
-            var assignCount = members.ToDictionary(m => m.Id, _ => 0);
-            var workStreak = members.ToDictionary(m => m.Id, _ => 0);
+            // シフト表から必要人数を読み取る
+            var skillNeeds = new Dictionary<DateTime, Dictionary<string, int>>();
+            var shiftNeeds = new Dictionary<DateTime, Dictionary<string, int>>();
 
             for (int col = dateColumnStartIndex; col < dateColumnStartIndex + days; col++)
             {
                 var date = baseDate.AddDays(col - dateColumnStartIndex);
 
-                // 必要人数の読み取り
-                var skillNeeds = new Dictionary<string, int>();
+                var sreq = new Dictionary<string, int>();
                 for (int r = 0; r < skillGroups.Count; r++)
                 {
                     int rowIndex = members.Count + r;
                     int.TryParse(shiftTable.Rows[rowIndex][col]?.ToString(), out int v);
-                    skillNeeds[skillGroups[r].Name] = v;
+                    sreq[skillGroups[r].Name] = v;
                 }
+                skillNeeds[date] = sreq;
 
-                var shiftNeeds = new Dictionary<string, int>();
+                var shreq = new Dictionary<string, int>();
                 for (int r = 0; r < enabledShiftTimes.Count; r++)
                 {
                     int rowIndex = members.Count + skillGroups.Count + r;
                     int.TryParse(shiftTable.Rows[rowIndex][col]?.ToString(), out int v);
-                    shiftNeeds[enabledShiftTimes[r].Name] = v;
+                    shreq[enabledShiftTimes[r].Name] = v;
+                }
+                shiftNeeds[date] = shreq;
+            }
+
+            var assignmentsMap = ShiftGeneratorGreedy.Generate(
+                members,
+                baseDate,
+                days,
+                skillNeeds,
+                shiftNeeds,
+                shiftRequests,
+                skillGroups,
+                enabledShiftTimes,
+                minHolidayCount);
+
+            // 結果をテーブルへ反映
+            for (int i = 0; i < members.Count; i++)
+            {
+                var m = members[i];
+                if (!assignmentsMap.TryGetValue(m.Id, out var dayMap))
+                {
+                    continue;
                 }
 
-                var dayAssignments = new Dictionary<int, string>();
-
-                // 各メンバーの勤務可否判定
-                var candidates = new List<Member>();
-                foreach (var m in members)
+                for (int d = 0; d < days; d++)
                 {
-                    var req = shiftRequests.FirstOrDefault(r => r.MemberId == m.Id && r.Date.Date == date.Date);
-
-                    if (req != null && req.IsHolidayRequest)
+                    var date = baseDate.AddDays(d);
+                    if (dayMap.TryGetValue(date, out var value))
                     {
-                        shiftTable.Rows[members.IndexOf(m)][col] = "希休";
-                        workStreak[m.Id] = 0;
-                        continue;
-                    }
-
-                    if (extraHolidays.TryGetValue(m.Id, out var set) && set.Contains(col - dateColumnStartIndex))
-                    {
-                        shiftTable.Rows[members.IndexOf(m)][col] = "休";
-                        workStreak[m.Id] = 0;
-                        continue;
-                    }
-
-                    bool canWork = m.AvailableDays.Contains(date.DayOfWeek) &&
-                        (date.DayOfWeek != DayOfWeek.Saturday || m.WorksOnSaturday) &&
-                        (date.DayOfWeek != DayOfWeek.Sunday || m.WorksOnSunday);
-
-                    int maxConsecutive = m.Constraints?.MaxConsecutiveDays ?? 5;
-                    if (workStreak[m.Id] >= maxConsecutive)
-                    {
-                        canWork = false;
-                    }
-
-                    if (!canWork)
-                    {
-                        shiftTable.Rows[members.IndexOf(m)][col] = "休";
-                        workStreak[m.Id] = 0;
-                        continue;
-                    }
-
-                    candidates.Add(m);
-                }
-
-                // スキル要件から優先的に割り当て
-                foreach (var sg in skillGroups)
-                {
-                    int need = skillNeeds.ContainsKey(sg.Name) ? skillNeeds[sg.Name] : 0;
-                    while (need > 0)
-                    {
-                        var target = candidates
-                            .Where(m => m.SkillGroup == sg.Name && !dayAssignments.ContainsKey(m.Id))
-                            .OrderBy(m => assignCount[m.Id])
-                            .ThenBy(_ => _rand.Next())
-                            .FirstOrDefault();
-
-                        if (target == null)
-                        {
-                            break;
-                        }
-
-                        var possibleShifts = target.AvailableShiftNames
-                            .Where(n => shiftNeeds.ContainsKey(n) && shiftNeeds[n] > 0)
-                            .ToList();
-
-                        if (possibleShifts.Count == 0)
-                        {
-                            break;
-                        }
-
-                        var shiftName = possibleShifts[_rand.Next(possibleShifts.Count)];
-                        shiftNeeds[shiftName]--;
-                        dayAssignments[target.Id] = shiftName;
-                        assignCount[target.Id]++;
-                        workStreak[target.Id]++;
-                        need--;
-                    }
-                }
-
-                // 残りの勤務枠を割り当て
-                foreach (var st in enabledShiftTimes)
-                {
-                    int need = shiftNeeds.ContainsKey(st.Name) ? shiftNeeds[st.Name] : 0;
-                    while (need > 0)
-                    {
-                        var target = candidates
-                            .Where(m => !dayAssignments.ContainsKey(m.Id) && m.AvailableShiftNames.Contains(st.Name))
-                            .OrderBy(m => assignCount[m.Id])
-                            .ThenBy(_ => _rand.Next())
-                            .FirstOrDefault();
-
-                        if (target == null)
-                        {
-                            break;
-                        }
-
-                        dayAssignments[target.Id] = st.Name;
-                        assignCount[target.Id]++;
-                        workStreak[target.Id]++;
-                        need--;
-                    }
-                }
-
-                // 割り当て結果をテーブルに書き込む
-                foreach (var m in members)
-                {
-                    if (dayAssignments.TryGetValue(m.Id, out var shiftName))
-                    {
-                        var req = shiftRequests.FirstOrDefault(r => r.MemberId == m.Id && r.Date.Date == date.Date);
-                        shiftTable.Rows[members.IndexOf(m)][col] = req != null ? $"希{shiftName}" : shiftName;
-                    }
-                    else if (shiftTable.Rows[members.IndexOf(m)][col].ToString() == string.Empty)
-                    {
-                        shiftTable.Rows[members.IndexOf(m)][col] = "休";
-                        workStreak[m.Id] = 0;
+                        shiftTable.Rows[i][dateColumnStartIndex + d] = value;
                     }
                 }
             }
