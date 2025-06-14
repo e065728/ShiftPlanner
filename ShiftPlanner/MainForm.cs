@@ -803,10 +803,20 @@ namespace ShiftPlanner
         {
             var nextId = members.Count > 0 ? members.Max(m => m.Id) + 1 : 1;
 
+            // 新規メンバー作成時は全曜日かつ全勤務時間帯を選択可能とする
             var member = new Member
             {
                 Id = nextId,
                 Name = "新規",
+                AvailableDays = Enum.GetValues(typeof(DayOfWeek))
+                    .Cast<DayOfWeek>()
+                    .ToList(),
+                WorksOnSaturday = true,
+                WorksOnSunday = true,
+                AvailableShiftNames = shiftTimes?
+                    .Where(st => st != null && st.IsEnabled)
+                    .Select(st => st.Name)
+                    .ToList() ?? new List<string>()
             };
 
             // 連続勤務上限が未設定であれば 5 日を設定
