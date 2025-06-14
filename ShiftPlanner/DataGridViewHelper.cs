@@ -56,5 +56,33 @@ namespace ShiftPlanner
             // 利用可能な領域で列幅を均等に調整
             grid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
         }
+
+        /// <summary>
+        /// 指定した列幅を設定します。
+        /// </summary>
+        /// <param name="grid">対象の DataGridView</param>
+        /// <param name="columnIndex">列インデックス</param>
+        /// <param name="width">幅</param>
+        public static void SetColumnWidth(DataGridView? grid, int columnIndex, int width)
+        {
+            if (grid?.Columns == null)
+            {
+                return;
+            }
+
+            if (columnIndex < 0 || columnIndex >= grid.Columns.Count)
+            {
+                return;
+            }
+
+            var column = grid.Columns[columnIndex];
+            if (column == null)
+            {
+                return;
+            }
+
+            column.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
+            column.Width = width;
+        }
     }
 }
