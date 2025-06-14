@@ -1334,6 +1334,41 @@ namespace ShiftPlanner
                     e.CellStyle.BackColor = Color.LightGreen;
                 }
             }
+            // 勤怠時間ごとの必要人数行の色付け
+            else if (e.RowIndex >= members.Count + skillGroups.Count &&
+                     e.RowIndex < members.Count + skillGroups.Count + enabledShiftTimes.Count)
+            {
+                string? shiftName = shiftTable.Rows[e.RowIndex][0]?.ToString();
+                if (!string.IsNullOrEmpty(shiftName))
+                {
+                    // その日の実際の割り当て人数を数える
+                    int actual = 0;
+                    for (int r = 0; r < members.Count; r++)
+                    {
+                        string val = shiftTable.Rows[r][e.ColumnIndex]?.ToString() ?? string.Empty;
+                        string name = val.StartsWith("希") ? val.Substring(1) : val;
+                        if (name == shiftName)
+                        {
+                            actual++;
+                        }
+                    }
+
+                    int.TryParse(shiftTable.Rows[e.RowIndex][e.ColumnIndex]?.ToString(), out int required);
+
+                    if (actual == required)
+                    {
+                        e.CellStyle.BackColor = Color.LightBlue;
+                    }
+                    else if (actual < required)
+                    {
+                        e.CellStyle.BackColor = Color.Red;
+                    }
+                    else
+                    {
+                        e.CellStyle.BackColor = Color.LightGreen;
+                    }
+                }
+            }
             else if (e.RowIndex < members.Count)
             {
                 // メンバー行の色付け
