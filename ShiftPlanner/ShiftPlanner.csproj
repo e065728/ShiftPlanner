@@ -84,6 +84,8 @@
     <Compile Include="ShiftAnalyzer.cs" />
     <Compile Include="ShiftAssignment.cs" />
     <Compile Include="ShiftGenerator.cs" />
+    <!-- 貪欲法によるシフト自動生成 -->
+    <Compile Include="ShiftGeneratorGreedy.cs" />
     <Compile Include="JapaneseHolidayHelper.cs" />
     <Compile Include="CustomHoliday.cs" />
     <!-- DataGridView の拡張メソッド -->
