@@ -1299,7 +1299,30 @@ namespace ShiftPlanner
         /// </summary>
         private void DtShifts_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
         {
-            if (dtShifts == null || dtp対象月 == null || e.ColumnIndex < dateColumnStartIndex || e.RowIndex < 0)
+            if (dtShifts == null || dtp対象月 == null || e.RowIndex < 0)
+            {
+                return;
+            }
+
+            // 休み数列の色付け判定
+            int restColumnIndex = 1 + enabledShiftTimes.Count;
+            if (e.ColumnIndex == restColumnIndex && e.RowIndex < members.Count)
+            {
+                if (int.TryParse(shiftTable.Rows[e.RowIndex][e.ColumnIndex]?.ToString(), out int restCount))
+                {
+                    if (restCount < minHolidayCount)
+                    {
+                        e.CellStyle.BackColor = Color.Red;
+                    }
+                    else if (restCount > minHolidayCount)
+                    {
+                        e.CellStyle.BackColor = Color.LightGreen;
+                    }
+                }
+                return;
+            }
+
+            if (e.ColumnIndex < dateColumnStartIndex)
             {
                 return;
             }
