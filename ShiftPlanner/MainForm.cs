@@ -148,6 +148,8 @@ namespace ShiftPlanner
 
         private void SaveMembers()
         {
+            // 保存前に土日勤務可否フラグと曜日リストを同期
+            NormalizeMemberAvailability();
             try
             {
                 var serializer = new DataContractJsonSerializer(typeof(List<Member>));
@@ -195,6 +197,63 @@ namespace ShiftPlanner
             catch (Exception ex)
             {
                 MessageBox.Show($"メンバー制約の正規化中にエラーが発生しました: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// メンバーの曜日勤務可否フラグと AvailableDays リストを整合させます。
+        /// </summary>
+        private void NormalizeMemberAvailability()
+        {
+            if (members == null)
+            {
+                return; // null安全対策
+            }
+
+            try
+            {
+                foreach (var m in members)
+                {
+                    if (m == null)
+                    {
+                        continue;
+                    }
+
+                    m.AvailableDays ??= new List<DayOfWeek>();
+
+                    // AvailableDays に基づきフラグを更新
+                    m.WorksOnSaturday = m.AvailableDays.Contains(DayOfWeek.Saturday) || m.WorksOnSaturday;
+                    m.WorksOnSunday = m.AvailableDays.Contains(DayOfWeek.Sunday) || m.WorksOnSunday;
+
+                    // フラグ側を優先してリストを更新
+                    if (m.WorksOnSaturday)
+                    {
+                        if (!m.AvailableDays.Contains(DayOfWeek.Saturday))
+                        {
+                            m.AvailableDays.Add(DayOfWeek.Saturday);
+                        }
+                    }
+                    else
+                    {
+                        m.AvailableDays.Remove(DayOfWeek.Saturday);
+                    }
+
+                    if (m.WorksOnSunday)
+                    {
+                        if (!m.AvailableDays.Contains(DayOfWeek.Sunday))
+                        {
+                            m.AvailableDays.Add(DayOfWeek.Sunday);
+                        }
+                    }
+                    else
+                    {
+                        m.AvailableDays.Remove(DayOfWeek.Sunday);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"メンバー勤務可否の正規化中にエラーが発生しました: {ex.Message}");
             }
         }
 
@@ -542,6 +601,7 @@ namespace ShiftPlanner
         {
             LoadMembers();
             NormalizeMemberConstraints();
+            NormalizeMemberAvailability();
             LoadFrames();
             LoadRequests();
             LoadAssignments();
