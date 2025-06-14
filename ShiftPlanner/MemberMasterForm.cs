@@ -15,6 +15,11 @@ namespace ShiftPlanner
         private readonly List<SkillGroup> _skillGroups;
         private readonly List<ShiftTime> _shiftTimes;
 
+        /// <summary>
+        /// 連続勤務上限を表示する列名
+        /// </summary>
+        private const string ColMaxConsecutive = "MaxConsecutiveDays";
+
         public MemberMasterForm(List<Member> members, List<SkillGroup> skillGroups, List<ShiftTime> shiftTimes)
         {
             _members = new BindingList<Member>(members ?? new List<Member>());
@@ -146,6 +151,19 @@ namespace ShiftPlanner
                 }
             }
 
+            // 連続勤務上限を編集する列を追加
+            if (!dtMembers.Columns.Contains(ColMaxConsecutive))
+            {
+                var maxCol = new DataGridViewTextBoxColumn
+                {
+                    Name = ColMaxConsecutive,
+                    HeaderText = "連続勤務上限",
+                    DataPropertyName = string.Empty,
+                    Width = 60
+                };
+                dtMembers.Columns.Add(maxCol);
+            }
+
             // 曜日ごとの勤務可否チェック列を追加
             var days = Enum.GetValues(typeof(DayOfWeek))
                 .Cast<DayOfWeek>()
@@ -229,6 +247,14 @@ namespace ShiftPlanner
                     e.FormattingApplied = true;
                 }
             }
+            else if (column != null && column.Name == ColMaxConsecutive)
+            {
+                if (dtMembers.Rows[e.RowIndex].DataBoundItem is Member m)
+                {
+                    e.Value = m.Constraints?.MaxConsecutiveDays;
+                    e.FormattingApplied = true;
+                }
+            }
         }
 
         private void DtMembers_CellParsing(object? sender, DataGridViewCellParsingEventArgs e)
@@ -306,6 +332,23 @@ namespace ShiftPlanner
                     else
                     {
                         m.AvailableShiftNames?.Remove(shiftName);
+                    }
+
+                    e.ParsingApplied = true;
+                }
+            }
+            else if (column != null && column.Name == ColMaxConsecutive)
+            {
+                if (dtMembers.Rows[e.RowIndex].DataBoundItem is Member m)
+                {
+                    if (m.Constraints == null)
+                    {
+                        m.Constraints = new ShiftConstraints();
+                    }
+
+                    if (e.Value != null && int.TryParse(e.Value.ToString(), out int value))
+                    {
+                        m.Constraints.MaxConsecutiveDays = value;
                     }
 
                     e.ParsingApplied = true;
