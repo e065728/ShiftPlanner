@@ -137,11 +137,6 @@ namespace ShiftPlanner
                 holidayLimit = settings.HolidayLimit;
             }
 
-            if (cmbDefaultRequired != null)
-            {
-                cmbDefaultRequired.SelectedItem = settings.DefaultRequired.ToString();
-            }
-
             if (cmbMinHolidayCount != null)
             {
                 cmbMinHolidayCount.SelectedItem = settings.MinHolidayCount.ToString();
@@ -1084,29 +1079,6 @@ namespace ShiftPlanner
             UpdateRequestSummary();
         }
 
-        private void CmbDefaultRequired_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (!int.TryParse(cmbDefaultRequired?.SelectedItem?.ToString(), out int v))
-            {
-                return;
-            }
-
-            settings.DefaultRequired = v;
-            SaveSettings();
-
-            int reqStart = members.Count;
-            int reqEnd = shiftTable.Rows.Count - 1; // 出勤人数行以外
-            for (int row = reqStart; row < reqEnd; row++)
-            {
-                for (int col = 1; col < shiftTable.Columns.Count; col++)
-                {
-                    shiftTable.Rows[row][col] = v;
-                }
-            }
-            UpdateAttendanceCounts();
-            // 保存処理はバックグラウンドで実行し、UI の応答性を確保
-            SaveShiftTableAsync();
-        }
 
         private void CmbMinHolidayCount_SelectedIndexChanged(object sender, EventArgs e)
         {
@@ -1239,7 +1211,7 @@ namespace ShiftPlanner
                 row[0] = sg.Name;
                 for (int i = 1; i < shiftTable.Columns.Count; i++)
                 {
-                    row[i] = settings.DefaultRequired;
+                    row[i] = 0; // 新規作成行は 0 で初期化
                 }
                 shiftTable.Rows.Add(row);
             }
@@ -1251,7 +1223,7 @@ namespace ShiftPlanner
                 row[0] = st.Name;
                 for (int i = 1; i < shiftTable.Columns.Count; i++)
                 {
-                    row[i] = settings.DefaultRequired;
+                    row[i] = 0; // 新規作成行は 0 で初期化
                 }
                 shiftTable.Rows.Add(row);
             }
