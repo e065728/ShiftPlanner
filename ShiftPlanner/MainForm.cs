@@ -931,6 +931,20 @@ namespace ShiftPlanner
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
+            // 編集中のセルがある場合は確定する
+            if (dtShifts != null)
+            {
+                try
+                {
+                    dtShifts.EndEdit();
+                    dtShifts.CommitEdit(DataGridViewDataErrorContexts.Commit);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"編集中のセル確定中にエラーが発生しました: {ex.Message}");
+                }
+            }
+
             SaveMembers();
             SaveRequests();
             SaveFrames();
@@ -1162,12 +1176,29 @@ namespace ShiftPlanner
         /// </summary>
         private void Btn月更新_Click(object? sender, EventArgs e)
         {
+            // 編集中の値を保存するためセルを確定
+            if (dtShifts != null)
+            {
+                try
+                {
+                    dtShifts.EndEdit();
+                    dtShifts.CommitEdit(DataGridViewDataErrorContexts.Commit);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"セル確定中にエラーが発生しました: {ex.Message}");
+                }
+            }
+
             SetupShiftGrid();
             SetupRequestGrid();
             if (dtp対象月 != null && dtp分析月 != null)
             {
                 dtp分析月.Value = dtp対象月.Value;
             }
+
+            // シフト表を保存
+            SaveShiftTable();
         }
 
         /// <summary>
