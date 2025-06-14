@@ -1099,6 +1099,33 @@ namespace ShiftPlanner
             SaveSettings();
         }
 
+        /// <summary>
+        /// 必要人数のデフォルト値が変更されたときの処理
+        /// </summary>
+        private void CmbDefaultRequired_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (!int.TryParse(cmbDefaultRequired?.SelectedItem?.ToString(), out int v))
+            {
+                return;
+            }
+
+            if (shiftFrames == null)
+            {
+                return;
+            }
+
+            foreach (var frame in shiftFrames)
+            {
+                if (frame != null)
+                {
+                    frame.RequiredNumber = v;
+                }
+            }
+
+            SaveFrames();
+            SetupShiftGrid();
+        }
+
         private void UpdateRequestSummary()
         {
             if (dtRequestSummary == null)
