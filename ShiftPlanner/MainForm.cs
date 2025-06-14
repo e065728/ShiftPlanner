@@ -669,6 +669,7 @@ namespace ShiftPlanner
 
                 // 列をソート不可に設定
                 DataGridViewHelper.SetColumnsNotSortable(dtRequests);
+                DataGridViewHelper.FitColumnsToGrid(dtRequests);
             }
             catch (Exception ex)
             {
@@ -961,6 +962,7 @@ namespace ShiftPlanner
 
                 dtRequestSummary.DataSource = list;
                 DataGridViewHelper.SetColumnsNotSortable(dtRequestSummary);
+                DataGridViewHelper.FitColumnsToGrid(dtRequestSummary);
             }
             catch (Exception ex)
             {
@@ -1072,6 +1074,7 @@ namespace ShiftPlanner
             DataGridViewHelper.SetColumnsNotSortable(dtShifts);
             // 列幅をヘッダー表示に合わせて調整
             DataGridViewHelper.AdjustColumnWidthToHeader(dtShifts);
+            DataGridViewHelper.FitColumnsToGrid(dtShifts);
 
             dtShifts.CellFormatting -= DtShifts_CellFormatting;
             dtShifts.CellFormatting += DtShifts_CellFormatting;

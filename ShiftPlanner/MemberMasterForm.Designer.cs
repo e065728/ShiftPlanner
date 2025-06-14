@@ -81,7 +81,7 @@ namespace ShiftPlanner
             this.Controls.Add(this.btnRemove);
             this.Controls.Add(this.btnOk);
             this.Controls.Add(this.btnCancel);
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.FormBorderStyle = FormBorderStyle.Sizable;
             this.StartPosition = FormStartPosition.CenterParent;
             this.Text = "メンバーマスター";
 

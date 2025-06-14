@@ -41,6 +41,10 @@ namespace ShiftPlanner
                     col.HeaderText = "名称";
                 }
             }
+
+            // 列幅をフォームのサイズに合わせて調整
+            DataGridViewHelper.SetColumnsNotSortable(dtHolidays);
+            DataGridViewHelper.FitColumnsToGrid(dtHolidays);
         }
 
         private void BtnAdd_Click(object sender, EventArgs e)

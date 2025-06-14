@@ -98,6 +98,10 @@ namespace ShiftPlanner
                         break;
                 }
             }
+
+            // 列幅をフォームのサイズに合わせて調整
+            DataGridViewHelper.SetColumnsNotSortable(dtShiftTimes);
+            DataGridViewHelper.FitColumnsToGrid(dtShiftTimes);
         }
 
         private void DtShiftTimes_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
