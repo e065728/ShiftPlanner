@@ -10,6 +10,7 @@ using System.Runtime.Serialization;
 using System.Windows.Forms.DataVisualization.Charting;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Text;
 
 namespace ShiftPlanner
 {
@@ -1174,6 +1175,72 @@ namespace ShiftPlanner
             SetupShiftGrid();
             GenerateRandomShifts();
             UpdateAttendanceCounts();
+        }
+
+        /// <summary>
+        /// シフト表の必要人数を集計します。
+        /// </summary>
+        private void Btn集計_Click(object? sender, EventArgs e)
+        {
+            try
+            {
+                if (dtp対象月 == null)
+                {
+                    return;
+                }
+
+                var baseDate = new DateTime(dtp対象月.Value.Year, dtp対象月.Value.Month, 1);
+                int days = DateTime.DaysInMonth(baseDate.Year, baseDate.Month);
+
+                var dailyNeeds = new List<int>();
+
+                int startRow = members.Count + skillGroups.Count;
+                int endRow = Math.Min(startRow + enabledShiftTimes.Count, shiftTable.Rows.Count - 1);
+
+                for (int d = 0; d < days; d++)
+                {
+                    int col = dateColumnStartIndex + d;
+                    int sum = 0;
+                    for (int row = startRow; row < endRow; row++)
+                    {
+                        if (int.TryParse(shiftTable.Rows[row][col]?.ToString(), out int v))
+                        {
+                            sum += v;
+                        }
+                    }
+                    dailyNeeds.Add(sum);
+                }
+
+                int totalNeed = dailyNeeds.Sum();
+                int maxNeed = dailyNeeds.Count > 0 ? dailyNeeds.Max() : 0;
+
+                int workableDays = days - minHolidayCount;
+                if (workableDays <= 0)
+                {
+                    MessageBox.Show("最低休日日数が多すぎます。", "エラー");
+                    return;
+                }
+
+                int minMembersByTotal = (int)Math.Ceiling(totalNeed / (double)workableDays);
+                int requiredMembers = Math.Max(maxNeed, minMembersByTotal);
+
+                var sb = new StringBuilder();
+                sb.AppendLine("日別必要人数一覧");
+                for (int i = 0; i < dailyNeeds.Count; i++)
+                {
+                    sb.AppendLine($"{i + 1}日: {dailyNeeds[i]}人");
+                }
+                sb.AppendLine($"合計必要勤務日数: {totalNeed}");
+                sb.AppendLine($"最大日次必要人数: {maxNeed}");
+                sb.AppendLine($"1人当たり最大勤務可能日数: {workableDays}");
+                sb.AppendLine($"必要メンバー数: {requiredMembers}");
+
+                MessageBox.Show(sb.ToString(), "集計結果");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"集計処理でエラーが発生しました: {ex.Message}");
+            }
         }
 
         /// <summary>

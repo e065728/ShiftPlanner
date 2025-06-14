@@ -23,6 +23,7 @@ namespace ShiftPlanner
         private Label lblDefaultRequired;
         private ComboBox cmbMinHolidayCount;
         private Label lblMinHolidayCount;
+        private Button btnAggregate;
         private Button btnAddRequest;
         private Button btnRemoveRequest;
         private DateTimePicker dtp分析月;
@@ -69,6 +70,7 @@ namespace ShiftPlanner
             this.lblDefaultRequired = new System.Windows.Forms.Label();
             this.cmbMinHolidayCount = new System.Windows.Forms.ComboBox();
             this.lblMinHolidayCount = new System.Windows.Forms.Label();
+            this.btnAggregate = new System.Windows.Forms.Button();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.menuFile = new System.Windows.Forms.ToolStripMenuItem();
             this.menuExportAnalysisCsv = new System.Windows.Forms.ToolStripMenuItem();
@@ -113,6 +115,7 @@ namespace ShiftPlanner
             this.tabShift.Controls.Add(this.lblMinHolidayCount);
             this.tabShift.Controls.Add(this.cmbDefaultRequired);
             this.tabShift.Controls.Add(this.lblDefaultRequired);
+            this.tabShift.Controls.Add(this.btnAggregate);
             this.tabShift.Controls.Add(this.btnShiftGenerate);
             this.tabShift.Location = new System.Drawing.Point(4, 22);
             this.tabShift.Name = "tabShift";
@@ -178,6 +181,16 @@ namespace ShiftPlanner
             this.cmbMinHolidayCount.Size = new System.Drawing.Size(60, 20);
             this.cmbMinHolidayCount.TabIndex = 5;
             this.cmbMinHolidayCount.SelectedIndexChanged += new System.EventHandler(this.CmbMinHolidayCount_SelectedIndexChanged);
+            //
+            // btnAggregate
+            //
+            this.btnAggregate.Location = new System.Drawing.Point(426, 6);
+            this.btnAggregate.Name = "btnAggregate";
+            this.btnAggregate.Size = new System.Drawing.Size(75, 23);
+            this.btnAggregate.TabIndex = 6;
+            this.btnAggregate.Text = "集計";
+            this.btnAggregate.UseVisualStyleBackColor = true;
+            this.btnAggregate.Click += new System.EventHandler(this.Btn集計_Click);
             //
             // lblDefaultRequired
             //
