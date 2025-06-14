@@ -1210,6 +1210,8 @@ namespace ShiftPlanner
             // 列幅をヘッダー表示に合わせて調整
             DataGridViewHelper.AdjustColumnWidthToHeader(dtShifts);
             DataGridViewHelper.FitColumnsToGrid(dtShifts);
+            // メンバー名列の幅を固定
+            DataGridViewHelper.SetColumnWidth(dtShifts, 0, 120);
 
             dtShifts.CellFormatting -= DtShifts_CellFormatting;
             dtShifts.CellFormatting += DtShifts_CellFormatting;
@@ -1248,7 +1250,18 @@ namespace ShiftPlanner
                 var reqRow = shiftTable.Rows[shiftTable.Rows.Count - 2];
                 int.TryParse(reqRow[e.ColumnIndex]?.ToString(), out int req);
                 int.TryParse(shiftTable.Rows[e.RowIndex][e.ColumnIndex]?.ToString(), out int actual);
-                e.CellStyle.BackColor = req == actual ? Color.LightBlue : Color.LightPink;
+                if (req == actual)
+                {
+                    e.CellStyle.BackColor = Color.LightBlue;
+                }
+                else if (actual < req)
+                {
+                    e.CellStyle.BackColor = Color.Red;
+                }
+                else
+                {
+                    e.CellStyle.BackColor = Color.LightGreen;
+                }
             }
             else if (shiftTable.Rows[e.RowIndex][0].ToString() != "必要人数")
             {
@@ -1257,7 +1270,13 @@ namespace ShiftPlanner
                 if (!string.IsNullOrEmpty(val))
                 {
                     string name = val.StartsWith("希") ? val.Substring(1) : val;
-                    if (!string.IsNullOrEmpty(name) && name != "休")
+                    if (val == "希休")
+                    {
+                        // 希望休は赤字で表示
+                        e.CellStyle.ForeColor = Color.Red;
+                        e.CellStyle.BackColor = Color.LightGray;
+                    }
+                    else if (!string.IsNullOrEmpty(name) && name != "休")
                     {
                         var st = shiftTimes.FirstOrDefault(s => s.Name == name);
                         if (st != null)
