@@ -1456,6 +1456,9 @@ namespace ShiftPlanner
                 enabledShiftTimes,
                 minHolidayCount);
 
+            // 生成結果で必要人数を満たせない列を補正
+            AdjustShortage(assignmentsMap, shiftNeeds, baseDate, days);
+
             // 結果をテーブルへ反映
             for (int i = 0; i < members.Count; i++)
             {
@@ -1478,6 +1481,83 @@ namespace ShiftPlanner
             UpdateAttendanceCounts();
             dtShifts.Refresh();
             SaveShiftTable();
+        }
+
+        /// <summary>
+        /// 生成されたシフト結果を確認し、必要人数に満たない列を調整します。
+        /// </summary>
+        /// <param name="map">メンバー別の割り当て結果</param>
+        /// <param name="shiftNeeds">日付ごとの勤務時間帯必要人数</param>
+        /// <param name="baseDate">対象月の開始日</param>
+        /// <param name="days">対象日数</param>
+        private void AdjustShortage(
+            Dictionary<int, Dictionary<DateTime, string>> map,
+            Dictionary<DateTime, Dictionary<string, int>> shiftNeeds,
+            DateTime baseDate,
+            int days)
+        {
+            if (map == null || shiftNeeds == null)
+            {
+                return;
+            }
+
+            for (int d = 0; d < days; d++)
+            {
+                var date = baseDate.AddDays(d);
+                if (!shiftNeeds.TryGetValue(date, out var needs) || needs == null)
+                {
+                    continue;
+                }
+
+                foreach (var kv in needs)
+                {
+                    string shiftName = kv.Key;
+                    int required = kv.Value;
+
+                    int actual = 0;
+                    foreach (var m in members)
+                    {
+                        if (!map.TryGetValue(m.Id, out var dayMap) || dayMap == null)
+                        {
+                            continue;
+                        }
+
+                        if (dayMap.TryGetValue(date, out var val))
+                        {
+                            string name = val.StartsWith("希") ? val.Substring(1) : val;
+                            if (!string.IsNullOrEmpty(name) && name == shiftName)
+                            {
+                                actual++;
+                            }
+                        }
+                    }
+
+                    int shortage = required - actual;
+                    while (shortage > 0)
+                    {
+                        var candidates = members
+                            .Where(m =>
+                                map.ContainsKey(m.Id) &&
+                                map[m.Id].ContainsKey(date) &&
+                                (string.IsNullOrEmpty(map[m.Id][date]) || map[m.Id][date] == "休") &&
+                                m.AvailableShiftNames.Contains(shiftName) &&
+                                m.AvailableDays.Contains(date.DayOfWeek) &&
+                                (date.DayOfWeek != DayOfWeek.Saturday || m.WorksOnSaturday) &&
+                                (date.DayOfWeek != DayOfWeek.Sunday || m.WorksOnSunday) &&
+                                !shiftRequests.Any(r => r.MemberId == m.Id && r.Date.Date == date.Date && r.IsHolidayRequest))
+                            .ToList();
+
+                        if (candidates.Count == 0)
+                        {
+                            break;
+                        }
+
+                        var chosen = candidates[_rand.Next(candidates.Count)];
+                        map[chosen.Id][date] = shiftName;
+                        shortage--;
+                    }
+                }
+            }
         }
 
         /// <summary>
