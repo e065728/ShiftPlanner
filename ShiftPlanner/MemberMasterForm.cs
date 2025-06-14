@@ -209,6 +209,8 @@ namespace ShiftPlanner
             dtMembers.CellFormatting += DtMembers_CellFormatting;
             dtMembers.CellParsing += DtMembers_CellParsing;
             dtMembers.CurrentCellDirtyStateChanged += DtMembers_CurrentCellDirtyStateChanged;
+            // データエラー時に独自メッセージを表示する
+            dtMembers.DataError += DtMembers_DataError;
             DataGridViewHelper.SetColumnsNotSortable(dtMembers);
             // フォームサイズに合わせて列幅を自動調整
             DataGridViewHelper.FitColumnsToGrid(dtMembers);
@@ -357,6 +359,19 @@ namespace ShiftPlanner
                     e.ParsingApplied = true;
                 }
             }
+        }
+
+        /// <summary>
+        /// DataGridViewのデータエラーを処理します。
+        /// </summary>
+        private void DtMembers_DataError(object? sender, DataGridViewDataErrorEventArgs e)
+        {
+            // 既定の例外ダイアログを抑制
+            e.ThrowException = false;
+
+            // 例外メッセージが取得できない場合も考慮
+            string message = e.Exception?.Message ?? "データ形式が正しくありません。";
+            MessageBox.Show($"入力値に誤りがあります: {message}", "データエラー", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
 
         /// <summary>
