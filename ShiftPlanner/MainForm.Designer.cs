@@ -21,6 +21,7 @@ namespace ShiftPlanner
         private Label lblHolidayLimit;
         private ComboBox cmbMinHolidayCount;
         private Label lblMinHolidayCount;
+        private Button btnAggregate;
         private Button btnAddRequest;
         private Button btnRemoveRequest;
         private DateTimePicker dtp分析月;
@@ -65,6 +66,7 @@ namespace ShiftPlanner
             this.lblHolidayLimit = new System.Windows.Forms.Label();
             this.cmbMinHolidayCount = new System.Windows.Forms.ComboBox();
             this.lblMinHolidayCount = new System.Windows.Forms.Label();
+            this.btnAggregate = new System.Windows.Forms.Button();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.menuFile = new System.Windows.Forms.ToolStripMenuItem();
             this.menuExportAnalysisCsv = new System.Windows.Forms.ToolStripMenuItem();
