@@ -142,14 +142,22 @@ namespace ShiftPlanner
                         // この列は後で曜日ごとのチェックボックス列に置き換えるため非表示
                         col.Visible = false;
                         break;
+                    case nameof(Member.AvailableShiftNames):
+                        // List 型列は直接編集しないため非表示
+                        col.Visible = false;
+                        break;
                     case nameof(Member.Skills):
                         col.HeaderText = "スキル";
+                        // List 型列は直接編集しないため読み取り専用とする
+                        col.ReadOnly = true;
                         break;
                     case nameof(Member.SkillGroup):
                         col.HeaderText = "スキルグループ";
                         break;
                     case nameof(Member.DesiredHolidays):
                         col.HeaderText = "希望休";
+                        // List 型列は直接編集しないため読み取り専用とする
+                        col.ReadOnly = true;
                         break;
                     case nameof(Member.Constraints):
                         col.Visible = false;
