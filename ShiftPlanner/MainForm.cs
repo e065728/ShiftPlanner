@@ -8,6 +8,8 @@ using System.IO;
 using System.Runtime.Serialization.Json;
 using System.Runtime.Serialization;
 using System.Windows.Forms.DataVisualization.Charting;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ShiftPlanner
 {
@@ -55,6 +57,9 @@ namespace ShiftPlanner
 
         // シフト表用のテーブル
         private DataTable shiftTable = new DataTable();
+
+        // 保存処理の排他制御に使用するロックオブジェクト
+        private readonly object saveLock = new object();
 
         // 乱数生成用の共有インスタンス
         private static readonly Random _rand = new Random();
@@ -1109,7 +1114,8 @@ namespace ShiftPlanner
                 }
             }
             UpdateAttendanceCounts();
-            SaveShiftTable();
+            // 保存処理はバックグラウンドで実行し、UI の応答性を確保
+            SaveShiftTableAsync();
         }
 
         private void CmbMinHolidayCount_SelectedIndexChanged(object sender, EventArgs e)
@@ -1661,7 +1667,8 @@ namespace ShiftPlanner
             }
 
             UpdateAttendanceCounts();
-            SaveShiftTable();
+            // 保存処理はバックグラウンドで実行し、UI の応答性を確保
+            SaveShiftTableAsync();
         }
 
         /// <summary>
@@ -1805,10 +1812,29 @@ namespace ShiftPlanner
 
         private void SaveShiftTable()
         {
+            SaveShiftTableInternal(shiftTable);
+        }
+
+        /// <summary>
+        /// 非同期でシフト表を保存します。UI スレッドをブロックしないようにします。
+        /// </summary>
+        private void SaveShiftTableAsync()
+        {
+            // 編集中のテーブルをコピーしてバックグラウンドで保存
+            var copy = shiftTable.Copy();
+            Task.Run(() => SaveShiftTableInternal(copy));
+        }
+
+        /// <summary>
+        /// 実際の保存処理本体。引数で渡されたテーブルをファイルに書き込みます。
+        /// </summary>
+        /// <param name="table">保存対象のテーブル</param>
+        private void SaveShiftTableInternal(DataTable table)
+        {
             try
             {
                 var data = new List<List<string>>();
-                foreach (DataRow row in shiftTable.Rows)
+                foreach (DataRow row in table.Rows)
                 {
                     var list = new List<string>();
                     foreach (var item in row.ItemArray)
@@ -1819,14 +1845,26 @@ namespace ShiftPlanner
                 }
 
                 var serializer = new DataContractJsonSerializer(typeof(List<List<string>>));
-                using (var stream = File.Create(shiftTableFilePath))
+
+                lock (saveLock)
                 {
-                    serializer.WriteObject(stream, data);
+                    using (var stream = File.Create(shiftTableFilePath))
+                    {
+                        serializer.WriteObject(stream, data);
+                    }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"シフト表の保存に失敗しました: {ex.Message}");
+                // バックグラウンドスレッドから呼び出される可能性があるため、Invoke を使用
+                if (InvokeRequired)
+                {
+                    Invoke(new Action(() => MessageBox.Show($"シフト表の保存に失敗しました: {ex.Message}")));
+                }
+                else
+                {
+                    MessageBox.Show($"シフト表の保存に失敗しました: {ex.Message}");
+                }
             }
         }
 
