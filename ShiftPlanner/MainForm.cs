@@ -46,6 +46,9 @@ namespace ShiftPlanner
         private List<SkillGroup> skillGroups = new List<SkillGroup>();
         private List<ShiftTime> shiftTimes = new List<ShiftTime>();
 
+        // 読み込み失敗を検知するためのフラグ
+        private bool loadFailed = false;
+
         // シフト表用のテーブル
         private DataTable shiftTable = new DataTable();
 
@@ -101,6 +104,23 @@ namespace ShiftPlanner
             UpdateRequestSummary();
             SetupShiftGrid();
 
+            // いずれかの読み込みに失敗した場合はデータを初期化
+            if (loadFailed)
+            {
+                MessageBox.Show("設定の読み込みに失敗したため、データを初期化します。");
+                ResetAllData();
+
+                // 再度データを読み込み直す
+                loadFailed = false;
+                LoadHolidays();
+                LoadSkillGroups();
+                LoadShiftTimes();
+                InitializeData();
+                SetupRequestGrid();
+                UpdateRequestSummary();
+                SetupShiftGrid();
+            }
+
             if (cmbHolidayLimit != null)
             {
                 cmbHolidayLimit.SelectedItem = settings.HolidayLimit.ToString();
@@ -128,21 +148,25 @@ namespace ShiftPlanner
 
         private void LoadMembers()
         {
-            if (File.Exists(memberFilePath))
+            if (!File.Exists(memberFilePath))
             {
-                try
+                loadFailed = true;
+                return;
+            }
+
+            try
+            {
+                var serializer = new DataContractJsonSerializer(typeof(List<Member>));
+                using (var stream = File.OpenRead(memberFilePath))
                 {
-                    var serializer = new DataContractJsonSerializer(typeof(List<Member>));
-                    using (var stream = File.OpenRead(memberFilePath))
-                    {
-                        members = (List<Member>)serializer.ReadObject(stream);
-                    }
+                    members = (List<Member>)serializer.ReadObject(stream);
                 }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"メンバー情報の読み込みに失敗しました: {ex.Message}");
-                    members = new List<Member>();
-                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"メンバー情報の読み込みに失敗しました: {ex.Message}");
+                members = new List<Member>();
+                loadFailed = true;
             }
         }
 
@@ -259,25 +283,29 @@ namespace ShiftPlanner
 
         private void LoadHolidays()
         {
-            if (File.Exists(holidayFilePath))
+            if (!File.Exists(holidayFilePath))
             {
-                try
+                loadFailed = true;
+                return;
+            }
+
+            try
+            {
+                var serializer = new DataContractJsonSerializer(typeof(List<CustomHoliday>));
+                using (var stream = File.OpenRead(holidayFilePath))
                 {
-                    var serializer = new DataContractJsonSerializer(typeof(List<CustomHoliday>));
-                    using (var stream = File.OpenRead(holidayFilePath))
+                    var list = serializer.ReadObject(stream) as List<CustomHoliday>;
+                    if (list != null)
                     {
-                        var list = serializer.ReadObject(stream) as List<CustomHoliday>;
-                        if (list != null)
-                        {
-                            customHolidays = list;
-                        }
+                        customHolidays = list;
                     }
                 }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"祝日情報の読み込みに失敗しました: {ex.Message}");
-                    customHolidays = new List<CustomHoliday>();
-                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"祝日情報の読み込みに失敗しました: {ex.Message}");
+                customHolidays = new List<CustomHoliday>();
+                loadFailed = true;
             }
         }
 
@@ -299,25 +327,29 @@ namespace ShiftPlanner
 
         private void LoadSkillGroups()
         {
-            if (File.Exists(skillGroupFilePath))
+            if (!File.Exists(skillGroupFilePath))
             {
-                try
+                loadFailed = true;
+                return;
+            }
+
+            try
+            {
+                var serializer = new DataContractJsonSerializer(typeof(List<SkillGroup>));
+                using (var stream = File.OpenRead(skillGroupFilePath))
                 {
-                    var serializer = new DataContractJsonSerializer(typeof(List<SkillGroup>));
-                    using (var stream = File.OpenRead(skillGroupFilePath))
+                    var list = serializer.ReadObject(stream) as List<SkillGroup>;
+                    if (list != null)
                     {
-                        var list = serializer.ReadObject(stream) as List<SkillGroup>;
-                        if (list != null)
-                        {
-                            skillGroups = list;
-                        }
+                        skillGroups = list;
                     }
                 }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"スキルグループ情報の読み込みに失敗しました: {ex.Message}");
-                    skillGroups = new List<SkillGroup>();
-                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"スキルグループ情報の読み込みに失敗しました: {ex.Message}");
+                skillGroups = new List<SkillGroup>();
+                loadFailed = true;
             }
         }
 
@@ -339,25 +371,29 @@ namespace ShiftPlanner
 
         private void LoadShiftTimes()
         {
-            if (File.Exists(shiftTimeFilePath))
+            if (!File.Exists(shiftTimeFilePath))
             {
-                try
+                loadFailed = true;
+                return;
+            }
+
+            try
+            {
+                var serializer = new DataContractJsonSerializer(typeof(List<ShiftTime>));
+                using (var stream = File.OpenRead(shiftTimeFilePath))
                 {
-                    var serializer = new DataContractJsonSerializer(typeof(List<ShiftTime>));
-                    using (var stream = File.OpenRead(shiftTimeFilePath))
+                    var list = serializer.ReadObject(stream) as List<ShiftTime>;
+                    if (list != null)
                     {
-                        var list = serializer.ReadObject(stream) as List<ShiftTime>;
-                        if (list != null)
-                        {
-                            shiftTimes = list;
-                        }
+                        shiftTimes = list;
                     }
                 }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"勤務時間情報の読み込みに失敗しました: {ex.Message}");
-                    shiftTimes = new List<ShiftTime>();
-                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"勤務時間情報の読み込みに失敗しました: {ex.Message}");
+                shiftTimes = new List<ShiftTime>();
+                loadFailed = true;
             }
         }
 
@@ -379,25 +415,29 @@ namespace ShiftPlanner
 
         private void LoadSettings()
         {
-            if (File.Exists(settingsFilePath))
+            if (!File.Exists(settingsFilePath))
             {
-                try
+                loadFailed = true;
+                return;
+            }
+
+            try
+            {
+                var serializer = new DataContractJsonSerializer(typeof(AppSettings));
+                using (var stream = File.OpenRead(settingsFilePath))
                 {
-                    var serializer = new DataContractJsonSerializer(typeof(AppSettings));
-                    using (var stream = File.OpenRead(settingsFilePath))
+                    var obj = serializer.ReadObject(stream) as AppSettings;
+                    if (obj != null)
                     {
-                        var obj = serializer.ReadObject(stream) as AppSettings;
-                        if (obj != null)
-                        {
-                            settings = obj;
-                        }
+                        settings = obj;
                     }
                 }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"設定の読み込みに失敗しました: {ex.Message}");
-                    settings = new AppSettings();
-                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"設定の読み込みに失敗しました: {ex.Message}");
+                settings = new AppSettings();
+                loadFailed = true;
             }
         }
 
@@ -420,23 +460,27 @@ namespace ShiftPlanner
 
         private void LoadRequests()
         {
-            if (File.Exists(requestFilePath))
+            if (!File.Exists(requestFilePath))
             {
-                try
-                {
-                    var serializer = new DataContractJsonSerializer(typeof(List<ShiftRequest>));
-                    using (var stream = File.OpenRead(requestFilePath))
-                    {
-                        shiftRequests = (List<ShiftRequest>)serializer.ReadObject(stream);
+                loadFailed = true;
+                return;
+            }
 
-                    }
-                }
-                catch (Exception ex)
+            try
+            {
+                var serializer = new DataContractJsonSerializer(typeof(List<ShiftRequest>));
+                using (var stream = File.OpenRead(requestFilePath))
                 {
+                    shiftRequests = (List<ShiftRequest>)serializer.ReadObject(stream);
 
-                    MessageBox.Show($"希望情報の読み込みに失敗しました: {ex.Message}");
-                    shiftRequests = new List<ShiftRequest>();
                 }
+            }
+            catch (Exception ex)
+            {
+
+                MessageBox.Show($"希望情報の読み込みに失敗しました: {ex.Message}");
+                shiftRequests = new List<ShiftRequest>();
+                loadFailed = true;
             }
         }
 
@@ -464,21 +508,25 @@ namespace ShiftPlanner
         /// </summary>
         private void LoadFrames()
         {
-            if (File.Exists(frameFilePath))
+            if (!File.Exists(frameFilePath))
             {
-                try
+                loadFailed = true;
+                return;
+            }
+
+            try
+            {
+                var serializer = new DataContractJsonSerializer(typeof(List<ShiftFrame>));
+                using (var stream = File.OpenRead(frameFilePath))
                 {
-                    var serializer = new DataContractJsonSerializer(typeof(List<ShiftFrame>));
-                    using (var stream = File.OpenRead(frameFilePath))
-                    {
-                        shiftFrames = (List<ShiftFrame>)serializer.ReadObject(stream);
-                    }
+                    shiftFrames = (List<ShiftFrame>)serializer.ReadObject(stream);
                 }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"シフトフレームの読み込みに失敗しました: {ex.Message}");
-                    shiftFrames = new List<ShiftFrame>();
-                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"シフトフレームの読み込みに失敗しました: {ex.Message}");
+                shiftFrames = new List<ShiftFrame>();
+                loadFailed = true;
             }
         }
 
@@ -529,23 +577,27 @@ namespace ShiftPlanner
         /// </summary>
         private void LoadAssignments()
         {
-            if (File.Exists(assignmentFilePath))
+            if (!File.Exists(assignmentFilePath))
             {
-                try
+                loadFailed = true;
+                return;
+            }
+
+            try
+            {
+                var serializer = new DataContractJsonSerializer(typeof(List<ShiftAssignment>));
+                using (var stream = File.OpenRead(assignmentFilePath))
                 {
-                    var serializer = new DataContractJsonSerializer(typeof(List<ShiftAssignment>));
-                    using (var stream = File.OpenRead(assignmentFilePath))
-                    {
-                        assignments = (List<ShiftAssignment>)serializer.ReadObject(stream);
-                    }
-                    // 読み込んだメンバーを既存の参照に置き換える
-                    ReconcileAssignmentMembers();
+                    assignments = (List<ShiftAssignment>)serializer.ReadObject(stream);
                 }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"割り当て結果の読み込みに失敗しました: {ex.Message}");
-                    assignments = new List<ShiftAssignment>();
-                }
+                // 読み込んだメンバーを既存の参照に置き換える
+                ReconcileAssignmentMembers();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"割り当て結果の読み込みに失敗しました: {ex.Message}");
+                assignments = new List<ShiftAssignment>();
+                loadFailed = true;
             }
         }
 
@@ -599,12 +651,20 @@ namespace ShiftPlanner
 
         private void InitializeData()
         {
+            // フラグを初期化
+            loadFailed = false;
+
             LoadMembers();
             NormalizeMemberConstraints();
             NormalizeMemberAvailability();
             LoadFrames();
             LoadRequests();
             LoadAssignments();
+
+            if (loadFailed)
+            {
+                return;
+            }
           
           
             // シフトフレームが無い場合でもサンプルデータは作成しない
@@ -1517,6 +1577,7 @@ namespace ShiftPlanner
         {
             if (!File.Exists(shiftTableFilePath))
             {
+                loadFailed = true;
                 return;
             }
 
@@ -1545,6 +1606,7 @@ namespace ShiftPlanner
             catch (Exception ex)
             {
                 MessageBox.Show($"シフト表の読み込みに失敗しました: {ex.Message}");
+                loadFailed = true;
             }
         }
 
@@ -1573,6 +1635,47 @@ namespace ShiftPlanner
             {
                 MessageBox.Show($"シフト表の保存に失敗しました: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// 保存データをすべて削除して初期状態に戻します。
+        /// </summary>
+        private void ResetAllData()
+        {
+            try
+            {
+                if (Directory.Exists(dataDir))
+                {
+                    Directory.Delete(dataDir, true);
+                }
+                Directory.CreateDirectory(dataDir);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"データディレクトリのリセットに失敗しました: {ex.Message}");
+            }
+
+            // 空のデータを生成
+            members = new List<Member>();
+            shiftFrames = new List<ShiftFrame>();
+            assignments = new List<ShiftAssignment>();
+            shiftRequests = new List<ShiftRequest>();
+            customHolidays = new List<CustomHoliday>();
+            skillGroups = new List<SkillGroup>();
+            shiftTimes = new List<ShiftTime>();
+            settings = new AppSettings();
+            shiftTable = new DataTable();
+
+            // 空データを保存しておく
+            SaveMembers();
+            SaveFrames();
+            SaveAssignments();
+            SaveRequests();
+            SaveHolidays();
+            SaveSkillGroups();
+            SaveShiftTimes();
+            SaveSettings();
+            SaveShiftTable();
         }
 
         // このメソッドの内容は MainForm.Designer.cs に移動しました。
