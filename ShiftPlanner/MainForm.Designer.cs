@@ -101,6 +101,9 @@ namespace ShiftPlanner
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
             this.tabControl1.Size = new System.Drawing.Size(1393, 834);
+            // フォームサイズ変更時にタブコントロールもリサイズされるようアンカーを設定
+            this.tabControl1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right)));
             this.tabControl1.TabIndex = 0;
             //
             // tabShift
@@ -221,8 +224,9 @@ namespace ShiftPlanner
             // dtRequestSummary
             // 
             this.dtRequestSummary.AllowUserToAddRows = false;
-            this.dtRequestSummary.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Right)));
+            // フォームリサイズ時に幅も変わるよう左右のアンカーを設定
+            this.dtRequestSummary.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right));
             this.dtRequestSummary.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             // 右側に表示できるよう座標を調整
             this.dtRequestSummary.Location = new System.Drawing.Point(692, 38);
@@ -234,8 +238,9 @@ namespace ShiftPlanner
             // dtRequests
             // 
             this.dtRequests.AllowUserToAddRows = false;
-            this.dtRequests.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left)));
+            // 左右双方のアンカーを設定し、フォームリサイズ時に幅を合わせる
+            this.dtRequests.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right));
             this.dtRequests.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dtRequests.Location = new System.Drawing.Point(6, 38);
             this.dtRequests.Name = "dtRequests";
