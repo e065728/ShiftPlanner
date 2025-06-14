@@ -45,6 +45,10 @@ namespace ShiftPlanner
         private List<CustomHoliday> customHolidays = new List<CustomHoliday>();
         private List<SkillGroup> skillGroups = new List<SkillGroup>();
         private List<ShiftTime> shiftTimes = new List<ShiftTime>();
+        /// <summary>
+        /// 有効な勤務時間のみを保持するリスト
+        /// </summary>
+        private List<ShiftTime> enabledShiftTimes = new List<ShiftTime>();
 
         // 読み込み失敗を検知するためのフラグ
         private bool loadFailed = false;
@@ -1183,17 +1187,17 @@ namespace ShiftPlanner
                 return;
             }
 
+            // 有効な勤務時間を抽出して保持
+            enabledShiftTimes = shiftTimes
+                .Where(s => s != null && s.IsEnabled)
+                .ToList();
+
             shiftTable = new DataTable();
             shiftTable.Columns.Add("メンバー名", typeof(string));
 
-            // 勤怠時間ごとの集計列
-            foreach (var st in shiftTimes)
+            // 勤怠時間ごとの集計列を作成
+            foreach (var st in enabledShiftTimes)
             {
-                if (st == null || !st.IsEnabled)
-                {
-                    // 無効な勤務時間は集計対象外
-                    continue;
-                }
                 shiftTable.Columns.Add(st.Name, typeof(int));
             }
 
@@ -1418,8 +1422,7 @@ namespace ShiftPlanner
                         else
                         {
                             // 有効な勤務時間のみ候補とする
-                            var activeNames = shiftTimes
-                                .Where(s => s != null && s.IsEnabled)
+                            var activeNames = enabledShiftTimes
                                 .Select(s => s.Name)
                                 .ToList();
 
@@ -1497,11 +1500,12 @@ namespace ShiftPlanner
 
             var baseDate = new DateTime(dtp対象月.Value.Year, dtp対象月.Value.Month, 1);
             var days = DateTime.DaysInMonth(baseDate.Year, baseDate.Month);
-            int weekdayStart = 1 + shiftTimes.Count + 1; // 月曜日列の開始位置
+            // 勤怠時間列の後ろに休列が入るため +1 する
+            int weekdayStart = 1 + enabledShiftTimes.Count + 1; // 月曜日列の開始位置
 
             for (int row = 0; row < members.Count; row++)
             {
-                int[] shiftCount = new int[shiftTimes.Count];
+                int[] shiftCount = new int[enabledShiftTimes.Count];
                 int restCount = 0;
                 int[] weekdayCount = new int[7];
 
@@ -1518,7 +1522,7 @@ namespace ShiftPlanner
                     }
                     else if (!string.IsNullOrEmpty(name))
                     {
-                        int idx = shiftTimes.FindIndex(s => s.Name == name);
+                        int idx = enabledShiftTimes.FindIndex(s => s.Name == name);
                         if (idx >= 0)
                         {
                             shiftCount[idx]++;
@@ -1528,13 +1532,13 @@ namespace ShiftPlanner
                 }
 
                 // 勤怠時間列
-                for (int i = 0; i < shiftTimes.Count; i++)
+                for (int i = 0; i < enabledShiftTimes.Count; i++)
                 {
                     shiftTable.Rows[row][1 + i] = shiftCount[i];
                 }
 
                 // 休列
-                shiftTable.Rows[row][1 + shiftTimes.Count] = restCount;
+                shiftTable.Rows[row][1 + enabledShiftTimes.Count] = restCount;
 
                 // 曜日列 (月〜日)
                 shiftTable.Rows[row][weekdayStart + 0] = weekdayCount[(int)DayOfWeek.Monday];
@@ -1595,7 +1599,8 @@ namespace ShiftPlanner
             }
 
             var combo = new DataGridViewComboBoxCell();
-            foreach (var st in shiftTimes)
+            // 有効な勤務時間のみ候補として追加
+            foreach (var st in enabledShiftTimes)
             {
                 combo.Items.Add(st.Name);
             }
