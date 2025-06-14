@@ -1097,16 +1097,17 @@ namespace ShiftPlanner
             settings.DefaultRequired = v;
             SaveSettings();
 
-            if (shiftTable.Rows.Count >= members.Count + 2)
+            int reqStart = members.Count;
+            int reqEnd = shiftTable.Rows.Count - 1; // 出勤人数行以外
+            for (int row = reqStart; row < reqEnd; row++)
             {
-                var reqRow = shiftTable.Rows[shiftTable.Rows.Count - 2];
                 for (int col = 1; col < shiftTable.Columns.Count; col++)
                 {
-                    reqRow[col] = v;
+                    shiftTable.Rows[row][col] = v;
                 }
-                UpdateAttendanceCounts();
-                SaveShiftTable();
             }
+            UpdateAttendanceCounts();
+            SaveShiftTable();
         }
 
         private void CmbMinHolidayCount_SelectedIndexChanged(object sender, EventArgs e)
@@ -1229,18 +1230,28 @@ namespace ShiftPlanner
                 shiftTable.Rows.Add(row);
             }
 
-            // 必要人数行
-            var reqRow = shiftTable.NewRow();
-            reqRow[0] = "必要人数";
-            for (int i = 1; i < shiftTable.Columns.Count; i++)
+            // スキルごとの必要人数行を追加
+            foreach (var sg in skillGroups)
             {
-                reqRow[i] = 0;
+                var row = shiftTable.NewRow();
+                row[0] = sg.Name;
+                for (int i = 1; i < shiftTable.Columns.Count; i++)
+                {
+                    row[i] = settings.DefaultRequired;
+                }
+                shiftTable.Rows.Add(row);
             }
-            shiftTable.Rows.Add(reqRow);
 
-            for (int col = 1; col < shiftTable.Columns.Count; col++)
+            // 勤怠時間ごとの必要人数行を追加
+            foreach (var st in enabledShiftTimes)
             {
-                reqRow[col] = settings.DefaultRequired;
+                var row = shiftTable.NewRow();
+                row[0] = st.Name;
+                for (int i = 1; i < shiftTable.Columns.Count; i++)
+                {
+                    row[i] = settings.DefaultRequired;
+                }
+                shiftTable.Rows.Add(row);
             }
 
             // 出勤人数行
@@ -1294,14 +1305,19 @@ namespace ShiftPlanner
             // 出勤人数行の色付け
             if (shiftTable.Rows[e.RowIndex][0].ToString() == "出勤人数")
             {
-                var reqRow = shiftTable.Rows[shiftTable.Rows.Count - 2];
-                int.TryParse(reqRow[e.ColumnIndex]?.ToString(), out int req);
+                int required = 0;
+                for (int r = members.Count; r < shiftTable.Rows.Count - 1; r++)
+                {
+                    int.TryParse(shiftTable.Rows[r][e.ColumnIndex]?.ToString(), out int v);
+                    required += v;
+                }
+
                 int.TryParse(shiftTable.Rows[e.RowIndex][e.ColumnIndex]?.ToString(), out int actual);
-                if (req == actual)
+                if (actual == required)
                 {
                     e.CellStyle.BackColor = Color.LightBlue;
                 }
-                else if (actual < req)
+                else if (actual < required)
                 {
                     e.CellStyle.BackColor = Color.Red;
                 }
@@ -1310,7 +1326,7 @@ namespace ShiftPlanner
                     e.CellStyle.BackColor = Color.LightGreen;
                 }
             }
-            else if (shiftTable.Rows[e.RowIndex][0].ToString() != "必要人数")
+            else if (e.RowIndex < members.Count)
             {
                 // メンバー行の色付け
                 var val = shiftTable.Rows[e.RowIndex][e.ColumnIndex]?.ToString();
@@ -1378,74 +1394,145 @@ namespace ShiftPlanner
                 extraHolidays[m.Id] = set;
             }
 
-            // 連勤カウンタ
+            // 月内での割当回数をカウントして公平性を保つ
+            var assignCount = members.ToDictionary(m => m.Id, _ => 0);
             var workStreak = members.ToDictionary(m => m.Id, _ => 0);
 
             for (int col = dateColumnStartIndex; col < dateColumnStartIndex + days; col++)
             {
                 var date = baseDate.AddDays(col - dateColumnStartIndex);
-                for (int row = 0; row < members.Count; row++)
-                {
-                    var m = members[row];
-                    string value = string.Empty;
 
+                // 必要人数の読み取り
+                var skillNeeds = new Dictionary<string, int>();
+                for (int r = 0; r < skillGroups.Count; r++)
+                {
+                    int rowIndex = members.Count + r;
+                    int.TryParse(shiftTable.Rows[rowIndex][col]?.ToString(), out int v);
+                    skillNeeds[skillGroups[r].Name] = v;
+                }
+
+                var shiftNeeds = new Dictionary<string, int>();
+                for (int r = 0; r < enabledShiftTimes.Count; r++)
+                {
+                    int rowIndex = members.Count + skillGroups.Count + r;
+                    int.TryParse(shiftTable.Rows[rowIndex][col]?.ToString(), out int v);
+                    shiftNeeds[enabledShiftTimes[r].Name] = v;
+                }
+
+                var dayAssignments = new Dictionary<int, string>();
+
+                // 各メンバーの勤務可否判定
+                var candidates = new List<Member>();
+                foreach (var m in members)
+                {
                     var req = shiftRequests.FirstOrDefault(r => r.MemberId == m.Id && r.Date.Date == date.Date);
 
                     if (req != null && req.IsHolidayRequest)
                     {
-                        value = "希休";
+                        shiftTable.Rows[members.IndexOf(m)][col] = "希休";
+                        workStreak[m.Id] = 0;
+                        continue;
+                    }
+
+                    if (extraHolidays.TryGetValue(m.Id, out var set) && set.Contains(col - dateColumnStartIndex))
+                    {
+                        shiftTable.Rows[members.IndexOf(m)][col] = "休";
+                        workStreak[m.Id] = 0;
+                        continue;
+                    }
+
+                    bool canWork = m.AvailableDays.Contains(date.DayOfWeek) &&
+                        (date.DayOfWeek != DayOfWeek.Saturday || m.WorksOnSaturday) &&
+                        (date.DayOfWeek != DayOfWeek.Sunday || m.WorksOnSunday);
+
+                    int maxConsecutive = m.Constraints?.MaxConsecutiveDays ?? 5;
+                    if (workStreak[m.Id] >= maxConsecutive)
+                    {
+                        canWork = false;
+                    }
+
+                    if (!canWork)
+                    {
+                        shiftTable.Rows[members.IndexOf(m)][col] = "休";
+                        workStreak[m.Id] = 0;
+                        continue;
+                    }
+
+                    candidates.Add(m);
+                }
+
+                // スキル要件から優先的に割り当て
+                foreach (var sg in skillGroups)
+                {
+                    int need = skillNeeds.ContainsKey(sg.Name) ? skillNeeds[sg.Name] : 0;
+                    while (need > 0)
+                    {
+                        var target = candidates
+                            .Where(m => m.SkillGroup == sg.Name && !dayAssignments.ContainsKey(m.Id))
+                            .OrderBy(m => assignCount[m.Id])
+                            .ThenBy(_ => _rand.Next())
+                            .FirstOrDefault();
+
+                        if (target == null)
+                        {
+                            break;
+                        }
+
+                        var possibleShifts = target.AvailableShiftNames
+                            .Where(n => shiftNeeds.ContainsKey(n) && shiftNeeds[n] > 0)
+                            .ToList();
+
+                        if (possibleShifts.Count == 0)
+                        {
+                            break;
+                        }
+
+                        var shiftName = possibleShifts[_rand.Next(possibleShifts.Count)];
+                        shiftNeeds[shiftName]--;
+                        dayAssignments[target.Id] = shiftName;
+                        assignCount[target.Id]++;
+                        workStreak[target.Id]++;
+                        need--;
+                    }
+                }
+
+                // 残りの勤務枠を割り当て
+                foreach (var st in enabledShiftTimes)
+                {
+                    int need = shiftNeeds.ContainsKey(st.Name) ? shiftNeeds[st.Name] : 0;
+                    while (need > 0)
+                    {
+                        var target = candidates
+                            .Where(m => !dayAssignments.ContainsKey(m.Id) && m.AvailableShiftNames.Contains(st.Name))
+                            .OrderBy(m => assignCount[m.Id])
+                            .ThenBy(_ => _rand.Next())
+                            .FirstOrDefault();
+
+                        if (target == null)
+                        {
+                            break;
+                        }
+
+                        dayAssignments[target.Id] = st.Name;
+                        assignCount[target.Id]++;
+                        workStreak[target.Id]++;
+                        need--;
+                    }
+                }
+
+                // 割り当て結果をテーブルに書き込む
+                foreach (var m in members)
+                {
+                    if (dayAssignments.TryGetValue(m.Id, out var shiftName))
+                    {
+                        var req = shiftRequests.FirstOrDefault(r => r.MemberId == m.Id && r.Date.Date == date.Date);
+                        shiftTable.Rows[members.IndexOf(m)][col] = req != null ? $"希{shiftName}" : shiftName;
+                    }
+                    else if (shiftTable.Rows[members.IndexOf(m)][col].ToString() == string.Empty)
+                    {
+                        shiftTable.Rows[members.IndexOf(m)][col] = "休";
                         workStreak[m.Id] = 0;
                     }
-                    else if (extraHolidays.TryGetValue(m.Id, out var set) && set.Contains(col - dateColumnStartIndex))
-                    {
-                        value = "休";
-                        workStreak[m.Id] = 0;
-                    }
-                    else
-                    {
-                        bool canWork = m.AvailableDays.Contains(date.DayOfWeek) &&
-                            (date.DayOfWeek != DayOfWeek.Saturday || m.WorksOnSaturday) &&
-                            (date.DayOfWeek != DayOfWeek.Sunday || m.WorksOnSunday);
-
-                        // 各メンバーの連続勤務上限を取得。設定が無い場合は5日とする
-                        int maxConsecutive = m.Constraints?.MaxConsecutiveDays ?? 5;
-                        if (workStreak[m.Id] >= maxConsecutive)
-                        {
-                            canWork = false;
-                        }
-
-                        if (!canWork)
-                        {
-                            value = "休";
-                            workStreak[m.Id] = 0;
-                        }
-                        else
-                        {
-                            // 有効な勤務時間のみ候補とする
-                            var activeNames = enabledShiftTimes
-                                .Select(s => s.Name)
-                                .ToList();
-
-                            var shifts = m.AvailableShiftNames.Count > 0
-                                ? m.AvailableShiftNames.Intersect(activeNames).ToList()
-                                : activeNames;
-
-                            if (shifts.Count > 0)
-                            {
-                                var shiftName = shifts[_rand.Next(shifts.Count)];
-                                value = req != null ? $"希{shiftName}" : shiftName;
-                                workStreak[m.Id]++;
-                            }
-                            else
-                            {
-                                // 利用可能な勤務時間が無ければ休み扱い
-                                value = "休";
-                                workStreak[m.Id] = 0;
-                            }
-                        }
-                    }
-
-                    shiftTable.Rows[row][col] = value;
                 }
             }
 
@@ -1459,12 +1546,11 @@ namespace ShiftPlanner
         /// </summary>
         private void UpdateAttendanceCounts()
         {
-            if (shiftTable.Rows.Count < members.Count + 2)
+            if (shiftTable.Rows.Count <= members.Count)
             {
                 return;
             }
 
-            var reqRow = shiftTable.Rows[shiftTable.Rows.Count - 2];
             var countRow = shiftTable.Rows[shiftTable.Rows.Count - 1];
 
             for (int col = dateColumnStartIndex; col < shiftTable.Columns.Count; col++)
@@ -1480,7 +1566,6 @@ namespace ShiftPlanner
                 }
                 countRow[col] = count;
 
-                int.TryParse(reqRow[col]?.ToString(), out int req);
                 // カラー更新は CellFormatting で処理
             }
 
@@ -1611,7 +1696,7 @@ namespace ShiftPlanner
 
         /// <summary>
         /// 編集コントロール表示時に入力制限を設定します。
-        /// 必要人数行では数値のみ入力可能にします。
+        /// 必要人数を入力する行では数値のみ入力可能にします。
         /// </summary>
         private void DtShifts_EditingControlShowing(object? sender, DataGridViewEditingControlShowingEventArgs e)
         {
@@ -1627,8 +1712,8 @@ namespace ShiftPlanner
                 return;
             }
 
-            string rowName = shiftTable.Rows[rowIndex][0]?.ToString() ?? string.Empty;
-            if (rowName == "必要人数" && e.Control is TextBox tb)
+            bool isRequirementRow = rowIndex >= members.Count && rowIndex < shiftTable.Rows.Count - 1;
+            if (isRequirementRow && e.Control is TextBox tb)
             {
                 tb.KeyPress -= NumericTextBox_KeyPress;
                 tb.KeyPress += NumericTextBox_KeyPress;
