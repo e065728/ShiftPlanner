@@ -323,6 +323,8 @@ namespace ShiftPlanner
                         }
                     }
 
+                    // DataGridView に設定する値も更新しておく
+                    e.Value = val;
                     e.ParsingApplied = true;
                 }
             }
@@ -353,6 +355,8 @@ namespace ShiftPlanner
                         m.AvailableShiftNames?.Remove(shiftName);
                     }
 
+                    // 入力値を DataGridView に反映
+                    e.Value = val;
                     e.ParsingApplied = true;
                 }
             }
@@ -365,11 +369,15 @@ namespace ShiftPlanner
                         m.Constraints = new ShiftConstraints();
                     }
 
-                    if (e.Value != null && int.TryParse(e.Value.ToString(), out int value))
+                    int value = 0;
+                    if (e.Value != null && int.TryParse(e.Value.ToString(), out int parsed))
                     {
+                        value = parsed;
                         m.Constraints.MaxConsecutiveDays = value;
                     }
 
+                    // DataGridView 側にも数値を設定
+                    e.Value = value;
                     e.ParsingApplied = true;
                 }
             }
