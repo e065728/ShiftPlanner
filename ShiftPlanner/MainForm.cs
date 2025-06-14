@@ -1272,6 +1272,11 @@ namespace ShiftPlanner
             DataGridViewHelper.FitColumnsToGrid(dtShifts);
             // メンバー名列の幅を固定
             DataGridViewHelper.SetColumnWidth(dtShifts, 0, 120);
+            // 行名列は誤操作防止のため編集不可とする
+            if (dtShifts.Columns.Count > 0)
+            {
+                dtShifts.Columns[0].ReadOnly = true;
+            }
 
             dtShifts.CellFormatting -= DtShifts_CellFormatting;
             dtShifts.CellFormatting += DtShifts_CellFormatting;
@@ -1814,7 +1819,7 @@ namespace ShiftPlanner
                             continue;
                         }
 
-                        var key = row[0] ?? string.Empty;
+                        var key = (row[0] ?? string.Empty).Trim();
                         if (!rowMap.TryGetValue(key, out var queue))
                         {
                             queue = new Queue<List<string>>();
@@ -1826,7 +1831,7 @@ namespace ShiftPlanner
                     // 現在のテーブルの行名を基にデータを上書き
                     foreach (DataRow row in shiftTable.Rows)
                     {
-                        var name = row[0]?.ToString() ?? string.Empty;
+                        var name = (row[0]?.ToString() ?? string.Empty).Trim();
                         if (!rowMap.TryGetValue(name, out var queue) || queue.Count == 0)
                         {
                             continue; // 保存データに該当行がなければスキップ
@@ -1876,9 +1881,17 @@ namespace ShiftPlanner
                 foreach (DataRow row in table.Rows)
                 {
                     var list = new List<string>();
+                    bool isFirst = true;
                     foreach (var item in row.ItemArray)
                     {
-                        list.Add(item?.ToString() ?? string.Empty);
+                        string text = item?.ToString() ?? string.Empty;
+                        if (isFirst)
+                        {
+                            // 行名は前後の空白を除去して保存
+                            text = text.Trim();
+                            isFirst = false;
+                        }
+                        list.Add(text);
                     }
                     data.Add(list);
                 }
