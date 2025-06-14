@@ -1310,8 +1310,11 @@ namespace ShiftPlanner
             // 出勤人数行の色付け
             if (shiftTable.Rows[e.RowIndex][0].ToString() == "出勤人数")
             {
+                // 勤務時間マスタの必要人数のみを合計する
                 int required = 0;
-                for (int r = members.Count; r < shiftTable.Rows.Count - 1; r++)
+                int startRow = members.Count + skillGroups.Count;
+                int endRow = startRow + enabledShiftTimes.Count;
+                for (int r = startRow; r < endRow; r++)
                 {
                     int.TryParse(shiftTable.Rows[r][e.ColumnIndex]?.ToString(), out int v);
                     required += v;
