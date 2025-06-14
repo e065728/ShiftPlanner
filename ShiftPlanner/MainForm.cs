@@ -84,6 +84,12 @@ namespace ShiftPlanner
 
             InitializeComponent(); // これだけでOK
 
+            // 集計ボタンを一番手前に表示
+            if (btnAggregate != null)
+            {
+                btnAggregate.BringToFront();
+            }
+
             // 初期表示月を当月に設定
             if (dtp対象月 != null)
             {
@@ -1156,8 +1162,14 @@ namespace ShiftPlanner
         {
             try
             {
-                if (dtp対象月 == null)
+                if (dtp対象月 == null || shiftTable == null)
                 {
+                    return;
+                }
+
+                if (enabledShiftTimes == null)
+                {
+                    MessageBox.Show("勤務時間の情報が取得できません。", "エラー");
                     return;
                 }
 
@@ -1166,8 +1178,15 @@ namespace ShiftPlanner
 
                 var dailyNeeds = new List<int>();
 
+                // 勤務時間行の開始・終了位置を取得
                 int startRow = members.Count + skillGroups.Count;
                 int endRow = Math.Min(startRow + enabledShiftTimes.Count, shiftTable.Rows.Count - 1);
+                // 想定行数より少ない場合はエラー
+                if (shiftTable.Rows.Count <= endRow)
+                {
+                    MessageBox.Show("シフト表データが不足しています。", "エラー");
+                    return;
+                }
 
                 for (int d = 0; d < days; d++)
                 {
