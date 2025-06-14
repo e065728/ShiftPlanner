@@ -1804,8 +1804,9 @@ namespace ShiftPlanner
                         return;
                     }
 
-                    // 1列目の値をキーとした辞書に変換
-                    var rowMap = new Dictionary<string, List<string>>();
+                    // 同名行が複数存在する場合に備えて
+                    // キーに対して複数行を保持できる辞書へ変換します
+                    var rowMap = new Dictionary<string, Queue<List<string>>>();
                     foreach (var row in data)
                     {
                         if (row == null || row.Count == 0)
@@ -1814,20 +1815,24 @@ namespace ShiftPlanner
                         }
 
                         var key = row[0] ?? string.Empty;
-                        if (!rowMap.ContainsKey(key))
+                        if (!rowMap.TryGetValue(key, out var queue))
                         {
-                            rowMap[key] = row;
+                            queue = new Queue<List<string>>();
+                            rowMap[key] = queue;
                         }
+                        queue.Enqueue(row);
                     }
 
                     // 現在のテーブルの行名を基にデータを上書き
                     foreach (DataRow row in shiftTable.Rows)
                     {
                         var name = row[0]?.ToString() ?? string.Empty;
-                        if (!rowMap.TryGetValue(name, out var savedRow))
+                        if (!rowMap.TryGetValue(name, out var queue) || queue.Count == 0)
                         {
                             continue; // 保存データに該当行がなければスキップ
                         }
+
+                        var savedRow = queue.Dequeue();
 
                         int cols = Math.Min(savedRow.Count, shiftTable.Columns.Count);
                         for (int c = 1; c < cols; c++)
