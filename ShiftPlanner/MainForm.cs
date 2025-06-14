@@ -758,16 +758,6 @@ namespace ShiftPlanner
         }
 
         /// <summary>
-        /// 指定したグリッドの列をすべてソート不可に設定します。
-        /// </summary>
-        /// <param name="grid">対象のDataGridView</param>
-        /// シフト表の「必要人数」行から値を取得してシフトフレームを更新します。
-        /// </summary>
-
-
-
-
-        /// <summary>
         /// 分析タブの情報を更新します。
         /// </summary>
         private void UpdateAnalysis()
