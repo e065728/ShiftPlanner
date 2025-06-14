@@ -125,13 +125,15 @@ namespace ShiftPlanner
             // dtShifts
             //
             this.dtShifts.AllowUserToAddRows = false;
-            this.dtShifts.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left) | System.Windows.Forms.AnchorStyles.Right));
+            // グリッドサイズは固定とするためアンカーをTopとLeftのみに設定
+            this.dtShifts.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)));
             this.dtShifts.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dtShifts.Location = new System.Drawing.Point(6, 38);
             this.dtShifts.Name = "dtShifts";
             this.dtShifts.RowTemplate.Height = 21;
             this.dtShifts.Size = new System.Drawing.Size(1373, 764);
+            // 非表示部分はスクロールして閲覧できるようにする
+            this.dtShifts.ScrollBars = System.Windows.Forms.ScrollBars.Both;
             this.dtShifts.TabIndex = 1;
             //
             // cmbDefaultRequired
