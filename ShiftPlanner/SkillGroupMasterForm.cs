@@ -19,6 +19,10 @@ namespace ShiftPlanner
             InitializeComponent();
             dtSkillGroups.DataSource = _skillGroups;
             SetupGrid();
+            // 編集中の値が失われないように編集確定イベントを設定
+            dtSkillGroups.CurrentCellDirtyStateChanged += DtSkillGroups_CurrentCellDirtyStateChanged;
+            // 入力エラー時のメッセージ表示
+            dtSkillGroups.DataError += DtSkillGroups_DataError;
         }
 
         /// <summary>
@@ -42,6 +46,8 @@ namespace ShiftPlanner
 
         private void BtnOk_Click(object? sender, EventArgs e)
         {
+            // 編集中のセルがあれば確定する
+            dtSkillGroups.EndEdit();
             DialogResult = DialogResult.OK;
         }
 
@@ -74,6 +80,27 @@ namespace ShiftPlanner
             // 列幅をフォームのサイズに合わせて調整
             DataGridViewHelper.SetColumnsNotSortable(dtSkillGroups);
             DataGridViewHelper.FitColumnsToGrid(dtSkillGroups);
+        }
+
+        /// <summary>
+        /// セル編集確定時に値をコミットします。
+        /// </summary>
+        private void DtSkillGroups_CurrentCellDirtyStateChanged(object? sender, EventArgs e)
+        {
+            if (dtSkillGroups.IsCurrentCellDirty)
+            {
+                dtSkillGroups.CommitEdit(DataGridViewDataErrorContexts.Commit);
+            }
+        }
+
+        /// <summary>
+        /// データエラー発生時に警告を表示します。
+        /// </summary>
+        private void DtSkillGroups_DataError(object? sender, DataGridViewDataErrorEventArgs e)
+        {
+            e.ThrowException = false;
+            string message = e.Exception?.Message ?? "入力値が正しくありません。";
+            MessageBox.Show($"データエラー: {message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
     }
 }

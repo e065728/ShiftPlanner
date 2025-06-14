@@ -21,6 +21,9 @@ namespace ShiftPlanner
             SetupGrid();
             dtShiftTimes.CellFormatting += DtShiftTimes_CellFormatting;
             dtShiftTimes.CellClick += DtShiftTimes_CellClick;
+            // 編集確定とエラー表示を追加
+            dtShiftTimes.CurrentCellDirtyStateChanged += DtShiftTimes_CurrentCellDirtyStateChanged;
+            dtShiftTimes.DataError += DtShiftTimes_DataError;
         }
 
         /// <summary>
@@ -50,6 +53,8 @@ namespace ShiftPlanner
 
         private void BtnOk_Click(object? sender, EventArgs e)
         {
+            // 編集中のセルがあれば確定する
+            dtShiftTimes.EndEdit();
             DialogResult = DialogResult.OK;
         }
 
@@ -159,6 +164,27 @@ namespace ShiftPlanner
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// セル編集確定時に値をコミットします。
+        /// </summary>
+        private void DtShiftTimes_CurrentCellDirtyStateChanged(object? sender, EventArgs e)
+        {
+            if (dtShiftTimes.IsCurrentCellDirty)
+            {
+                dtShiftTimes.CommitEdit(DataGridViewDataErrorContexts.Commit);
+            }
+        }
+
+        /// <summary>
+        /// データエラー発生時に警告を表示します。
+        /// </summary>
+        private void DtShiftTimes_DataError(object? sender, DataGridViewDataErrorEventArgs e)
+        {
+            e.ThrowException = false;
+            string message = e.Exception?.Message ?? "入力値が正しくありません。";
+            MessageBox.Show($"データエラー: {message}", "エラー", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
     }
 }
