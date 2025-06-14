@@ -19,8 +19,6 @@ namespace ShiftPlanner
         private DataGridView dtRequestSummary;
         private ComboBox cmbHolidayLimit;
         private Label lblHolidayLimit;
-        private ComboBox cmbDefaultRequired;
-        private Label lblDefaultRequired;
         private ComboBox cmbMinHolidayCount;
         private Label lblMinHolidayCount;
         private Button btnAggregate;
@@ -66,8 +64,6 @@ namespace ShiftPlanner
             this.btnAddRequest = new System.Windows.Forms.Button();
             this.cmbHolidayLimit = new System.Windows.Forms.ComboBox();
             this.lblHolidayLimit = new System.Windows.Forms.Label();
-            this.cmbDefaultRequired = new System.Windows.Forms.ComboBox();
-            this.lblDefaultRequired = new System.Windows.Forms.Label();
             this.cmbMinHolidayCount = new System.Windows.Forms.ComboBox();
             this.lblMinHolidayCount = new System.Windows.Forms.Label();
             this.btnAggregate = new System.Windows.Forms.Button();
@@ -113,9 +109,6 @@ namespace ShiftPlanner
             this.tabShift.Controls.Add(this.dtShifts);
             this.tabShift.Controls.Add(this.cmbMinHolidayCount);
             this.tabShift.Controls.Add(this.lblMinHolidayCount);
-            this.tabShift.Controls.Add(this.cmbDefaultRequired);
-            this.tabShift.Controls.Add(this.lblDefaultRequired);
-            this.tabShift.Controls.Add(this.btnAggregate);
             this.tabShift.Controls.Add(this.btnShiftGenerate);
             this.tabShift.Location = new System.Drawing.Point(4, 22);
             this.tabShift.Name = "tabShift";
@@ -139,27 +132,6 @@ namespace ShiftPlanner
             this.dtShifts.ScrollBars = System.Windows.Forms.ScrollBars.Both;
             this.dtShifts.TabIndex = 1;
             //
-            // cmbDefaultRequired
-            //
-            this.cmbDefaultRequired.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cmbDefaultRequired.FormattingEnabled = true;
-            this.cmbDefaultRequired.Items.AddRange(new object[] {
-            "1",
-            "2",
-            "3",
-            "4",
-            "5",
-            "6",
-            "7",
-            "8",
-            "9",
-            "10"});
-            this.cmbDefaultRequired.Location = new System.Drawing.Point(200, 8);
-            this.cmbDefaultRequired.Name = "cmbDefaultRequired";
-            this.cmbDefaultRequired.Size = new System.Drawing.Size(60, 20);
-            this.cmbDefaultRequired.TabIndex = 3;
-            this.cmbDefaultRequired.SelectedIndexChanged += new System.EventHandler(this.CmbDefaultRequired_SelectedIndexChanged);
-            //
             // cmbMinHolidayCount
             //
             this.cmbMinHolidayCount.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
@@ -181,25 +153,6 @@ namespace ShiftPlanner
             this.cmbMinHolidayCount.Size = new System.Drawing.Size(60, 20);
             this.cmbMinHolidayCount.TabIndex = 5;
             this.cmbMinHolidayCount.SelectedIndexChanged += new System.EventHandler(this.CmbMinHolidayCount_SelectedIndexChanged);
-            //
-            // btnAggregate
-            //
-            this.btnAggregate.Location = new System.Drawing.Point(426, 6);
-            this.btnAggregate.Name = "btnAggregate";
-            this.btnAggregate.Size = new System.Drawing.Size(75, 23);
-            this.btnAggregate.TabIndex = 6;
-            this.btnAggregate.Text = "集計";
-            this.btnAggregate.UseVisualStyleBackColor = true;
-            this.btnAggregate.Click += new System.EventHandler(this.Btn集計_Click);
-            //
-            // lblDefaultRequired
-            //
-            this.lblDefaultRequired.AutoSize = true;
-            this.lblDefaultRequired.Location = new System.Drawing.Point(110, 11);
-            this.lblDefaultRequired.Name = "lblDefaultRequired";
-            this.lblDefaultRequired.Size = new System.Drawing.Size(84, 12);
-            this.lblDefaultRequired.TabIndex = 2;
-            this.lblDefaultRequired.Text = "必要人数デフォルト";
             //
             // lblMinHolidayCount
             //
