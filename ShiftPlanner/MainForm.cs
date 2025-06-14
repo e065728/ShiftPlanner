@@ -1656,14 +1656,44 @@ namespace ShiftPlanner
         /// </summary>
         private void DtShifts_CellEndEdit(object? sender, DataGridViewCellEventArgs e)
         {
-            if (dtShifts != null)
+            if (dtShifts == null)
+            {
+                return;
+            }
+
+            object? value = dtShifts[e.ColumnIndex, e.RowIndex].Value;
+
+            try
             {
                 var cell = dtShifts[e.ColumnIndex, e.RowIndex];
                 if (cell is DataGridViewComboBoxCell)
                 {
-                    var val = cell.Value;
-                    dtShifts[e.ColumnIndex, e.RowIndex] = new DataGridViewTextBoxCell { Value = val };
+                    // コンボボックスセルは編集終了時にテキストボックスに戻す
+                    dtShifts[e.ColumnIndex, e.RowIndex] = new DataGridViewTextBoxCell { Value = value };
                 }
+
+                // 選択されている複数セルに同じ値を設定する
+                if (dtShifts.SelectedCells.Count > 1)
+                {
+                    foreach (DataGridViewCell c in dtShifts.SelectedCells)
+                    {
+                        if (c.RowIndex == e.RowIndex && c.ColumnIndex == e.ColumnIndex)
+                        {
+                            continue; // 編集対象セルは既に処理済み
+                        }
+
+                        if (c.ColumnIndex < dateColumnStartIndex || c.ReadOnly)
+                        {
+                            continue; // 日付列以外や読み取り専用セルは除外
+                        }
+
+                        c.Value = value;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"セル値の反映中にエラーが発生しました: {ex.Message}");
             }
 
             UpdateAttendanceCounts();
