@@ -100,6 +100,7 @@ namespace ShiftPlanner
             JapaneseHolidayHelper.SetCustomHolidays(customHolidays);
 
             InitializeData();
+            NormalizeMemberShiftNames();
             SetupRequestGrid();
             UpdateRequestSummary();
             SetupShiftGrid();
@@ -278,6 +279,45 @@ namespace ShiftPlanner
             catch (Exception ex)
             {
                 MessageBox.Show($"メンバー勤務可否の正規化中にエラーが発生しました: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// メンバーが対応可能な勤務時間名を勤務時間マスターと同期します。
+        /// </summary>
+        private void NormalizeMemberShiftNames()
+        {
+            if (members == null || shiftTimes == null)
+            {
+                return; // null安全対策
+            }
+
+            try
+            {
+                // 有効な勤務時間名だけを取得
+                var validNames = shiftTimes
+                    .Where(s => s != null && s.IsEnabled)
+                    .Select(s => s.Name)
+                    .ToHashSet();
+
+                foreach (var m in members)
+                {
+                    if (m == null)
+                    {
+                        continue;
+                    }
+
+                    m.AvailableShiftNames ??= new List<string>();
+
+                    // 無効な勤務時間名を除去
+                    m.AvailableShiftNames = m.AvailableShiftNames
+                        .Where(n => validNames.Contains(n))
+                        .ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"勤務時間設定の正規化中にエラーが発生しました: {ex.Message}");
             }
         }
 
@@ -969,7 +1009,10 @@ namespace ShiftPlanner
                 if (form.ShowDialog() == DialogResult.OK)
                 {
                     shiftTimes = form.ShiftTimes;
+                    NormalizeMemberShiftNames();
                     SaveShiftTimes();
+                    SaveMembers();
+                    SetupShiftGrid();
                 }
             }
         }
