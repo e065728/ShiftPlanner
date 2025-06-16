@@ -601,29 +601,6 @@ namespace ShiftPlanner
         }
 
         /// <summary>
-        /// すべてのシフトフレームの必要人数をリセットします。
-        /// </summary>
-        private void ResetRequiredNumbers()
-        {
-            if (shiftFrames == null)
-            {
-                return; // null 安全対策
-            }
-
-            foreach (var frame in shiftFrames)
-            {
-                if (frame != null)
-                {
-                    frame.RequiredNumber = 0;
-                }
-            }
-
-            SaveFrames();
-        }
-
-
-
-        /// <summary>
         /// 割り当て結果を読み込みます。
         /// </summary>
         private void LoadAssignments()
@@ -1111,33 +1088,6 @@ namespace ShiftPlanner
             minHolidayCount = v;
             settings.MinHolidayCount = v;
             SaveSettings();
-        }
-
-        /// <summary>
-        /// 必要人数のデフォルト値が変更されたときの処理
-        /// </summary>
-        private void CmbDefaultRequired_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (!int.TryParse(cmbDefaultRequired?.SelectedItem?.ToString(), out int v))
-            {
-                return;
-            }
-
-            if (shiftFrames == null)
-            {
-                return;
-            }
-
-            foreach (var frame in shiftFrames)
-            {
-                if (frame != null)
-                {
-                    frame.RequiredNumber = v;
-                }
-            }
-
-            SaveFrames();
-            SetupShiftGrid();
         }
 
         private void UpdateRequestSummary()

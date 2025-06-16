@@ -41,8 +41,6 @@ namespace ShiftPlanner
         private TabPage tabShift;
         private DataGridView dtShifts;
         private Button btnShiftGenerate;
-        private ComboBox cmbDefaultRequired;
-        private Label lblDefaultRequired;
 
         /// <summary>
         /// 使用中のリソースをすべて解放します。
@@ -83,8 +81,6 @@ namespace ShiftPlanner
             this.tabShift = new System.Windows.Forms.TabPage();
             this.dtShifts = new System.Windows.Forms.DataGridView();
             this.btnShiftGenerate = new System.Windows.Forms.Button();
-            this.cmbDefaultRequired = new System.Windows.Forms.ComboBox();
-            this.lblDefaultRequired = new System.Windows.Forms.Label();
             this.tabControl1.SuspendLayout();
             this.tabShift.SuspendLayout();
             this.tabPage3.SuspendLayout();
@@ -113,8 +109,6 @@ namespace ShiftPlanner
             this.tabShift.Controls.Add(this.dtShifts);
             this.tabShift.Controls.Add(this.cmbMinHolidayCount);
             this.tabShift.Controls.Add(this.lblMinHolidayCount);
-            this.tabShift.Controls.Add(this.cmbDefaultRequired);
-            this.tabShift.Controls.Add(this.lblDefaultRequired);
             this.tabShift.Controls.Add(this.btnAggregate);
             this.tabShift.Controls.Add(this.btnShiftGenerate);
             this.tabShift.Location = new System.Drawing.Point(4, 22);
@@ -138,28 +132,6 @@ namespace ShiftPlanner
             // 非表示部分はスクロールして閲覧できるようにする
             this.dtShifts.ScrollBars = System.Windows.Forms.ScrollBars.Both;
             this.dtShifts.TabIndex = 1;
-            //
-            // cmbDefaultRequired
-            //
-            this.cmbDefaultRequired.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cmbDefaultRequired.FormattingEnabled = true;
-            this.cmbDefaultRequired.Items.AddRange(new object[] {
-            "0",
-            "1",
-            "2",
-            "3",
-            "4",
-            "5",
-            "6",
-            "7",
-            "8",
-            "9",
-            "10"});
-            this.cmbDefaultRequired.Location = new System.Drawing.Point(200, 8);
-            this.cmbDefaultRequired.Name = "cmbDefaultRequired";
-            this.cmbDefaultRequired.Size = new System.Drawing.Size(60, 20);
-            this.cmbDefaultRequired.TabIndex = 3;
-            this.cmbDefaultRequired.SelectedIndexChanged += new System.EventHandler(this.CmbDefaultRequired_SelectedIndexChanged);
             //
             // cmbMinHolidayCount
             //
@@ -194,15 +166,6 @@ namespace ShiftPlanner
             // Anchorを指定して常に左上に表示されるようにする
             this.btnAggregate.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)));
             this.btnAggregate.Click += new System.EventHandler(this.Btn集計_Click);
-            //
-            // lblDefaultRequired
-            //
-            this.lblDefaultRequired.AutoSize = true;
-            this.lblDefaultRequired.Location = new System.Drawing.Point(110, 11);
-            this.lblDefaultRequired.Name = "lblDefaultRequired";
-            this.lblDefaultRequired.Size = new System.Drawing.Size(84, 12);
-            this.lblDefaultRequired.TabIndex = 2;
-            this.lblDefaultRequired.Text = "必要人数デフォルト";
             //
             // lblMinHolidayCount
             //
