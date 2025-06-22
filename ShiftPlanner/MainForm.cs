@@ -956,7 +956,8 @@ namespace ShiftPlanner
             {
                 try
                 {
-                    var data = new Dictionary<string, IList>
+                    // Excel出力用にシート名とデータをまとめる
+                    var data = new Dictionary<string, System.Collections.IList>
                     {
                         { "メンバー", members },
                         { "祝日", customHolidays },
