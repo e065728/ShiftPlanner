@@ -944,6 +944,100 @@ namespace ShiftPlanner
         }
 
         /// <summary>
+        /// Excel出力メニューのクリックイベント
+        /// </summary>
+        private void menuExportExcel_Click(object sender, EventArgs e)
+        {
+            using var dialog = new SaveFileDialog();
+            dialog.Filter = "Excel XML (*.xml)|*.xml|すべてのファイル (*.*)|*.*";
+            dialog.Title = "Excel出力先を選択してください";
+
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                try
+                {
+                    var data = new Dictionary<string, IList>
+                    {
+                        { "メンバー", members },
+                        { "祝日", customHolidays },
+                        { "スキルグループ", skillGroups },
+                        { "勤務時間", shiftTimes },
+                        { "希望", shiftRequests },
+                        { "シフト枠", shiftFrames }
+                    };
+                    ExcelHelper.エクスポート(data, dialog.FileName);
+                    MessageBox.Show("Excel出力が完了しました。", "情報");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Excel出力に失敗しました: {ex.Message}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Excel取り込みメニューのクリックイベント
+        /// </summary>
+        private void menuImportExcel_Click(object sender, EventArgs e)
+        {
+            using var dialog = new OpenFileDialog();
+            dialog.Filter = "Excel XML (*.xml)|*.xml|すべてのファイル (*.*)|*.*";
+            dialog.Title = "取込むExcelファイルを選択してください";
+
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                try
+                {
+                    var sheets = ExcelHelper.インポート(dialog.FileName);
+                    if (sheets.TryGetValue("メンバー", out var memberRows))
+                    {
+                        members = ExcelHelper.行データからオブジェクトへ変換<Member>(memberRows);
+                    }
+                    if (sheets.TryGetValue("祝日", out var holidayRows))
+                    {
+                        customHolidays = ExcelHelper.行データからオブジェクトへ変換<CustomHoliday>(holidayRows);
+                    }
+                    if (sheets.TryGetValue("スキルグループ", out var groupRows))
+                    {
+                        skillGroups = ExcelHelper.行データからオブジェクトへ変換<SkillGroup>(groupRows);
+                    }
+                    if (sheets.TryGetValue("勤務時間", out var timeRows))
+                    {
+                        shiftTimes = ExcelHelper.行データからオブジェクトへ変換<ShiftTime>(timeRows);
+                    }
+                    if (sheets.TryGetValue("希望", out var reqRows))
+                    {
+                        shiftRequests = ExcelHelper.行データからオブジェクトへ変換<ShiftRequest>(reqRows);
+                    }
+                    if (sheets.TryGetValue("シフト枠", out var frameRows))
+                    {
+                        shiftFrames = ExcelHelper.行データからオブジェクトへ変換<ShiftFrame>(frameRows);
+                    }
+
+                    // 保存処理
+                    SaveMembers();
+                    SaveHolidays();
+                    SaveSkillGroups();
+                    SaveShiftTimes();
+                    SaveFrames();
+                    SaveRequests();
+
+                    // 画面更新
+                    NormalizeMemberShiftNames();
+                    SetupRequestGrid();
+                    UpdateRequestSummary();
+                    SetupShiftGrid();
+
+                    MessageBox.Show("Excel取込が完了しました。", "情報");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Excel取込に失敗しました: {ex.Message}");
+                }
+            }
+        }
+
+        /// <summary>
         /// 祝日マスター編集メニューのクリックイベント
         /// </summary>
         private void menuHolidayMaster_Click(object sender, EventArgs e)

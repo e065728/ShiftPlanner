@@ -90,6 +90,7 @@
     <Compile Include="CustomHoliday.cs" />
     <!-- DataGridView の拡張メソッド -->
     <Compile Include="DataGridViewHelper.cs" />
+    <Compile Include="ExcelHelper.cs" />
     <Compile Include="AppSettings.cs" />
     <!-- メンバーごとの希望件数サマリ表示用クラス -->
     <Compile Include="RequestSummary.cs" />

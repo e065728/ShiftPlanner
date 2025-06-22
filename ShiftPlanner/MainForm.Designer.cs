@@ -35,6 +35,8 @@ namespace ShiftPlanner
         private ToolStripMenuItem menuSkillGroupMaster;
         private ToolStripMenuItem menuShiftTimeMaster;
         private ToolStripMenuItem menuExportAnalysisCsv;
+        private ToolStripMenuItem menuExportExcel;
+        private ToolStripMenuItem menuImportExcel;
 
         private DateTimePicker dtp対象月;
         private Button btn月更新;
@@ -70,6 +72,8 @@ namespace ShiftPlanner
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.menuFile = new System.Windows.Forms.ToolStripMenuItem();
             this.menuExportAnalysisCsv = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuExportExcel = new System.Windows.Forms.ToolStripMenuItem();
+            this.menuImportExcel = new System.Windows.Forms.ToolStripMenuItem();
             this.menuMaster = new System.Windows.Forms.ToolStripMenuItem();
             this.menuHolidayMaster = new System.Windows.Forms.ToolStripMenuItem();
             this.menuMemberMaster = new System.Windows.Forms.ToolStripMenuItem();
@@ -292,7 +296,9 @@ namespace ShiftPlanner
             // menuFile
             // 
             this.menuFile.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.menuExportAnalysisCsv});
+            this.menuExportAnalysisCsv,
+            this.menuExportExcel,
+            this.menuImportExcel});
             this.menuFile.Name = "menuFile";
             this.menuFile.Size = new System.Drawing.Size(53, 20);
             this.menuFile.Text = "ファイル";
@@ -303,9 +309,23 @@ namespace ShiftPlanner
             this.menuExportAnalysisCsv.Size = new System.Drawing.Size(142, 22);
             this.menuExportAnalysisCsv.Text = "分析CSV出力";
             this.menuExportAnalysisCsv.Click += new System.EventHandler(this.menuExportAnalysisCsv_Click);
-            // 
+            //
+            // menuExportExcel
+            //
+            this.menuExportExcel.Name = "menuExportExcel";
+            this.menuExportExcel.Size = new System.Drawing.Size(142, 22);
+            this.menuExportExcel.Text = "Excel出力";
+            this.menuExportExcel.Click += new System.EventHandler(this.menuExportExcel_Click);
+            //
+            // menuImportExcel
+            //
+            this.menuImportExcel.Name = "menuImportExcel";
+            this.menuImportExcel.Size = new System.Drawing.Size(142, 22);
+            this.menuImportExcel.Text = "Excel取込";
+            this.menuImportExcel.Click += new System.EventHandler(this.menuImportExcel_Click);
+            //
             // menuMaster
-            // 
+            //
             this.menuMaster.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.menuHolidayMaster,
             this.menuMemberMaster,
