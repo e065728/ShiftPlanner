@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Runtime.Serialization.Json;
 using System.Text;
@@ -10,12 +11,12 @@ using System.Xml;
 namespace ShiftPlanner
 {
     /// <summary>
-    /// Excel(XML)形式での入出力を補助するクラス
+    /// Excel(xlsx)形式での入出力を補助するクラス
     /// </summary>
     public static class ExcelHelper
     {
         /// <summary>
-        /// シート名とデータリストを受け取りExcel XML形式で保存します。
+        /// シート名とデータリストを受け取りExcel(xlsx)形式で保存します。
         /// </summary>
         public static void エクスポート(Dictionary<string, IList> データ, string 保存先)
         {
@@ -24,69 +25,164 @@ namespace ShiftPlanner
                 return;
             }
 
-            var settings = new XmlWriterSettings { Encoding = Encoding.UTF8, Indent = true };
-            using var writer = XmlWriter.Create(保存先, settings);
-            writer.WriteStartDocument();
-            writer.WriteStartElement("Workbook", "urn:schemas-microsoft-com:office:spreadsheet");
-            writer.WriteAttributeString("xmlns", "o", null, "urn:schemas-microsoft-com:office:office");
-            writer.WriteAttributeString("xmlns", "x", null, "urn:schemas-microsoft-com:office:excel");
-            writer.WriteAttributeString("xmlns", "ss", null, "urn:schemas-microsoft-com:office:spreadsheet");
+            var dir = Path.GetDirectoryName(保存先);
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+
+            using var stream = File.Create(保存先);
+            using var archive = new ZipArchive(stream, ZipArchiveMode.Create);
+
+            var sheetInfos = new List<(string Name, string RelId, string Path)>();
+            int sheetIndex = 1;
 
             foreach (var kv in データ)
             {
                 string sheetName = kv.Key;
                 var list = kv.Value ?? new ArrayList();
 
-                writer.WriteStartElement("Worksheet");
-                writer.WriteAttributeString("ss", "Name", null, sheetName);
-                writer.WriteStartElement("Table");
+                string sheetPath = $"xl/worksheets/sheet{sheetIndex}.xml";
+                string relId = $"rId{sheetIndex}";
+                sheetInfos.Add((sheetName, relId, $"worksheets/sheet{sheetIndex}.xml"));
 
-                var first = list.Count > 0 ? list[0] : null;
-                if (first != null)
+                var entry = archive.CreateEntry(sheetPath);
+                var writerSettings = new XmlWriterSettings { Encoding = Encoding.UTF8, Indent = true };
+                using (var writer = XmlWriter.Create(entry.Open(), writerSettings))
                 {
-                    var props = first.GetType().GetProperties();
-                    // ヘッダ行
-                    writer.WriteStartElement("Row");
-                    foreach (var p in props)
-                    {
-                        writer.WriteStartElement("Cell");
-                        writer.WriteStartElement("Data");
-                        writer.WriteAttributeString("ss", "Type", null, "String");
-                        writer.WriteString(p.Name);
-                        writer.WriteEndElement(); // Data
-                        writer.WriteEndElement(); // Cell
-                    }
-                    writer.WriteEndElement(); // Row
+                    writer.WriteStartDocument();
+                    writer.WriteStartElement("worksheet", "http://schemas.openxmlformats.org/spreadsheetml/2006/main");
+                    writer.WriteStartElement("sheetData");
 
-                    // データ行
-                    foreach (var item in list)
+                    object? first = list.Count > 0 ? list[0] : null;
+                    if (first != null)
                     {
-                        writer.WriteStartElement("Row");
+                        var props = first.GetType().GetProperties();
+
+                        writer.WriteStartElement("row");
                         foreach (var p in props)
                         {
-                            object? val = p.GetValue(item, null);
-                            string str = 値を文字列に変換(val);
-                            writer.WriteStartElement("Cell");
-                            writer.WriteStartElement("Data");
-                            writer.WriteAttributeString("ss", "Type", null, "String");
-                            writer.WriteString(str);
-                            writer.WriteEndElement();
+                            writer.WriteStartElement("c");
+                            writer.WriteAttributeString("t", "str");
+                            writer.WriteElementString("v", p.Name);
                             writer.WriteEndElement();
                         }
                         writer.WriteEndElement();
+
+                        foreach (var item in list)
+                        {
+                            writer.WriteStartElement("row");
+                            foreach (var p in props)
+                            {
+                                object? val = p.GetValue(item);
+                                string str = 値を文字列に変換(val);
+                                writer.WriteStartElement("c");
+                                writer.WriteAttributeString("t", "str");
+                                writer.WriteElementString("v", str);
+                                writer.WriteEndElement();
+                            }
+                            writer.WriteEndElement();
+                        }
                     }
+
+                    writer.WriteEndElement();
+                    writer.WriteEndElement();
+                    writer.WriteEndDocument();
                 }
 
-                writer.WriteEndElement(); // Table
-                writer.WriteEndElement(); // Worksheet
+                sheetIndex++;
             }
 
-            writer.WriteEndElement(); // Workbook
-            writer.WriteEndDocument();
+            // workbook.xml
+            var workbookEntry = archive.CreateEntry("xl/workbook.xml");
+            using (var writer = XmlWriter.Create(workbookEntry.Open(), new XmlWriterSettings { Encoding = Encoding.UTF8, Indent = true }))
+            {
+                writer.WriteStartDocument();
+                writer.WriteStartElement("workbook", "http://schemas.openxmlformats.org/spreadsheetml/2006/main");
+                writer.WriteAttributeString("xmlns", "r", null, "http://schemas.openxmlformats.org/officeDocument/2006/relationships");
+                writer.WriteStartElement("sheets");
+                int sid = 1;
+                foreach (var info in sheetInfos)
+                {
+                    writer.WriteStartElement("sheet");
+                    writer.WriteAttributeString("name", info.Name);
+                    writer.WriteAttributeString("sheetId", sid.ToString());
+                    writer.WriteAttributeString("r", "id", null, info.RelId);
+                    writer.WriteEndElement();
+                    sid++;
+                }
+                writer.WriteEndElement();
+                writer.WriteEndElement();
+                writer.WriteEndDocument();
+            }
+
+            // workbook relationships
+            var relEntry = archive.CreateEntry("xl/_rels/workbook.xml.rels");
+            using (var writer = XmlWriter.Create(relEntry.Open(), new XmlWriterSettings { Encoding = Encoding.UTF8, Indent = true }))
+            {
+                writer.WriteStartDocument();
+                writer.WriteStartElement("Relationships", "http://schemas.openxmlformats.org/package/2006/relationships");
+                foreach (var info in sheetInfos)
+                {
+                    writer.WriteStartElement("Relationship");
+                    writer.WriteAttributeString("Id", info.RelId);
+                    writer.WriteAttributeString("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet");
+                    writer.WriteAttributeString("Target", info.Path);
+                    writer.WriteEndElement();
+                }
+                writer.WriteEndElement();
+                writer.WriteEndDocument();
+            }
+
+            // root relationships
+            var rootEntry = archive.CreateEntry("_rels/.rels");
+            using (var writer = XmlWriter.Create(rootEntry.Open(), new XmlWriterSettings { Encoding = Encoding.UTF8, Indent = true }))
+            {
+                writer.WriteStartDocument();
+                writer.WriteStartElement("Relationships", "http://schemas.openxmlformats.org/package/2006/relationships");
+                writer.WriteStartElement("Relationship");
+                writer.WriteAttributeString("Id", "rId1");
+                writer.WriteAttributeString("Type", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument");
+                writer.WriteAttributeString("Target", "xl/workbook.xml");
+                writer.WriteEndElement();
+                writer.WriteEndElement();
+                writer.WriteEndDocument();
+            }
+
+            // content types
+            var contentEntry = archive.CreateEntry("[Content_Types].xml");
+            using (var writer = XmlWriter.Create(contentEntry.Open(), new XmlWriterSettings { Encoding = Encoding.UTF8, Indent = true }))
+            {
+                writer.WriteStartDocument();
+                writer.WriteStartElement("Types", "http://schemas.openxmlformats.org/package/2006/content-types");
+                writer.WriteStartElement("Default");
+                writer.WriteAttributeString("Extension", "rels");
+                writer.WriteAttributeString("ContentType", "application/vnd.openxmlformats-package.relationships+xml");
+                writer.WriteEndElement();
+                writer.WriteStartElement("Default");
+                writer.WriteAttributeString("Extension", "xml");
+                writer.WriteAttributeString("ContentType", "application/xml");
+                writer.WriteEndElement();
+                writer.WriteStartElement("Override");
+                writer.WriteAttributeString("PartName", "/xl/workbook.xml");
+                writer.WriteAttributeString("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml");
+                writer.WriteEndElement();
+                int sid = 1;
+                foreach (var info in sheetInfos)
+                {
+                    writer.WriteStartElement("Override");
+                    writer.WriteAttributeString("PartName", $"/xl/worksheets/sheet{sid}.xml");
+                    writer.WriteAttributeString("ContentType", "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml");
+                    writer.WriteEndElement();
+                    sid++;
+                }
+                writer.WriteEndElement();
+                writer.WriteEndDocument();
+            }
         }
 
         /// <summary>
-        /// Excel XMLを読み込み、シートごとの行データを取得します。
+        /// Excel(xlsx)を読み込み、シートごとの行データを取得します。
         /// </summary>
         public static Dictionary<string, List<Dictionary<string, string>>> インポート(string ファイル)
         {
@@ -96,13 +192,51 @@ namespace ShiftPlanner
                 return result;
             }
 
-            var doc = new XmlDocument();
-            doc.Load(ファイル);
-            var ns = new XmlNamespaceManager(doc.NameTable);
-            ns.AddNamespace("ss", "urn:schemas-microsoft-com:office:spreadsheet");
+            using var archive = new ZipArchive(File.OpenRead(ファイル), ZipArchiveMode.Read);
 
-            // シート一覧を取得。存在しない場合は空の結果を返す
-            var sheetNodes = doc.SelectNodes("//ss:Worksheet", ns);
+            var workbookEntry = archive.GetEntry("xl/workbook.xml");
+            if (workbookEntry == null)
+            {
+                return result;
+            }
+
+            var workbookDoc = new XmlDocument();
+            using (var ws = workbookEntry.Open())
+            {
+                workbookDoc.Load(ws);
+            }
+
+            var ns = new XmlNamespaceManager(workbookDoc.NameTable);
+            ns.AddNamespace("d", "http://schemas.openxmlformats.org/spreadsheetml/2006/main");
+            ns.AddNamespace("r", "http://schemas.openxmlformats.org/officeDocument/2006/relationships");
+
+            var relsEntry = archive.GetEntry("xl/_rels/workbook.xml.rels");
+            var relsMap = new Dictionary<string, string>();
+            if (relsEntry != null)
+            {
+                var relDoc = new XmlDocument();
+                using (var rs = relsEntry.Open())
+                {
+                    relDoc.Load(rs);
+                }
+                var relNs = new XmlNamespaceManager(relDoc.NameTable);
+                relNs.AddNamespace("r", "http://schemas.openxmlformats.org/package/2006/relationships");
+                var relNodes = relDoc.SelectNodes("//r:Relationship", relNs);
+                if (relNodes != null)
+                {
+                    foreach (XmlNode rel in relNodes)
+                    {
+                        var id = rel.Attributes?["Id"]?.Value;
+                        var target = rel.Attributes?["Target"]?.Value;
+                        if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(target))
+                        {
+                            relsMap[id] = target;
+                        }
+                    }
+                }
+            }
+
+            var sheetNodes = workbookDoc.SelectNodes("//d:sheet", ns);
             if (sheetNodes == null)
             {
                 return result;
@@ -110,22 +244,35 @@ namespace ShiftPlanner
 
             foreach (XmlNode sheet in sheetNodes)
             {
-                var nameAttr = sheet.Attributes?["ss:Name"];
-                string sheetName = nameAttr?.Value ?? "Sheet";
-                var rows = new List<Dictionary<string, string>>();
-                var table = sheet.SelectSingleNode("ss:Table", ns);
-                if (table == null)
+                string name = sheet.Attributes?["name"]?.Value ?? "Sheet";
+                string rid = sheet.Attributes?["r:id"]?.Value ?? string.Empty;
+                if (!relsMap.TryGetValue(rid, out var target))
                 {
                     continue;
                 }
-                var rowNodes = table.SelectNodes("ss:Row", ns);
+                string path = "xl/" + target.TrimStart('/');
+                var entry = archive.GetEntry(path);
+                if (entry == null)
+                {
+                    continue;
+                }
+                var sheetDoc = new XmlDocument();
+                using (var ss = entry.Open())
+                {
+                    sheetDoc.Load(ss);
+                }
+                var sheetNs = new XmlNamespaceManager(sheetDoc.NameTable);
+                sheetNs.AddNamespace("d", "http://schemas.openxmlformats.org/spreadsheetml/2006/main");
+
+                var rowNodes = sheetDoc.SelectNodes("//d:sheetData/d:row", sheetNs);
+                var rows = new List<Dictionary<string, string>>();
                 if (rowNodes == null || rowNodes.Count == 0)
                 {
-                    result[sheetName] = rows;
+                    result[name] = rows;
                     continue;
                 }
 
-                var headerCells = rowNodes[0].SelectNodes("ss:Cell/ss:Data", ns);
+                var headerCells = rowNodes[0].SelectNodes("d:c/d:v", sheetNs);
                 var headers = new List<string>();
                 if (headerCells != null)
                 {
@@ -138,7 +285,7 @@ namespace ShiftPlanner
                 for (int i = 1; i < rowNodes.Count; i++)
                 {
                     var row = rowNodes[i];
-                    var dataCells = row.SelectNodes("ss:Cell/ss:Data", ns);
+                    var dataCells = row.SelectNodes("d:c/d:v", sheetNs);
                     var dict = new Dictionary<string, string>();
                     int col = 0;
                     if (dataCells != null)
@@ -155,7 +302,7 @@ namespace ShiftPlanner
                     rows.Add(dict);
                 }
 
-                result[sheetName] = rows;
+                result[name] = rows;
             }
 
             return result;

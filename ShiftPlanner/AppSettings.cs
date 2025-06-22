@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.Serialization;
 
 namespace ShiftPlanner
@@ -16,5 +17,12 @@ namespace ShiftPlanner
         /// </summary>
         [DataMember]
         public int MinHolidayCount { get; set; } = 4;
+
+        /// <summary>
+        /// Excel入出力ダイアログの直近フォルダ
+        /// </summary>
+        [DataMember]
+        public string? LastExcelFolder { get; set; } = 
+            Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
     }
 }

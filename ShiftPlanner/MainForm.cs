@@ -949,8 +949,23 @@ namespace ShiftPlanner
         private void menuExportExcel_Click(object sender, EventArgs e)
         {
             using var dialog = new SaveFileDialog();
-            dialog.Filter = "Excel XML (*.xml)|*.xml|すべてのファイル (*.*)|*.*";
+            dialog.Filter = "Excelファイル (*.xlsx)|*.xlsx|すべてのファイル (*.*)|*.*";
             dialog.Title = "Excel出力先を選択してください";
+
+            var baseDir = settings.LastExcelFolder;
+            if (!string.IsNullOrEmpty(baseDir) && Directory.Exists(baseDir))
+            {
+                dialog.InitialDirectory = baseDir;
+            }
+
+            if (dtp対象月 != null)
+            {
+                dialog.FileName = dtp対象月.Value.ToString("yy年MM月_シフト表.xlsx");
+            }
+            else
+            {
+                dialog.FileName = "シフト表.xlsx";
+            }
 
             if (dialog.ShowDialog() == DialogResult.OK)
             {
@@ -967,6 +982,8 @@ namespace ShiftPlanner
                         { "シフト枠", shiftFrames }
                     };
                     ExcelHelper.エクスポート(data, dialog.FileName);
+                    settings.LastExcelFolder = Path.GetDirectoryName(dialog.FileName) ?? settings.LastExcelFolder;
+                    SaveSettings();
                     MessageBox.Show("Excel出力が完了しました。", "情報");
                 }
                 catch (Exception ex)
@@ -982,8 +999,14 @@ namespace ShiftPlanner
         private void menuImportExcel_Click(object sender, EventArgs e)
         {
             using var dialog = new OpenFileDialog();
-            dialog.Filter = "Excel XML (*.xml)|*.xml|すべてのファイル (*.*)|*.*";
+            dialog.Filter = "Excelファイル (*.xlsx)|*.xlsx|すべてのファイル (*.*)|*.*";
             dialog.Title = "取込むExcelファイルを選択してください";
+
+            var baseDir = settings.LastExcelFolder;
+            if (!string.IsNullOrEmpty(baseDir) && Directory.Exists(baseDir))
+            {
+                dialog.InitialDirectory = baseDir;
+            }
 
             if (dialog.ShowDialog() == DialogResult.OK)
             {
@@ -1028,6 +1051,9 @@ namespace ShiftPlanner
                     SetupRequestGrid();
                     UpdateRequestSummary();
                     SetupShiftGrid();
+
+                    settings.LastExcelFolder = Path.GetDirectoryName(dialog.FileName) ?? settings.LastExcelFolder;
+                    SaveSettings();
 
                     MessageBox.Show("Excel取込が完了しました。", "情報");
                 }
