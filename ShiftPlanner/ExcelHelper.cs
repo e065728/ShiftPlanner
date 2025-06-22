@@ -101,7 +101,14 @@ namespace ShiftPlanner
             var ns = new XmlNamespaceManager(doc.NameTable);
             ns.AddNamespace("ss", "urn:schemas-microsoft-com:office:spreadsheet");
 
-            foreach (XmlNode sheet in doc.SelectNodes("//ss:Worksheet", ns) ?? new XmlNodeList[0])
+            // シート一覧を取得。存在しない場合は空の結果を返す
+            var sheetNodes = doc.SelectNodes("//ss:Worksheet", ns);
+            if (sheetNodes == null)
+            {
+                return result;
+            }
+
+            foreach (XmlNode sheet in sheetNodes)
             {
                 var nameAttr = sheet.Attributes?["ss:Name"];
                 string sheetName = nameAttr?.Value ?? "Sheet";
