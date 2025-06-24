@@ -1630,6 +1630,14 @@ namespace ShiftPlanner
                 return;
             }
 
+            // マスターが空の場合は処理しない
+            if (members == null || members.Count == 0 || enabledShiftTimes == null || enabledShiftTimes.Count == 0)
+            {
+                Console.WriteLine("[GenerateRandomShifts] メンバーまたは勤務時間が未登録のため処理を中止しました。");
+                MessageBox.Show("メンバーまたは勤務時間が登録されていないため、ランダム生成を実行できません。", "情報");
+                return;
+            }
+
             var baseDate = new DateTime(dtp対象月.Value.Year, dtp対象月.Value.Month, 1);
             var days = DateTime.DaysInMonth(baseDate.Year, baseDate.Month);
 
@@ -1713,6 +1721,12 @@ namespace ShiftPlanner
         {
             if (map == null || shiftNeeds == null)
             {
+                return;
+            }
+
+            if (members == null || members.Count == 0)
+            {
+                Console.WriteLine("[AdjustShortage] メンバーが存在しないため不足補正を行いません。");
                 return;
             }
 
