@@ -125,7 +125,7 @@ namespace ShiftPlanner
 
             // メンバーごとの現在休日数をカウント
             var holidayCounts = members.ToDictionary(m => m.Id, m =>
-                requests.Count(r => r.MemberId == m.Id && r.IsHolidayRequest && r.Date.Year == baseDate.Year && r.Date.Month == baseDate.Month));
+                requests.Count(r => r.MemberId == m.Id && r.種別 != 申請種別.勤務希望 && r.Date.Year == baseDate.Year && r.Date.Month == baseDate.Month));
 
             // 最低休日日数を満たすための追加休み候補を生成
             var extraHolidays = new Dictionary<int, HashSet<int>>();
@@ -176,9 +176,10 @@ namespace ShiftPlanner
                 foreach (var m in members)
                 {
                     var req = requests.FirstOrDefault(r => r.MemberId == m.Id && r.Date.Date == date.Date);
-                    if (req != null && req.IsHolidayRequest)
+                    if (req != null && req.種別 != 申請種別.勤務希望)
                     {
-                        result[m.Id][date] = "希休";
+                        string name = req.種別 == 申請種別.希望休 ? "希休" : req.種別 == 申請種別.有休 ? "有休" : "健診";
+                        result[m.Id][date] = name;
                         states[m.Id].WorkStreak = 0;
                         if (dailyHolidayCapacity.ContainsKey(d))
                         {
@@ -289,7 +290,7 @@ namespace ShiftPlanner
                 {
                     if (dayAssignments.TryGetValue(m.Id, out var shiftName))
                     {
-                        bool preferWork = requests.Any(r => r.MemberId == m.Id && r.Date.Date == date.Date && !r.IsHolidayRequest);
+                        bool preferWork = requests.Any(r => r.MemberId == m.Id && r.Date.Date == date.Date && r.種別 == 申請種別.勤務希望);
                         result[m.Id][date] = preferWork ? $"希{shiftName}" : shiftName;
                     }
                     else if (string.IsNullOrEmpty(result[m.Id][date]))

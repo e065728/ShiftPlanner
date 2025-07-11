@@ -18,8 +18,8 @@ namespace ShiftPlanner
         [DataMember]
         public DateTime Date { get; set; }
 
-        /// <summary>true の場合は休み希望、false の場合は勤務希望</summary>
+        /// <summary>個別日程調整の種別</summary>
         [DataMember]
-        public bool IsHolidayRequest { get; set; }
+        public 申請種別 種別 { get; set; } = 申請種別.勤務希望;
     }
 }

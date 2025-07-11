@@ -36,11 +36,11 @@ namespace ShiftPlanner
                     (frame.Date.DayOfWeek != DayOfWeek.Sunday || m.WorksOnSunday))
                     .ToList();
 
-                // 休み希望があれば割当対象から除外
+                // 休み希望(勤務希望以外)があれば割当対象から除外
                 if (requests != null)
                 {
                     eligible = eligible
-                        .Where(m => !requests.Any(r => r.MemberId == m.Id && r.Date.Date == frame.Date.Date && r.IsHolidayRequest))
+                        .Where(m => !requests.Any(r => r.MemberId == m.Id && r.Date.Date == frame.Date.Date && r.種別 != 申請種別.勤務希望))
                         .ToList();
                 }
 
@@ -55,7 +55,7 @@ namespace ShiftPlanner
                 if (requests != null)
                 {
                     priorityMembers = eligible
-                        .Where(m => requests.Any(r => r.MemberId == m.Id && r.Date.Date == frame.Date.Date && !r.IsHolidayRequest))
+                        .Where(m => requests.Any(r => r.MemberId == m.Id && r.Date.Date == frame.Date.Date && r.種別 == 申請種別.勤務希望))
                         .ToList();
                 }
 

@@ -13,7 +13,7 @@ namespace ShiftPlanner
         // --- UI コントロール定義 ---
         private ComboBox cmbMember;
         private DateTimePicker dtpDate;
-        private CheckBox chkHoliday;
+        private ComboBox cmb種別;
         private Button btnOk;
         private Button btnCancel;
 
@@ -36,7 +36,7 @@ namespace ShiftPlanner
         {
             this.cmbMember = new ComboBox();
             this.dtpDate = new DateTimePicker();
-            this.chkHoliday = new CheckBox();
+            this.cmb種別 = new ComboBox();
             this.btnOk = new Button();
             this.btnCancel = new Button();
 
@@ -51,9 +51,10 @@ namespace ShiftPlanner
             this.dtpDate.Location = new System.Drawing.Point(12, 41);
             this.dtpDate.Size = new System.Drawing.Size(200, 23);
 
-            // chkHoliday
-            this.chkHoliday.Location = new System.Drawing.Point(12, 70);
-            this.chkHoliday.Text = "休み希望";
+            // cmb種別
+            this.cmb種別.DropDownStyle = ComboBoxStyle.DropDownList;
+            this.cmb種別.Location = new System.Drawing.Point(12, 70);
+            this.cmb種別.Size = new System.Drawing.Size(200, 23);
 
             // btnOk
             this.btnOk.Location = new System.Drawing.Point(12, 100);
@@ -71,7 +72,7 @@ namespace ShiftPlanner
             this.ClientSize = new System.Drawing.Size(224, 135);
             this.Controls.Add(this.cmbMember);
             this.Controls.Add(this.dtpDate);
-            this.Controls.Add(this.chkHoliday);
+            this.Controls.Add(this.cmb種別);
             this.Controls.Add(this.btnOk);
             this.Controls.Add(this.btnCancel);
             this.FormBorderStyle = FormBorderStyle.FixedDialog;

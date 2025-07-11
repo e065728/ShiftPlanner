@@ -203,7 +203,7 @@ namespace ShiftPlanner
             this.tabPage3.Padding = new System.Windows.Forms.Padding(3);
             this.tabPage3.Size = new System.Drawing.Size(1385, 808);
             this.tabPage3.TabIndex = 2;
-            this.tabPage3.Text = "希望";
+            this.tabPage3.Text = "個別日程調整";
             this.tabPage3.UseVisualStyleBackColor = true;
             // 
             // dtRequestSummary
