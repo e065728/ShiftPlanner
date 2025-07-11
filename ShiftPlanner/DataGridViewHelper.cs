@@ -84,5 +84,38 @@ namespace ShiftPlanner
             column.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
             column.Width = width;
         }
+
+        /// <summary>
+        /// セル編集を確定させた上で DataGridView のフォーカスを外します。
+        /// </summary>
+        /// <param name="grid">対象の DataGridView</param>
+        /// <param name="nextFocus">フォーカスを移す先のコントロール。null の場合は親コントロールにフォーカスします。</param>
+        public static void セル確定してフォーカス解除(DataGridView? grid, Control? nextFocus)
+        {
+            if (grid == null)
+            {
+                return;
+            }
+
+            try
+            {
+                grid.EndEdit();
+                grid.CommitEdit(DataGridViewDataErrorContexts.Commit);
+
+                if (nextFocus != null)
+                {
+                    nextFocus.Focus();
+                }
+                else if (grid.Parent != null)
+                {
+                    grid.Parent.Focus();
+                }
+            }
+            catch (Exception ex)
+            {
+                // フォーカス解除処理中の例外は致命的でないためログに出力のみ行う
+                Console.WriteLine($"セル確定中にエラーが発生しました: {ex.Message}");
+            }
+        }
     }
 }

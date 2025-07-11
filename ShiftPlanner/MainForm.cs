@@ -1247,19 +1247,8 @@ namespace ShiftPlanner
         /// </summary>
         private void Btn月更新_Click(object? sender, EventArgs e)
         {
-            // 編集中の値を保存するためセルを確定
-            if (dtShifts != null)
-            {
-                try
-                {
-                    dtShifts.EndEdit();
-                    dtShifts.CommitEdit(DataGridViewDataErrorContexts.Commit);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"セル確定中にエラーが発生しました: {ex.Message}");
-                }
-            }
+            // 編集中の値を確定し、グリッドのフォーカスを外す
+            DataGridViewHelper.セル確定してフォーカス解除(dtShifts, btn月更新);
 
             SetupShiftGrid();
             SetupRequestGrid();
@@ -1277,6 +1266,9 @@ namespace ShiftPlanner
         /// </summary>
         private void BtnShiftGenerate_Click(object? sender, EventArgs e)
         {
+            // ボタン押下時に編集中のセルを確定し、フォーカスを外す
+            DataGridViewHelper.セル確定してフォーカス解除(dtShifts, btnShiftGenerate);
+
             // メンバー数が変更されている可能性があるため
             // 事前にグリッドを再構築して反映させる
             SetupShiftGrid();
