@@ -77,6 +77,34 @@ namespace ShiftPlanner
             // メンバー状態の初期化
             var states = members.ToDictionary(m => m.Id, m => new MemberState(m));
 
+            // メンバーごとの勤務可能枠数(柔軟度)を計算
+            var 柔軟度マップ = new Dictionary<int, int>();
+            try
+            {
+                for (int i = 0; i < members.Count; i++)
+                {
+                    var m = members[i];
+                    int 枠数 = 0;
+                    for (int d = 0; d < days; d++)
+                    {
+                        var 日付 = baseDate.AddDays(d);
+                        bool 出勤可能 = m.AvailableDays.Contains(日付.DayOfWeek) &&
+                            (日付.DayOfWeek != DayOfWeek.Saturday || m.WorksOnSaturday) &&
+                            (日付.DayOfWeek != DayOfWeek.Sunday || m.WorksOnSunday);
+
+                        if (出勤可能)
+                        {
+                            枠数 += m.AvailableShiftNames?.Count ?? 0;
+                        }
+                    }
+                    柔軟度マップ[m.Id] = 枠数;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Generate] 柔軟度計算中にエラーが発生しました: {ex.Message}");
+            }
+
             // 各日の休み許容量を計算
             var dailyHolidayCapacity = new Dictionary<int, int>();
             for (int d = 0; d < days; d++)
@@ -201,7 +229,8 @@ namespace ShiftPlanner
                     {
                         var target = candidates
                             .Where(m => m.SkillGroup == sg.Name && !dayAssignments.ContainsKey(m.Id))
-                            .OrderBy(m => states[m.Id].AssignedCount)
+                            .OrderBy(m => 柔軟度マップ.ContainsKey(m.Id) ? 柔軟度マップ[m.Id] : int.MaxValue)
+                            .ThenBy(m => states[m.Id].AssignedCount)
                             .ThenBy(_ => _rand.Next())
                             .FirstOrDefault();
 
@@ -236,7 +265,8 @@ namespace ShiftPlanner
                     {
                         var target = candidates
                             .Where(m => !dayAssignments.ContainsKey(m.Id) && m.AvailableShiftNames.Contains(st.Name))
-                            .OrderBy(m => states[m.Id].AssignedCount)
+                            .OrderBy(m => 柔軟度マップ.ContainsKey(m.Id) ? 柔軟度マップ[m.Id] : int.MaxValue)
+                            .ThenBy(m => states[m.Id].AssignedCount)
                             .ThenBy(_ => _rand.Next())
                             .FirstOrDefault();
 
