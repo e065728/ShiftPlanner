@@ -326,11 +326,12 @@ namespace ShiftPlanner
             //
             // menuMaster
             //
+            // マスターの表示順を「祝日、スキル、勤務時間、メンバー」の順に変更
             this.menuMaster.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.menuHolidayMaster,
-            this.menuMemberMaster,
-            this.menuSkillGroupMaster,
-            this.menuShiftTimeMaster});
+            this.menuHolidayMaster,     // 祝日マスター
+            this.menuSkillGroupMaster,  // スキルグループマスター
+            this.menuShiftTimeMaster,   // 勤務時間マスター
+            this.menuMemberMaster});    // メンバーマスター
             this.menuMaster.Name = "menuMaster";
             this.menuMaster.Size = new System.Drawing.Size(54, 20);
             this.menuMaster.Text = "マスター";
