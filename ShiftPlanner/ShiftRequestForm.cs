@@ -20,8 +20,8 @@ namespace ShiftPlanner
         /// コンストラクタ
         /// </summary>
         /// <param name="members">メンバー一覧</param>
-        /// <param name="holidayChecked">休み希望チェックの初期値</param>
-        public ShiftRequestForm(List<Member> members, bool holidayChecked = false)
+        /// <param name="初期種別">初期表示する種別</param>
+        public ShiftRequestForm(List<Member> members, 申請種別 初期種別 = 申請種別.希望休)
         {
             this.members = members ?? new List<Member>();
             InitializeComponent();
@@ -39,8 +39,9 @@ namespace ShiftPlanner
                 MessageBox.Show($"メンバー情報の読込に失敗しました: {ex.Message}");
             }
 
-            // 休み希望チェックボックスの初期状態を設定
-            chkHoliday.Checked = holidayChecked;
+            // 種別コンボボックスの初期値を設定
+            cmb種別.DataSource = Enum.GetValues(typeof(申請種別));
+            cmb種別.SelectedItem = 初期種別;
         }
 
         // このメソッドの内容は ShiftRequestForm.Designer.cs に移動しました。
@@ -54,11 +55,17 @@ namespace ShiftPlanner
                 return;
             }
 
+            if (cmb種別.SelectedItem == null)
+            {
+                MessageBox.Show("種別を選択してください。");
+                return;
+            }
+
             this.ShiftRequest = new ShiftRequest
             {
                 MemberId = member.Id,
                 Date = dtpDate.Value.Date,
-                IsHolidayRequest = chkHoliday.Checked
+                種別 = (申請種別)cmb種別.SelectedItem
             };
             this.DialogResult = DialogResult.OK;
         }

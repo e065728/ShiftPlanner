@@ -529,7 +529,7 @@ namespace ShiftPlanner
             catch (Exception ex)
             {
 
-                MessageBox.Show($"希望情報の読み込みに失敗しました: {ex.Message}");
+                MessageBox.Show($"調整情報の読み込みに失敗しました: {ex.Message}");
                 shiftRequests = new List<ShiftRequest>();
                 loadFailed = true;
             }
@@ -549,7 +549,7 @@ namespace ShiftPlanner
             catch (Exception ex)
             {
 
-                MessageBox.Show($"希望情報の保存に失敗しました: {ex.Message}");
+                MessageBox.Show($"調整情報の保存に失敗しました: {ex.Message}");
 
             }
         }
@@ -793,16 +793,17 @@ namespace ShiftPlanner
                 var colDate = new DataGridViewTextBoxColumn
                 {
                     DataPropertyName = nameof(ShiftRequest.Date),
-                    HeaderText = "希望日"
+                    HeaderText = "調整日"
                 };
 
-                var colHoliday = new DataGridViewCheckBoxColumn
+                var colType = new DataGridViewComboBoxColumn
                 {
-                    DataPropertyName = nameof(ShiftRequest.IsHolidayRequest),
-                    HeaderText = "休み希望"
+                    DataPropertyName = nameof(ShiftRequest.種別),
+                    HeaderText = "種別",
+                    DataSource = Enum.GetValues(typeof(申請種別))
                 };
 
-                dtRequests.Columns.AddRange(new DataGridViewColumn[] { colMember, colDate, colHoliday });
+                dtRequests.Columns.AddRange(new DataGridViewColumn[] { colMember, colDate, colType });
                 dtRequests.DataSource = shiftRequests ?? new List<ShiftRequest>();
 
                 // 列をソート不可に設定
@@ -865,15 +866,15 @@ namespace ShiftPlanner
 
         private void btnAddRequest_Click(object sender, EventArgs e)
         {
-            // 休み希望をデフォルトでチェックした状態でフォームを表示
-            using (var form = new ShiftRequestForm(members, true))
+            // 希望休を初期選択してフォームを表示
+            using (var form = new ShiftRequestForm(members, 申請種別.希望休))
             {
                 if (form.ShowDialog() == DialogResult.OK && form.ShiftRequest != null)
                 {
                     var req = form.ShiftRequest;
-                    if (req.IsHolidayRequest)
+                    if (req.種別 != 申請種別.勤務希望)
                     {
-                        int count = shiftRequests.Count(r => r.MemberId == req.MemberId && r.IsHolidayRequest);
+                        int count = shiftRequests.Count(r => r.MemberId == req.MemberId && r.種別 != 申請種別.勤務希望);
                         if (count >= holidayLimit)
                         {
                             MessageBox.Show($"{GetMemberName(req.MemberId)} の休み希望は最大 {holidayLimit} 件までです。");
@@ -978,7 +979,7 @@ namespace ShiftPlanner
                         { "祝日", customHolidays },
                         { "スキルグループ", skillGroups },
                         { "勤務時間", shiftTimes },
-                        { "希望", shiftRequests },
+                        { "個別日程調整", shiftRequests },
                         { "シフト枠", shiftFrames }
                     };
                     ExcelHelper.エクスポート(data, dialog.FileName);
@@ -1029,7 +1030,7 @@ namespace ShiftPlanner
                     {
                         shiftTimes = ExcelHelper.行データからオブジェクトへ変換<ShiftTime>(timeRows);
                     }
-                    if (sheets.TryGetValue("希望", out var reqRows))
+                    if (sheets.TryGetValue("個別日程調整", out var reqRows))
                     {
                         shiftRequests = ExcelHelper.行データからオブジェクトへ変換<ShiftRequest>(reqRows);
                     }
@@ -1173,13 +1174,13 @@ namespace ShiftPlanner
                 return;
             }
 
-            if (dtRequests.Rows[e.RowIndex].DataBoundItem is ShiftRequest req && req.IsHolidayRequest)
+            if (dtRequests.Rows[e.RowIndex].DataBoundItem is ShiftRequest req && req.種別 != 申請種別.勤務希望)
             {
-                int count = shiftRequests.Count(r => r.MemberId == req.MemberId && r.IsHolidayRequest);
+                int count = shiftRequests.Count(r => r.MemberId == req.MemberId && r.種別 != 申請種別.勤務希望);
                 if (count > holidayLimit)
                 {
                     MessageBox.Show($"{GetMemberName(req.MemberId)} の休み希望は最大 {holidayLimit} 件までです。");
-                    req.IsHolidayRequest = false;
+                    req.種別 = 申請種別.勤務希望;
                     dtRequests.Refresh();
                     SaveRequests();
                     UpdateRequestSummary();
@@ -1223,8 +1224,10 @@ namespace ShiftPlanner
                 var list = members.Select(m => new RequestSummary
                 {
                     メンバー = m.Name,
-                    出勤希望数 = shiftRequests.Count(r => r.MemberId == m.Id && !r.IsHolidayRequest),
-                    休希望数 = shiftRequests.Count(r => r.MemberId == m.Id && r.IsHolidayRequest)
+                    出勤希望数 = shiftRequests.Count(r => r.MemberId == m.Id && r.種別 == 申請種別.勤務希望),
+                    希望休数 = shiftRequests.Count(r => r.MemberId == m.Id && r.種別 == 申請種別.希望休),
+                    有休数 = shiftRequests.Count(r => r.MemberId == m.Id && r.種別 == 申請種別.有休),
+                    健康診断数 = shiftRequests.Count(r => r.MemberId == m.Id && r.種別 == 申請種別.健康診断)
                 }).ToList();
 
                 dtRequestSummary.DataSource = list;
@@ -1583,9 +1586,9 @@ namespace ShiftPlanner
                 if (!string.IsNullOrEmpty(val))
                 {
                     string name = val.StartsWith("希") ? val.Substring(1) : val;
-                    if (val == "希休")
+                    if (val == "希休" || val == "有休" || val == "健診")
                     {
-                        // 希望休は赤字で表示
+                        // 休みに関する指定は赤字で表示
                         e.CellStyle.ForeColor = Color.Red;
                         e.CellStyle.BackColor = Color.LightGray;
                     }
@@ -1765,7 +1768,7 @@ namespace ShiftPlanner
                                 m.AvailableDays.Contains(date.DayOfWeek) &&
                                 (date.DayOfWeek != DayOfWeek.Saturday || m.WorksOnSaturday) &&
                                 (date.DayOfWeek != DayOfWeek.Sunday || m.WorksOnSunday) &&
-                                !shiftRequests.Any(r => r.MemberId == m.Id && r.Date.Date == date.Date && r.IsHolidayRequest))
+                                !shiftRequests.Any(r => r.MemberId == m.Id && r.Date.Date == date.Date && r.種別 != 申請種別.勤務希望))
                             .ToList();
 
                         if (candidates.Count == 0)
@@ -1799,7 +1802,7 @@ namespace ShiftPlanner
                 for (int row = 0; row < members.Count; row++)
                 {
                     var v = shiftTable.Rows[row][col]?.ToString();
-                    if (!string.IsNullOrEmpty(v) && v != "休" && v != "希休")
+                    if (!string.IsNullOrEmpty(v) && v != "休" && v != "希休" && v != "有休" && v != "健診")
                     {
                         count++;
                     }
@@ -1841,7 +1844,7 @@ namespace ShiftPlanner
 
                     var date = baseDate.AddDays(col - dateColumnStartIndex);
 
-                    if (name == "休" || name == "希休")
+                    if (name == "休" || name == "希休" || name == "有休" || name == "健診")
                     {
                         restCount++;
                     }
