@@ -1486,6 +1486,12 @@ namespace ShiftPlanner
                 return;
             }
 
+            // データテーブルの範囲外アクセスを防止
+            if (e.RowIndex >= shiftTable.Rows.Count || e.ColumnIndex >= shiftTable.Columns.Count)
+            {
+                return;
+            }
+
             // 休み数列の色付け判定
             int restColumnIndex = 1 + enabledShiftTimes.Count;
             if (e.ColumnIndex == restColumnIndex && e.RowIndex < members.Count)
