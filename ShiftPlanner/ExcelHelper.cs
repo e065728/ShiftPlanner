@@ -25,6 +25,8 @@ namespace ShiftPlanner
                 return;
             }
 
+            Console.WriteLine($"[ExcelExport] 出力開始: {保存先}");
+
             var dir = Path.GetDirectoryName(保存先);
             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
             {
@@ -39,17 +41,20 @@ namespace ShiftPlanner
 
             foreach (var kv in データ)
             {
-                string sheetName = kv.Key;
-                var list = kv.Value ?? new ArrayList();
-
-                string sheetPath = $"xl/worksheets/sheet{sheetIndex}.xml";
-                string relId = $"rId{sheetIndex}";
-                sheetInfos.Add((sheetName, relId, $"worksheets/sheet{sheetIndex}.xml"));
-
-                var entry = archive.CreateEntry(sheetPath);
-                var writerSettings = new XmlWriterSettings { Encoding = Encoding.UTF8, Indent = true };
-                using (var writer = XmlWriter.Create(entry.Open(), writerSettings))
+                try
                 {
+                    string sheetName = kv.Key;
+                    var list = kv.Value ?? new ArrayList();
+
+                    string sheetPath = $"xl/worksheets/sheet{sheetIndex}.xml";
+                    string relId = $"rId{sheetIndex}";
+                    sheetInfos.Add((sheetName, relId, $"worksheets/sheet{sheetIndex}.xml"));
+
+                    var entry = archive.CreateEntry(sheetPath);
+                    var writerSettings = new XmlWriterSettings { Encoding = Encoding.UTF8, Indent = true };
+                    using var entryStream = entry.Open();
+                    using var writer = XmlWriter.Create(entryStream, writerSettings);
+
                     writer.WriteStartDocument();
                     writer.WriteStartElement("worksheet", "http://schemas.openxmlformats.org/spreadsheetml/2006/main");
                     writer.WriteStartElement("sheetData");
@@ -88,9 +93,13 @@ namespace ShiftPlanner
                     writer.WriteEndElement();
                     writer.WriteEndElement();
                     writer.WriteEndDocument();
-                }
 
-                sheetIndex++;
+                    sheetIndex++;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[ExcelExport] シート作成中にエラーが発生しました: {ex.Message}");
+                }
             }
 
             // workbook.xml
@@ -179,6 +188,8 @@ namespace ShiftPlanner
                 writer.WriteEndElement();
                 writer.WriteEndDocument();
             }
+
+            Console.WriteLine("[ExcelExport] 出力完了");
         }
 
         /// <summary>
