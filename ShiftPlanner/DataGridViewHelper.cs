@@ -1,3 +1,4 @@
+using System; // 例外およびコンソール利用のため
 using System.Windows.Forms;
 
 namespace ShiftPlanner
