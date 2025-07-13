@@ -96,6 +96,8 @@
     <Compile Include="AppSettings.cs" />
     <!-- メンバーごとの希望件数サマリ表示用クラス -->
     <Compile Include="RequestSummary.cs" />
+    <!-- 個別日程調整の種別を定義する列挙体 -->
+    <Compile Include="RequestType.cs" />
     <Compile Include="HolidayMasterForm.cs">
       <SubType>Form</SubType>
     </Compile>
