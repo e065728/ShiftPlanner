@@ -1283,6 +1283,47 @@ namespace ShiftPlanner
         }
 
         /// <summary>
+        /// 日付列ヘッダーの文字色を曜日・祝日に応じて設定します。
+        /// </summary>
+        /// <param name="baseDate">対象月の初日</param>
+        /// <param name="days">月の日数</param>
+        private void SetDateColumnHeaderColors(DateTime baseDate, int days)
+        {
+            if (dtShifts == null)
+            {
+                return;
+            }
+
+            try
+            {
+                for (int i = 0; i < days; i++)
+                {
+                    int columnIndex = dateColumnStartIndex + i;
+                    if (columnIndex >= dtShifts.Columns.Count)
+                    {
+                        continue;
+                    }
+
+                    var date = baseDate.AddDays(i);
+                    var style = dtShifts.Columns[columnIndex].HeaderCell.Style;
+
+                    if (JapaneseHolidayHelper.IsHoliday(date) || date.DayOfWeek == DayOfWeek.Sunday)
+                    {
+                        style.ForeColor = Color.Red;
+                    }
+                    else if (date.DayOfWeek == DayOfWeek.Saturday)
+                    {
+                        style.ForeColor = Color.Blue;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SetDateColumnHeaderColors] ヘッダー色設定中にエラーが発生しました: {ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// シフト表の必要人数を集計します。
         /// </summary>
         private void Btn集計_Click(object? sender, EventArgs e)
@@ -1457,6 +1498,9 @@ namespace ShiftPlanner
             DataGridViewHelper.FitColumnsToGrid(dtShifts);
             // メンバー名列の幅を固定
             DataGridViewHelper.SetColumnWidth(dtShifts, 0, 120);
+
+            // 曜日ヘッダーの色分けを実施
+            SetDateColumnHeaderColors(baseDate, days);
             // 行名列は誤操作防止のため編集不可とする
             if (dtShifts.Columns.Count > 0)
             {
