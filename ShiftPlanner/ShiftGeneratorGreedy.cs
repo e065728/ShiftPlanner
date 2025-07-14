@@ -222,8 +222,19 @@ namespace ShiftPlanner
                     candidates.Add(m);
                 }
 
+                // 候補者数が少ないスキルグループから処理する
+                var skillGroupOrder = skillGroups
+                    .Select(sg => new {
+                        Group = sg,
+                        Count = candidates.Count(m => m.SkillGroup == sg.Name)
+                    })
+                    .OrderBy(x => x.Count)
+                    .Select(x => x.Group)
+                    .ToList();
+                Console.WriteLine($"[Generate] {date:yyyy-MM-dd} スキルグループ優先順: {string.Join(',', skillGroupOrder.Select(s => s.Name))}");
+
                 // Phase-B: スキルグループ要件の充足
-                foreach (var sg in skillGroups)
+                foreach (var sg in skillGroupOrder)
                 {
                     int need = daySkillReq.ContainsKey(sg.Name) ? daySkillReq[sg.Name] : 0;
                     while (need > 0)
@@ -258,8 +269,19 @@ namespace ShiftPlanner
                     }
                 }
 
+                // 候補者数が少ない勤務時間から処理する
+                var shiftTimeOrder = shiftTimes
+                    .Select(st => new {
+                        Time = st,
+                        Count = candidates.Count(m => m.AvailableShiftNames.Contains(st.Name))
+                    })
+                    .OrderBy(x => x.Count)
+                    .Select(x => x.Time)
+                    .ToList();
+                Console.WriteLine($"[Generate] {date:yyyy-MM-dd} 勤務時間優先順: {string.Join(',', shiftTimeOrder.Select(t => t.Name))}");
+
                 // Phase-C: 残りの勤務枠を割り当て
-                foreach (var st in shiftTimes)
+                foreach (var st in shiftTimeOrder)
                 {
                     int need = dayShiftReq.ContainsKey(st.Name) ? dayShiftReq[st.Name] : 0;
                     while (need > 0)
