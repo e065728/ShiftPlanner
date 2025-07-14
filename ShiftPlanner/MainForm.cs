@@ -1283,6 +1283,48 @@ namespace ShiftPlanner
         }
 
         /// <summary>
+        /// 選択中のセルにコンボボックスの値を設定します。
+        /// </summary>
+        private void Btnセル修正_Click(object? sender, EventArgs e)
+        {
+            if (dtShifts == null || cmb勤怠時間 == null)
+            {
+                return;
+            }
+
+            DataGridViewHelper.セル確定してフォーカス解除(dtShifts, btnセル修正);
+
+            string value = cmb勤怠時間.SelectedItem?.ToString() ?? string.Empty;
+            if (string.IsNullOrEmpty(value))
+            {
+                return;
+            }
+
+            foreach (DataGridViewCell cell in dtShifts.SelectedCells)
+            {
+                if (cell.RowIndex < 0 || cell.ColumnIndex < dateColumnStartIndex)
+                {
+                    continue;
+                }
+
+                if (cell.RowIndex >= members.Count)
+                {
+                    continue;
+                }
+
+                if (cell.ReadOnly)
+                {
+                    continue;
+                }
+
+                cell.Value = value;
+            }
+
+            UpdateAttendanceCounts();
+            SaveShiftTableAsync();
+        }
+
+        /// <summary>
         /// 日付列ヘッダーの文字色を曜日・祝日に応じて設定します。
         /// </summary>
         /// <param name="baseDate">対象月の初日</param>
@@ -1414,6 +1456,21 @@ namespace ShiftPlanner
             if (dtShifts == null || dtp対象月 == null)
             {
                 return;
+            }
+
+            // 勤怠時間選択用コンボボックスを更新
+            if (cmb勤怠時間 != null)
+            {
+                cmb勤怠時間.Items.Clear();
+                foreach (var st in shiftTimes.Where(s => s != null && s.IsEnabled))
+                {
+                    cmb勤怠時間.Items.Add(st.Name);
+                }
+                cmb勤怠時間.Items.Add("休");
+                if (cmb勤怠時間.Items.Count > 0 && cmb勤怠時間.SelectedIndex < 0)
+                {
+                    cmb勤怠時間.SelectedIndex = 0;
+                }
             }
 
             // 有効な勤務時間を抽出して保持
