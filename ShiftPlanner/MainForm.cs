@@ -1253,6 +1253,9 @@ namespace ShiftPlanner
             // 編集中の値を確定し、グリッドのフォーカスを外す
             DataGridViewHelper.セル確定してフォーカス解除(dtShifts, btn月更新);
 
+            // 新しい月のテーブルを作成する前に現在のシフト表を保存しておく
+            SaveShiftTable();
+
             SetupShiftGrid();
             SetupRequestGrid();
             if (dtp対象月 != null && dtp分析月 != null)
@@ -1260,7 +1263,7 @@ namespace ShiftPlanner
                 dtp分析月.Value = dtp対象月.Value;
             }
 
-            // シフト表を保存
+            // 月更新後のテーブルを保存
             SaveShiftTable();
         }
 
