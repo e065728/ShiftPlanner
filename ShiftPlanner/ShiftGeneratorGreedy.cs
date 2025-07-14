@@ -231,7 +231,10 @@ namespace ShiftPlanner
                     .OrderBy(x => x.Count)
                     .Select(x => x.Group)
                     .ToList();
-                Console.WriteLine($"[Generate] {date:yyyy-MM-dd} スキルグループ優先順: {string.Join(',', skillGroupOrder.Select(s => s.Name))}");
+                // スキルグループの割り当て順をログに出力
+                Console.WriteLine(
+                    $"[Generate] {date:yyyy-MM-dd} スキルグループ優先順: " +
+                    string.Join(",", skillGroupOrder.Select(s => s.Name)));
 
                 // Phase-B: スキルグループ要件の充足
                 foreach (var sg in skillGroupOrder)
@@ -278,7 +281,10 @@ namespace ShiftPlanner
                     .OrderBy(x => x.Count)
                     .Select(x => x.Time)
                     .ToList();
-                Console.WriteLine($"[Generate] {date:yyyy-MM-dd} 勤務時間優先順: {string.Join(',', shiftTimeOrder.Select(t => t.Name))}");
+                // 勤務時間帯の割り当て順をログに出力
+                Console.WriteLine(
+                    $"[Generate] {date:yyyy-MM-dd} 勤務時間優先順: " +
+                    string.Join(",", shiftTimeOrder.Select(t => t.Name)));
 
                 // Phase-C: 残りの勤務枠を割り当て
                 foreach (var st in shiftTimeOrder)
