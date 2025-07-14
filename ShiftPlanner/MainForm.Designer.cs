@@ -43,6 +43,8 @@ namespace ShiftPlanner
         private TabPage tabShift;
         private DataGridView dtShifts;
         private Button btnShiftGenerate;
+        private ComboBox cmb勤怠時間;
+        private Button btnセル修正;
 
         /// <summary>
         /// 使用中のリソースをすべて解放します。
@@ -85,6 +87,8 @@ namespace ShiftPlanner
             this.tabShift = new System.Windows.Forms.TabPage();
             this.dtShifts = new System.Windows.Forms.DataGridView();
             this.btnShiftGenerate = new System.Windows.Forms.Button();
+            this.cmb勤怠時間 = new System.Windows.Forms.ComboBox();
+            this.btnセル修正 = new System.Windows.Forms.Button();
             this.tabControl1.SuspendLayout();
             this.tabShift.SuspendLayout();
             this.tabPage3.SuspendLayout();
@@ -114,6 +118,8 @@ namespace ShiftPlanner
             this.tabShift.Controls.Add(this.cmbMinHolidayCount);
             this.tabShift.Controls.Add(this.lblMinHolidayCount);
             this.tabShift.Controls.Add(this.btnAggregate);
+            this.tabShift.Controls.Add(this.cmb勤怠時間);
+            this.tabShift.Controls.Add(this.btnセル修正);
             this.tabShift.Controls.Add(this.btnShiftGenerate);
             this.tabShift.Location = new System.Drawing.Point(4, 22);
             this.tabShift.Name = "tabShift";
@@ -170,6 +176,25 @@ namespace ShiftPlanner
             // Anchorを指定して常に左上に表示されるようにする
             this.btnAggregate.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)));
             this.btnAggregate.Click += new System.EventHandler(this.Btn集計_Click);
+
+            // cmb勤怠時間
+            //
+            this.cmb勤怠時間.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cmb勤怠時間.FormattingEnabled = true;
+            this.cmb勤怠時間.Location = new System.Drawing.Point(507, 8);
+            this.cmb勤怠時間.Name = "cmb勤怠時間";
+            this.cmb勤怠時間.Size = new System.Drawing.Size(121, 20);
+            this.cmb勤怠時間.TabIndex = 7;
+
+            // btnセル修正
+            //
+            this.btnセル修正.Location = new System.Drawing.Point(634, 6);
+            this.btnセル修正.Name = "btnセル修正";
+            this.btnセル修正.Size = new System.Drawing.Size(75, 23);
+            this.btnセル修正.TabIndex = 8;
+            this.btnセル修正.Text = "修正";
+            this.btnセル修正.UseVisualStyleBackColor = true;
+            this.btnセル修正.Click += new System.EventHandler(this.Btnセル修正_Click);
             //
             // lblMinHolidayCount
             //
