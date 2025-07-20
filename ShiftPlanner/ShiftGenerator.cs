@@ -34,7 +34,7 @@ namespace ShiftPlanner
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Shuffle] シャフル中にエラーが発生しました: {ex.Message}");
+                SimpleLogger.Error("[Shuffle] シャフル中にエラーが発生しました", ex);
             }
         }
         /// <summary>
@@ -131,7 +131,7 @@ namespace ShiftPlanner
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[GenerateBaseShift] 出力中にエラー: {ex.Message}");
+                SimpleLogger.Error("[GenerateBaseShift] 出力中にエラー", ex);
             }
 
             return assignments;

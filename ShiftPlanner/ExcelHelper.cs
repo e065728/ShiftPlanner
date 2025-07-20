@@ -25,7 +25,7 @@ namespace ShiftPlanner
                 return;
             }
 
-            Console.WriteLine($"[ExcelExport] 出力開始: {保存先}");
+            SimpleLogger.Info($"[ExcelExport] 出力開始: {保存先}");
 
             var dir = Path.GetDirectoryName(保存先);
             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
@@ -98,7 +98,7 @@ namespace ShiftPlanner
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[ExcelExport] シート作成中にエラーが発生しました: {ex.Message}");
+                    SimpleLogger.Error("[ExcelExport] シート作成中にエラーが発生しました", ex);
                 }
             }
 
@@ -189,7 +189,7 @@ namespace ShiftPlanner
                 writer.WriteEndDocument();
             }
 
-            Console.WriteLine("[ExcelExport] 出力完了");
+            SimpleLogger.Info("[ExcelExport] 出力完了");
         }
 
         /// <summary>
