@@ -115,7 +115,7 @@ namespace ShiftPlanner
             catch (Exception ex)
             {
                 // フォーカス解除処理中の例外は致命的でないためログに出力のみ行う
-                Console.WriteLine($"セル確定中にエラーが発生しました: {ex.Message}");
+                SimpleLogger.Error("セル確定中にエラーが発生しました", ex);
             }
         }
     }

@@ -161,7 +161,7 @@ namespace ShiftPlanner
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Generate] 柔軟度計算中にエラーが発生しました: {ex.Message}");
+                SimpleLogger.Error("[Generate] 柔軟度計算中にエラーが発生しました", ex);
             }
 
             // 各日の休み許容量を計算
@@ -294,7 +294,7 @@ namespace ShiftPlanner
                     .Select(x => x.Group)
                     .ToList();
                 // スキルグループの割り当て順をログに出力
-                Console.WriteLine(
+                SimpleLogger.Info(
                     $"[Generate] {date:yyyy-MM-dd} スキルグループ優先順: " +
                     string.Join(",", skillGroupOrder.Select(s => s.Name)));
 
@@ -347,7 +347,7 @@ namespace ShiftPlanner
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"[Generate] 労働時間更新エラー: {ex.Message}");
+                            SimpleLogger.Error("[Generate] 労働時間更新エラー", ex);
                         }
                         need--;
                     }
@@ -363,7 +363,7 @@ namespace ShiftPlanner
                     .Select(x => x.Time)
                     .ToList();
                 // 勤務時間帯の割り当て順をログに出力
-                Console.WriteLine(
+                SimpleLogger.Info(
                     $"[Generate] {date:yyyy-MM-dd} 勤務時間優先順: " +
                     string.Join(",", shiftTimeOrder.Select(t => t.Name)));
 
@@ -405,7 +405,7 @@ namespace ShiftPlanner
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"[Generate] 労働時間更新エラー: {ex.Message}");
+                            SimpleLogger.Error("[Generate] 労働時間更新エラー", ex);
                         }
                         need--;
                     }
