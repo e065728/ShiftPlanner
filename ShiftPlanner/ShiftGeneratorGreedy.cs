@@ -8,7 +8,7 @@ namespace ShiftPlanner
     /// <summary>
     /// 貪欲法を用いてシフト割り当てを行うクラス。
     /// </summary>
-    public static class ShiftGeneratorGreedy
+    public class ShiftGeneratorGreedy : IRosterAlgorithm
     {
         private static readonly Random _rand = new Random();
 
@@ -103,7 +103,7 @@ namespace ShiftPlanner
         /// <param name="shiftTimes">勤務時間一覧</param>
         /// <param name="minHolidayCount">最低休日日数</param>
         /// <returns>メンバーIDと日付をキーとした割当結果</returns>
-        public static Dictionary<int, Dictionary<DateTime, string>> Generate(
+        public Dictionary<int, Dictionary<DateTime, string>> Generate(
             List<Member>? members,
             DateTime baseDate,
             int days,

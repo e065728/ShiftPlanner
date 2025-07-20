@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using System.Windows.Forms;
 
 namespace ShiftPlanner
@@ -21,7 +22,16 @@ namespace ShiftPlanner
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MainForm());
+
+            // DI コンテナの設定
+            var services = new ServiceCollection();
+            services.AddSingleton<IRosterAlgorithm, ShiftGeneratorGreedy>();
+
+            using (var provider = services.BuildServiceProvider())
+            {
+                var algorithm = provider.GetRequiredService<IRosterAlgorithm>();
+                Application.Run(new MainForm(algorithm));
+            }
         }
 
         /// <summary>
