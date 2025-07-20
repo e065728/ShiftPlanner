@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace ShiftPlanner
@@ -20,10 +21,73 @@ namespace ShiftPlanner
             public int AssignedCount { get; set; }
             public int WorkStreak { get; set; }
 
+            /// <summary>
+            /// 前回割り当てた勤務名。
+            /// </summary>
+            public string LastShiftName { get; set; } = string.Empty;
+
+            /// <summary>
+            /// 週番号ごとの総労働時間。
+            /// </summary>
+            public Dictionary<int, double> WeeklyHours { get; } = new Dictionary<int, double>();
+
             public MemberState(Member member)
             {
                 Member = member;
             }
+        }
+
+        /// <summary>
+        /// 候補メンバーへの割り当てコストを計算します。
+        /// </summary>
+        private static double CalculateCost(
+            Member member,
+            MemberState state,
+            DateTime date,
+            string shiftName,
+            string requiredSkillGroup,
+            Dictionary<string, ShiftTime> shiftTimeMap)
+        {
+            double cost = 0;
+
+            // スキル不一致ペナルティ
+            if (!string.Equals(member.SkillGroup, requiredSkillGroup, StringComparison.OrdinalIgnoreCase))
+            {
+                cost += 50; // 大きめのペナルティ
+            }
+
+            if (!string.IsNullOrEmpty(shiftName) && shiftTimeMap.TryGetValue(shiftName, out var shift))
+            {
+                // 残業超過ペナルティ
+                var cal = CultureInfo.CurrentCulture.Calendar;
+                var week = cal.GetWeekOfYear(date, CalendarWeekRule.FirstFullWeek, DayOfWeek.Monday);
+                state.WeeklyHours.TryGetValue(week, out var worked);
+                var hours = (shift.End - shift.Start).TotalHours;
+                var max = member.Constraints?.MaxWeeklyHours ?? double.MaxValue;
+                if (worked + hours > max)
+                {
+                    cost += (worked + hours - max) * 10;
+                }
+
+                // 前後シフト切替ペナルティ
+                if (!string.IsNullOrEmpty(state.LastShiftName) && shiftTimeMap.TryGetValue(state.LastShiftName, out var prev))
+                {
+                    var rest = (shift.Start - prev.End).TotalHours;
+                    if (rest < 10) // 休息不足
+                    {
+                        cost += 20;
+                    }
+                    if (shiftName != state.LastShiftName)
+                    {
+                        cost += 1; // シフト種別が変わる小さなペナルティ
+                    }
+                }
+            }
+
+            // 負荷平準化: 割り当て数が多いほどペナルティ
+            cost += state.AssignedCount * 0.5;
+
+            return cost;
         }
 
         /// <summary>
@@ -62,6 +126,12 @@ namespace ShiftPlanner
             requests ??= new List<ShiftRequest>();
             skillGroups ??= new List<SkillGroup>();
             shiftTimes ??= new List<ShiftTime>();
+
+            var shiftTimeMap = shiftTimes
+                .Where(st => st != null && !string.IsNullOrEmpty(st.Name))
+                .GroupBy(st => st.Name)
+                .Select(g => g.First())
+                .ToDictionary(st => st.Name, st => st);
 
             // メンバー状態の初期化
             var states = members.ToDictionary(m => m.Id, m => new MemberState(m));
@@ -170,6 +240,8 @@ namespace ShiftPlanner
                         string name = req.種別 == 申請種別.希望休 ? "希休" : req.種別 == 申請種別.有休 ? "有休" : "健診";
                         result[m.Id][date] = name;
                         states[m.Id].WorkStreak = 0;
+                        states[m.Id].LastShiftName = string.Empty;
+                        states[m.Id].LastShiftName = string.Empty;
                         if (dailyHolidayCapacity.ContainsKey(d))
                         {
                             dailyHolidayCapacity[d]--;
@@ -182,6 +254,7 @@ namespace ShiftPlanner
                     {
                         result[m.Id][date] = "休";
                         states[m.Id].WorkStreak = 0;
+                        states[m.Id].LastShiftName = string.Empty;
                         continue;
                     }
 
@@ -233,7 +306,8 @@ namespace ShiftPlanner
                     {
                         var target = candidates
                             .Where(m => m.SkillGroup == sg.Name && !dayAssignments.ContainsKey(m.Id))
-                            .OrderBy(m => 柔軟度マップ.ContainsKey(m.Id) ? 柔軟度マップ[m.Id] : int.MaxValue)
+                            .OrderBy(m => CalculateCost(m, states[m.Id], date, string.Empty, sg.Name, shiftTimeMap))
+                            .ThenBy(m => 柔軟度マップ.ContainsKey(m.Id) ? 柔軟度マップ[m.Id] : int.MaxValue)
                             .ThenBy(m => states[m.Id].AssignedCount)
                             .ThenBy(_ => _rand.Next())
                             .FirstOrDefault();
@@ -257,6 +331,24 @@ namespace ShiftPlanner
                         dayAssignments[target.Id] = shiftName;
                         states[target.Id].AssignedCount++;
                         states[target.Id].WorkStreak++;
+                        states[target.Id].LastShiftName = shiftName;
+                        try
+                        {
+                            if (shiftTimeMap.TryGetValue(shiftName, out var stInfo))
+                            {
+                                var cal = CultureInfo.CurrentCulture.Calendar;
+                                var weekIdx = cal.GetWeekOfYear(date, CalendarWeekRule.FirstFullWeek, DayOfWeek.Monday);
+                                if (!states[target.Id].WeeklyHours.ContainsKey(weekIdx))
+                                {
+                                    states[target.Id].WeeklyHours[weekIdx] = 0;
+                                }
+                                states[target.Id].WeeklyHours[weekIdx] += (stInfo.End - stInfo.Start).TotalHours;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[Generate] 労働時間更新エラー: {ex.Message}");
+                        }
                         need--;
                     }
                 }
@@ -283,7 +375,8 @@ namespace ShiftPlanner
                     {
                         var target = candidates
                             .Where(m => !dayAssignments.ContainsKey(m.Id) && m.AvailableShiftNames.Contains(st.Name))
-                            .OrderBy(m => 柔軟度マップ.ContainsKey(m.Id) ? 柔軟度マップ[m.Id] : int.MaxValue)
+                            .OrderBy(m => CalculateCost(m, states[m.Id], date, st.Name, m.SkillGroup, shiftTimeMap))
+                            .ThenBy(m => 柔軟度マップ.ContainsKey(m.Id) ? 柔軟度マップ[m.Id] : int.MaxValue)
                             .ThenBy(m => states[m.Id].AssignedCount)
                             .ThenBy(_ => _rand.Next())
                             .FirstOrDefault();
@@ -296,6 +389,24 @@ namespace ShiftPlanner
                         dayAssignments[target.Id] = st.Name;
                         states[target.Id].AssignedCount++;
                         states[target.Id].WorkStreak++;
+                        states[target.Id].LastShiftName = st.Name;
+                        try
+                        {
+                            if (shiftTimeMap.TryGetValue(st.Name, out var stInfo))
+                            {
+                                var cal = CultureInfo.CurrentCulture.Calendar;
+                                var weekIdx = cal.GetWeekOfYear(date, CalendarWeekRule.FirstFullWeek, DayOfWeek.Monday);
+                                if (!states[target.Id].WeeklyHours.ContainsKey(weekIdx))
+                                {
+                                    states[target.Id].WeeklyHours[weekIdx] = 0;
+                                }
+                                states[target.Id].WeeklyHours[weekIdx] += (stInfo.End - stInfo.Start).TotalHours;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[Generate] 労働時間更新エラー: {ex.Message}");
+                        }
                         need--;
                     }
                 }
@@ -314,6 +425,7 @@ namespace ShiftPlanner
                     {
                         result[m.Id][date] = "休";
                         states[m.Id].WorkStreak = 0;
+                        states[m.Id].LastShiftName = string.Empty;
                     }
                 }
             }
