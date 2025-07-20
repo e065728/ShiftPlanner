@@ -5,6 +5,8 @@ VisualStudioVersion = 17.10.34928.147
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShiftPlanner", "ShiftPlanner\ShiftPlanner.csproj", "{33F6FA0B-5236-4F5F-8828-A70B7CEE259C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShiftPlanner.Tests", "ShiftPlanner.Tests\ShiftPlanner.Tests.csproj", "{11859477-B9E4-4957-8649-3810ECC66B8B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -14,8 +16,12 @@ Global
 		{33F6FA0B-5236-4F5F-8828-A70B7CEE259C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{33F6FA0B-5236-4F5F-8828-A70B7CEE259C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{33F6FA0B-5236-4F5F-8828-A70B7CEE259C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{33F6FA0B-5236-4F5F-8828-A70B7CEE259C}.Release|Any CPU.Build.0 = Release|Any CPU
-	EndGlobalSection
+               {33F6FA0B-5236-4F5F-8828-A70B7CEE259C}.Release|Any CPU.Build.0 = Release|Any CPU
+                {11859477-B9E4-4957-8649-3810ECC66B8B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+                {11859477-B9E4-4957-8649-3810ECC66B8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+                {11859477-B9E4-4957-8649-3810ECC66B8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+                {11859477-B9E4-4957-8649-3810ECC66B8B}.Release|Any CPU.Build.0 = Release|Any CPU
+        EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection

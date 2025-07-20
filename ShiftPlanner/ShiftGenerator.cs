@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Diagnostics;
 
 namespace ShiftPlanner
 {
@@ -8,6 +9,34 @@ namespace ShiftPlanner
     {
         // 乱数生成用の共有インスタンス
         private static readonly Random _rand = new Random();
+
+        /// <summary>
+        /// Fisher–Yates アルゴリズムでリストをシャフルします。
+        /// </summary>
+        /// <typeparam name="T">リストの要素型</typeparam>
+        /// <param name="list">シャフル対象のリスト</param>
+        public static void Shuffle<T>(IList<T>? list)
+        {
+            if (list == null || list.Count <= 1)
+            {
+                return;
+            }
+
+            try
+            {
+                for (int i = list.Count - 1; i > 0; i--)
+                {
+                    int j = _rand.Next(i + 1);
+                    T temp = list[i];
+                    list[i] = list[j];
+                    list[j] = temp;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Shuffle] シャフル中にエラーが発生しました: {ex.Message}");
+            }
+        }
         /// <summary>
         /// シフト枠に必要な人数を満たすようメンバーを割り当てます。
         /// </summary>
@@ -18,7 +47,7 @@ namespace ShiftPlanner
         public static List<ShiftAssignment> GenerateBaseShift(
             List<ShiftFrame> frames,
             List<Member> members,
-            List<ShiftRequest> requests)
+            List<ShiftRequest>? requests)
         {
             var assignments = new List<ShiftAssignment>();
             if (frames == null || members == null)
@@ -26,10 +55,14 @@ namespace ShiftPlanner
                 return assignments; // nullチェック
             }
 
+            requests ??= new List<ShiftRequest>();
+
             // 乱数生成用インスタンスはクラスで共有
 
-            foreach (var frame in frames.OrderBy(f => f.Date))
+            try
             {
+                foreach (var frame in frames.OrderBy(f => f.Date))
+                {
                 var eligible = members.Where(m =>
                     (m.AvailableDays == null || m.AvailableDays.Contains(frame.Date.DayOfWeek)) &&
                     (frame.Date.DayOfWeek != DayOfWeek.Saturday || m.WorksOnSaturday) &&
@@ -76,9 +109,8 @@ namespace ShiftPlanner
                 // 残りの枠はランダムに選択
                 if (others.Count > 0)
                 {
-                    // OrderBy で乱数を使用してシャッフル
-                    var shuffled = others.OrderBy(_ => _rand.Next()).ToList();
-                    foreach (var m in shuffled)
+                    Shuffle(others);
+                    foreach (var m in others)
                     {
                         if (assigned.Count >= frame.RequiredNumber)
                         {
@@ -95,6 +127,11 @@ namespace ShiftPlanner
                     RequiredNumber = frame.RequiredNumber,
                     AssignedMembers = assigned
                 });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[GenerateBaseShift] 出力中にエラー: {ex.Message}");
             }
 
             return assignments;
