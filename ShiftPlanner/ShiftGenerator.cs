@@ -5,7 +5,10 @@ using System.Diagnostics;
 
 namespace ShiftPlanner
 {
-    public static class ShiftGenerator
+    /// <summary>
+    /// ランダム方式による簡易シフト自動生成クラス。
+    /// </summary>
+    public class ShiftGenerator : IRosterAlgorithm
     {
         // 乱数生成用の共有インスタンス
         private static readonly Random _rand = new Random();
@@ -135,6 +138,72 @@ namespace ShiftPlanner
             }
 
             return assignments;
+        }
+
+        /// <summary>
+        /// <see cref="IRosterAlgorithm"/> 実装。指定された条件からシフトを生成します。
+        /// </summary>
+        public Dictionary<int, Dictionary<DateTime, string>> Generate(
+            List<Member>? members,
+            DateTime baseDate,
+            int days,
+            Dictionary<DateTime, Dictionary<string, int>>? skillRequirements,
+            Dictionary<DateTime, Dictionary<string, int>>? shiftRequirements,
+            List<ShiftRequest>? requests,
+            List<SkillGroup>? skillGroups,
+            List<ShiftTime>? shiftTimes,
+            int minHolidayCount)
+        {
+            var result = new Dictionary<int, Dictionary<DateTime, string>>();
+            if (members == null || members.Count == 0 || shiftRequirements == null)
+            {
+                return result;
+            }
+
+            var shiftTimeMap = shiftTimes?.ToDictionary(t => t.Name, t => t) ?? new Dictionary<string, ShiftTime>();
+            var frames = new List<ShiftFrame>();
+
+            foreach (var kv in shiftRequirements)
+            {
+                foreach (var sv in kv.Value)
+                {
+                    shiftTimeMap.TryGetValue(sv.Key, out var st);
+                    frames.Add(new ShiftFrame
+                    {
+                        Date = kv.Key,
+                        ShiftType = sv.Key,
+                        ShiftStart = st?.Start ?? TimeSpan.Zero,
+                        ShiftEnd = st?.End ?? TimeSpan.Zero,
+                        RequiredNumber = sv.Value
+                    });
+                }
+            }
+
+            var assignments = GenerateBaseShift(frames, members, requests);
+
+            foreach (var m in members)
+            {
+                var dict = new Dictionary<DateTime, string>();
+                for (int d = 0; d < days; d++)
+                {
+                    dict[baseDate.AddDays(d)] = string.Empty;
+                }
+                result[m.Id] = dict;
+            }
+
+            foreach (var asg in assignments)
+            {
+                foreach (var m in asg.AssignedMembers)
+                {
+                    if (!result.ContainsKey(m.Id))
+                    {
+                        continue;
+                    }
+                    result[m.Id][asg.Date] = asg.ShiftType;
+                }
+            }
+
+            return result;
         }
     }
 }

@@ -34,6 +34,7 @@ namespace ShiftPlanner
         private readonly string shiftTimeFilePath;
         private readonly string settingsFilePath;
         private readonly string shiftTableFilePath;
+        private readonly IRosterAlgorithm _algorithm;
         private AppSettings settings = new AppSettings();
         private List<Member> members = new List<Member>();
         private List<ShiftFrame> shiftFrames = new List<ShiftFrame>();
@@ -68,8 +69,9 @@ namespace ShiftPlanner
         // 日付列が開始するインデックス
         private int dateColumnStartIndex = 1;
 
-        public MainForm()
+        public MainForm(IRosterAlgorithm algorithm)
         {
+            _algorithm = algorithm ?? throw new ArgumentNullException(nameof(algorithm));
             // 各ファイルパスを生成
             memberFilePath = Path.Combine(dataDir, "members.json");
             frameFilePath = Path.Combine(dataDir, "shiftFrames.json");
@@ -1773,7 +1775,7 @@ namespace ShiftPlanner
                 shiftNeeds[date] = shreq;
             }
 
-            var assignmentsMap = ShiftGeneratorGreedy.Generate(
+            var assignmentsMap = _algorithm.Generate(
                 members,
                 baseDate,
                 days,
