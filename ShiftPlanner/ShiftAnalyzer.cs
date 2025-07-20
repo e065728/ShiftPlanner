@@ -16,9 +16,23 @@ namespace ShiftPlanner
         /// </summary>
         public static TimeSpan CalculateMonthlyHours(IEnumerable<ShiftFrame> shifts, int year, int month)
         {
-            return shifts
-                .Where(s => s.Date.Year == year && s.Date.Month == month)
-                .Aggregate(TimeSpan.Zero, (acc, s) => acc + (s.ShiftEnd - s.ShiftStart));
+            if (shifts == null)
+            {
+                SimpleLogger.Error("[CalculateMonthlyHours] shifts is null");
+                return TimeSpan.Zero;
+            }
+
+            try
+            {
+                return shifts
+                    .Where(s => s.Date.Year == year && s.Date.Month == month)
+                    .Aggregate(TimeSpan.Zero, (acc, s) => acc + (s.ShiftEnd - s.ShiftStart));
+            }
+            catch (Exception ex)
+            {
+                SimpleLogger.Error("[CalculateMonthlyHours] 集計に失敗しました", ex);
+                return TimeSpan.Zero;
+            }
         }
 
 
@@ -36,10 +50,18 @@ namespace ShiftPlanner
                 return new Dictionary<string, int>();
             }
 
-            return shifts
-                .Where(s => s.Date.Year == year && s.Date.Month == month)
-                .GroupBy(s => s.ShiftType ?? string.Empty)
-                .ToDictionary(g => g.Key, g => g.Count());
+            try
+            {
+                return shifts
+                    .Where(s => s.Date.Year == year && s.Date.Month == month)
+                    .GroupBy(s => s.ShiftType ?? string.Empty)
+                    .ToDictionary(g => g.Key, g => g.Count());
+            }
+            catch (Exception ex)
+            {
+                SimpleLogger.Error("[GetShiftTypeDistribution] 集計に失敗しました", ex);
+                return new Dictionary<string, int>();
+            }
         }
 
 

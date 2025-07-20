@@ -23,3 +23,6 @@ jobs:
 
     - name: ビルドを実行
       run: msbuild ShiftPlanner.sln /p:Configuration=Release
+
+    - name: テストを実行
+      run: dotnet test ShiftPlanner.sln --no-build --configuration Release
