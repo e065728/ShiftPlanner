@@ -27,17 +27,6 @@ namespace ShiftPlanner
         }
 
         /// <summary>
-        /// 勤務枠情報を表す構造体。
-        /// 必要に応じて SkillGroup 名を保持します。
-        /// </summary>
-        private struct Slot
-        {
-            public DateTime Date { get; set; }
-            public string ShiftName { get; set; }
-            public string? RequiredSkill { get; set; }
-        }
-
-        /// <summary>
         /// 指定した条件からシフト表を生成します。
         /// </summary>
         /// <param name="members">メンバー一覧</param>
