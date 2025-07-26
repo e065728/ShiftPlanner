@@ -129,6 +129,8 @@
     </Compile>
     <Compile Include="ShiftConstraints.cs" />
     <Compile Include="SimpleLogger.cs" />
+    <!-- JSON Lines ログ出力クラス -->
+    <Compile Include="ShiftLog.cs" />
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
