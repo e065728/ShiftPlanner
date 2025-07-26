@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Linq;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
 
@@ -17,15 +18,48 @@ namespace ShiftPlanner
         /// </summary>
         /// <param name="shifts">出力対象のシフト一覧</param>
         /// <param name="path">保存先パス</param>
-        public static void ExportToCsv(IEnumerable<ShiftFrame> shifts, string path)
+        /// <returns>処理結果メッセージ</returns>
+        public static string ExportToCsv(IEnumerable<ShiftFrame> shifts, string path)
         {
-            using (var writer = new StreamWriter(path, false, Encoding.UTF8))
+            // 入力チェック
+            if (shifts == null || !shifts.Any())
             {
-                writer.WriteLine("Date,ShiftType,Start,End,RequiredNumber");
-                foreach (var s in shifts)
+                SimpleLogger.Info("[CsvExport] シフト情報がないため処理を中止しました。");
+                return "シフト情報がありません。";
+            }
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                SimpleLogger.Error("[CsvExport] 出力先パスが指定されていません。");
+                return "出力先パスが指定されていません。";
+            }
+
+            try
+            {
+                SimpleLogger.Info($"[CsvExport] 出力開始: {path}");
+
+                var directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                 {
-                    writer.WriteLine($"{s.Date:yyyy-MM-dd},{s.ShiftType},{s.ShiftStart},{s.ShiftEnd},{s.RequiredNumber}");
+                    Directory.CreateDirectory(directory);
                 }
+
+                using (var writer = new StreamWriter(path, false, Encoding.UTF8))
+                {
+                    // CSVヘッダ
+                    writer.WriteLine("Date,ShiftType,Start,End,RequiredNumber");
+                    foreach (var s in shifts)
+                    {
+                        writer.WriteLine($"{s.Date:yyyy-MM-dd},{s.ShiftType},{s.ShiftStart},{s.ShiftEnd},{s.RequiredNumber}");
+                    }
+                }
+
+                SimpleLogger.Info("[CsvExport] 出力完了");
+                return "CSV出力が完了しました。";
+            }
+            catch (Exception ex)
+            {
+                SimpleLogger.Error("[CsvExport] 出力中にエラーが発生しました", ex);
+                return $"CSV出力に失敗しました: {ex.Message}";
             }
         }
 
