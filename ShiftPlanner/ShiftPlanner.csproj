@@ -68,70 +68,71 @@
     <!-- PDF 出力用ライブラリ -->
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MainForm.cs">
+    <Compile Include="Views\MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="MainForm.Designer.cs">
+    <Compile Include="Views\MainForm.Designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Member.cs" />
+    <Compile Include="Models\Member.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ShiftFrame.cs" />
-    <Compile Include="ShiftRequest.cs" />
-    <Compile Include="ShiftRequestForm.cs">
+    <Compile Include="Models\ShiftFrame.cs" />
+    <Compile Include="Models\ShiftRequest.cs" />
+    <Compile Include="Views\ShiftRequestForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="ShiftRequestForm.Designer.cs">
+    <Compile Include="Views\ShiftRequestForm.Designer.cs">
       <DependentUpon>ShiftRequestForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="ShiftExporter.cs" />
-    <Compile Include="ShiftAnalyzer.cs" />
-    <Compile Include="ShiftAssignment.cs" />
-    <Compile Include="ShiftGenerator.cs" />
+    <Compile Include="Controllers\ShiftExporter.cs" />
+    <Compile Include="Controllers\ShiftAnalyzer.cs" />
+    <Compile Include="Controllers\IRosterAlgorithm.cs" />
+    <Compile Include="Models\ShiftAssignment.cs" />
+    <Compile Include="Controllers\ShiftGenerator.cs" />
     <!-- 貪欲法によるシフト自動生成 -->
-    <Compile Include="ShiftGeneratorGreedy.cs" />
-    <Compile Include="JapaneseHolidayHelper.cs" />
-    <Compile Include="CustomHoliday.cs" />
+    <Compile Include="Controllers\ShiftGeneratorGreedy.cs" />
+    <Compile Include="Models\JapaneseHolidayHelper.cs" />
+    <Compile Include="Models\CustomHoliday.cs" />
     <!-- DataGridView の拡張メソッド -->
-    <Compile Include="DataGridViewHelper.cs" />
-    <Compile Include="ExcelHelper.cs" />
-    <Compile Include="AppSettings.cs" />
+    <Compile Include="Views\DataGridViewHelper.cs" />
+    <Compile Include="Controllers\ExcelHelper.cs" />
+    <Compile Include="Models\AppSettings.cs" />
     <!-- メンバーごとの希望件数サマリ表示用クラス -->
-    <Compile Include="RequestSummary.cs" />
+    <Compile Include="Models\RequestSummary.cs" />
     <!-- 個別日程調整の種別を定義する列挙体 -->
-    <Compile Include="RequestType.cs" />
-    <Compile Include="HolidayMasterForm.cs">
+    <Compile Include="Models\RequestType.cs" />
+    <Compile Include="Views\HolidayMasterForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="HolidayMasterForm.Designer.cs">
+    <Compile Include="Views\HolidayMasterForm.Designer.cs">
       <DependentUpon>HolidayMasterForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="MemberMasterForm.cs">
+    <Compile Include="Views\MemberMasterForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="MemberMasterForm.Designer.cs">
+    <Compile Include="Views\MemberMasterForm.Designer.cs">
       <DependentUpon>MemberMasterForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="SkillGroup.cs" />
-    <Compile Include="SkillGroupMasterForm.cs">
+    <Compile Include="Models\SkillGroup.cs" />
+    <Compile Include="Views\SkillGroupMasterForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="SkillGroupMasterForm.Designer.cs">
+    <Compile Include="Views\SkillGroupMasterForm.Designer.cs">
       <DependentUpon>SkillGroupMasterForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="ShiftTime.cs" />
-    <Compile Include="ShiftTimeMasterForm.cs">
+    <Compile Include="Models\ShiftTime.cs" />
+    <Compile Include="Views\ShiftTimeMasterForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="ShiftTimeMasterForm.Designer.cs">
+    <Compile Include="Views\ShiftTimeMasterForm.Designer.cs">
       <DependentUpon>ShiftTimeMasterForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="ShiftConstraints.cs" />
-    <Compile Include="SimpleLogger.cs" />
+    <Compile Include="Models\ShiftConstraints.cs" />
+    <Compile Include="Controllers\SimpleLogger.cs" />
     <!-- JSON Lines ログ出力クラス -->
-    <Compile Include="ShiftLog.cs" />
-    <EmbeddedResource Include="MainForm.resx">
+    <Compile Include="Models\ShiftLog.cs" />
+    <EmbeddedResource Include="Views\MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
