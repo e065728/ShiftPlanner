@@ -96,7 +96,7 @@
     <Compile Include="Models\CustomHoliday.cs" />
     <!-- DataGridView の拡張メソッド -->
     <Compile Include="Views\DataGridViewHelper.cs" />
-    <Compile Include="Controllers\ExcelHelper.cs" />
+    <Compile Include="Utilities\ExcelHelper.cs" />
     <Compile Include="Models\AppSettings.cs" />
     <!-- メンバーごとの希望件数サマリ表示用クラス -->
     <Compile Include="Models\RequestSummary.cs" />
@@ -129,7 +129,7 @@
       <DependentUpon>ShiftTimeMasterForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Models\ShiftConstraints.cs" />
-    <Compile Include="Controllers\SimpleLogger.cs" />
+    <Compile Include="Utilities\SimpleLogger.cs" />
     <!-- JSON Lines ログ出力クラス -->
     <Compile Include="Models\ShiftLog.cs" />
     <EmbeddedResource Include="Views\MainForm.resx">
